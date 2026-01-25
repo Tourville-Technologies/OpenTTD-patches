@@ -485,8 +485,9 @@ static const NamedSaveLoad _company_desc[] = {
 	NSL("months_of_bankruptcy",             SLE_VAR(CompanyProperties, months_of_bankruptcy,  SLE_UINT8)),
 	NSL("bankrupt_last_asked",        SLE_CONDVAR_X(CompanyProperties, bankrupt_last_asked,   SLE_UINT8,        SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_BANKRUPTCY_EXTRA))),
 	NSL("bankrupt_flags",             SLE_CONDVAR_X(CompanyProperties, bankrupt_flags,        SLE_UINT8,        SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_BANKRUPTCY_EXTRA, 2))),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_FILE_U8  | SLE_VAR_U16,  SL_MIN_VERSION, SLV_104)),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_UINT16,                  SLV_104, SL_MAX_VERSION)),
+	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_FILE_U8  | SLE_VAR_U32,  SL_MIN_VERSION, SLV_104)),
+	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_UINT16 | SLE_UINT32,                  SLV_104, SLV_15_COMPANY)),
+	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_UINT32,                  SLV_15_COMPANY, SL_MAX_VERSION)),
 	NSL("bankrupt_timeout",                 SLE_VAR(CompanyProperties, bankrupt_timeout,      SLE_INT16)),
 	NSL("bankrupt_value",               SLE_CONDVAR(CompanyProperties, bankrupt_value,        SLE_VAR_I64 | SLE_FILE_I32,  SL_MIN_VERSION, SLV_65)),
 	NSL("bankrupt_value",               SLE_CONDVAR(CompanyProperties, bankrupt_value,        SLE_INT64,                   SLV_65, SL_MAX_VERSION)),
@@ -744,7 +745,7 @@ static void Save_PLYP()
 			SlSetLength(0);
 		} else {
 			SlSetLength(2 + _saved_PLYP_data.size());
-			SlWriteUint16(_saved_PLYP_invalid_mask);
+			SlWriteUint32(_saved_PLYP_invalid_mask);
 			MemoryDumper::GetCurrent()->CopyBytes((const uint8_t *)_saved_PLYP_data.data(), _saved_PLYP_data.size());
 		}
 		return;

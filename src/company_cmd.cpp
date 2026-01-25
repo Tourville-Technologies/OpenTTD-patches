@@ -568,7 +568,7 @@ static Colours GenerateCompanyColour()
 		if (colours[i] != INVALID_COLOUR) return colours[i];
 	}
 
-	NOT_REACHED();
+	return (Colours)(Random() & 0xF);
 }
 
 /**

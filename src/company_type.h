@@ -13,7 +13,7 @@
 #include "core/enum_type.hpp"
 #include "core/pool_type.hpp"
 
-struct CompanyIDTag : public PoolIDTraits<uint8_t, 0xF, 0xFF> {};
+struct CompanyIDTag : public PoolIDTraits<uint8_t, 0xF0, 0xFF> {};
 using CompanyID = PoolID<CompanyIDTag>;
 
 /* 'Fake' companies used for networks */
@@ -23,11 +23,11 @@ static constexpr CompanyID COMPANY_SPECTATOR{255}; ///< The client is spectating
 
 using Owner = CompanyID;
 static constexpr Owner OWNER_BEGIN = Owner::Begin(); ///< First owner
-static constexpr Owner OWNER_TOWN{0x0F}; ///< A town owns the tile, or a town is expanding
-static constexpr Owner OWNER_NONE{0x10}; ///< The tile has no ownership
-static constexpr Owner OWNER_WATER{0x11}; ///< The tile/execution is done by "water"
-static constexpr Owner OWNER_DEITY{0x12}; ///< The object is owned by a superuser / goal script
-static constexpr Owner OWNER_END{0x13}; ///< Last + 1 owner
+static constexpr Owner OWNER_TOWN{ 0xF0 }; ///< A town owns the tile, or a town is expanding
+static constexpr Owner OWNER_NONE{0xF1}; ///< The tile has no ownership
+static constexpr Owner OWNER_WATER{0xF2}; ///< The tile/execution is done by "water"
+static constexpr Owner OWNER_DEITY{0xF3}; ///< The object is owned by a superuser / goal script
+static constexpr Owner OWNER_END{0xF4}; ///< Last + 1 owner
 static constexpr Owner INVALID_OWNER = Owner::Invalid(); ///< An invalid owner
 
 static const uint8_t MAX_COMPANIES = CompanyID::End().base();
@@ -42,9 +42,9 @@ static const uint MAX_COMPETITORS_INTERVAL = 500; ///< The maximum interval (in 
 
 typedef Owner CompanyID;
 
-class CompanyMask : public BaseBitSet<CompanyMask, CompanyID, uint16_t> {
+class CompanyMask : public BaseBitSet<CompanyMask, CompanyID, uint32_t> {
 public:
-	constexpr CompanyMask() : BaseBitSet<CompanyMask, CompanyID, uint16_t>() {}
+	constexpr CompanyMask() : BaseBitSet<CompanyMask, CompanyID, uint32_t>() {}
 	static constexpr size_t DecayValueType(CompanyID value) { return value.base(); }
 
 	constexpr auto operator <=>(const CompanyMask &) const noexcept = default;

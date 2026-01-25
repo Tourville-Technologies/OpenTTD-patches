@@ -25,7 +25,7 @@
 uint32_t VehicleListIdentifier::Pack() const
 {
 	uint8_t c = this->company == OWNER_NONE ? 0xF : this->company.base();
-	assert(c             < (1 <<  4));
+	assert(c             < (1 <<  8));
 	assert(this->vtype   < (1 <<  2));
 	assert(this->index   < (1 << 20));
 	assert(this->type    < VLT_END);

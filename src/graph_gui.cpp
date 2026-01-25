@@ -174,7 +174,7 @@ struct ValuesInterval {
 
 struct BaseGraphWindow : Window {
 protected:
-	static const int GRAPH_MAX_DATASETS     =  64;
+	static const int GRAPH_MAX_DATASETS     =  256;
 	static constexpr PixelColour GRAPH_BASE_COLOUR      =  GREY_SCALE(2);
 	static constexpr PixelColour GRAPH_GRID_COLOUR      =  GREY_SCALE(3);
 	static constexpr PixelColour GRAPH_AXIS_LINE_COLOUR =  GREY_SCALE(1);

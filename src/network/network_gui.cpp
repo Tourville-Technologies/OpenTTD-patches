@@ -1058,7 +1058,7 @@ struct NetworkStartServerWindow : public Window {
 
 			case WID_NSS_COMPANIES_TXT:  // Click on number of companies
 				this->widget_id = WID_NSS_COMPANIES_TXT;
-				ShowQueryString(GetString(STR_JUST_INT, _settings_client.network.max_companies), STR_NETWORK_START_SERVER_NUMBER_OF_COMPANIES,  3, this, CS_NUMERAL, {});
+				ShowQueryString(GetString(STR_JUST_INT, _settings_client.network.max_companies), STR_NETWORK_START_SERVER_NUMBER_OF_COMPANIES,  4, this, CS_NUMERAL, {});
 				break;
 
 			case WID_NSS_GENERATE_GAME: // Start game
