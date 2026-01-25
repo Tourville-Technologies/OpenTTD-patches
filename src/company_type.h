@@ -23,7 +23,8 @@ static constexpr CompanyID COMPANY_SPECTATOR{255}; ///< The client is spectating
 
 using Owner = CompanyID;
 static constexpr Owner OWNER_BEGIN = Owner::Begin(); ///< First owner
-static constexpr Owner OWNER_TOWN{ 0xF0 }; ///< A town owns the tile, or a town is expanding
+static constexpr Owner OWNER_TOWN{0xF0}; ///< A town owns the tile, or a town is expanding
+static constexpr Owner OLD_OWNER_TOWN{ 0x0F }; ///< Used in old savegames to indicate town ownership
 static constexpr Owner OWNER_NONE{0xF1}; ///< The tile has no ownership
 static constexpr Owner OWNER_WATER{0xF2}; ///< The tile/execution is done by "water"
 static constexpr Owner OWNER_DEITY{0xF3}; ///< The object is owned by a superuser / goal script

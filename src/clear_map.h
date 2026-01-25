@@ -256,6 +256,8 @@ inline void MakeClear(TileIndex t, ClearGround g, uint density)
 	_me[t].m6 = 0;
 	_me[t].m7 = 0;
 	_me[t].m8 = 0;
+	_me[t].m9 = 0;
+	_me[t].m10 = 0;
 }
 
 

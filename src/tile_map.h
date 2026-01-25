@@ -186,7 +186,7 @@ inline Owner GetTileOwner(TileIndex tile)
 	dbg_assert_tile(IsValidTile(tile), tile);
 	dbg_assert_tile(!IsTileType(tile, MP_HOUSE) && !IsTileType(tile, MP_INDUSTRY), tile);
 
-	return (Owner)GB(_m[tile].m1, 0, 5);
+	return (Owner)(GB(_m[tile].m1, 0, 5) | (((uint16_t)_me[tile].m9 & 0x1F) << 5));
 }
 
 /**
@@ -206,6 +206,18 @@ inline void SetTileOwner(TileIndex tile, Owner owner)
 	dbg_assert_tile(!IsTileType(tile, MP_HOUSE) && !IsTileType(tile, MP_INDUSTRY), tile);
 
 	SB(_m[tile].m1, 0, 5, owner.base());
+	uint8_t owner_add = ((owner.base() & 0x3FF) >> 5);
+	_me[tile].m9 &= ~(0x1f);
+	_me[tile].m9 |= owner_add & 0x1f;
+	if (owner == OWNER_NONE) {
+		_me[tile].m9 &= ~(0xe0);
+		_me[tile].m9 |= (owner_add & 0x1f) << 5;
+		_me[tile].m10 &= ~(0x03);
+		_me[tile].m10 |= (owner_add & 0x1f) >> 3;
+		_me[tile].m10 &= ~(0xFC);
+		_me[tile].m10 |= (owner_add & 0x1f) << 2;
+	}
+
 }
 
 /**
