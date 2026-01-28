@@ -243,7 +243,7 @@ static void Load_WMAP()
 	TileExtended *me_end = _me.tile_data + size;
 	if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
 		for (TileExtended *me = me_start; me != me_end; me++) {
-			RawReadBuffer buf = reader->ReadRawBytes(4);
+			RawReadBuffer buf = reader->ReadRawBytes(5);
 			me->m6 = buf.RawReadByte();
 			me->m7 = buf.RawReadByte();
 			me->m8 = buf.RawReadByte();
