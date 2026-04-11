@@ -2458,6 +2458,7 @@ SaveLoadTableData SlTableHeader(const NamedSaveLoadTable &slt, TableHeaderSpecia
 				uint8_t correct_type = GetSavegameTableFileType(*sld_it->save_load);
 				if (correct_type != type) {
 					Debug(sl, 1, "Field type for '{}' was expected to be 0x{:02X} but 0x{:02X} was found", key, correct_type, type);
+					Debug(sl, 1, "Savegame version before MORE_COMPANIES: {}", IsSavegameVersionBefore(SLV_15_COMPANY));
 					SlErrorCorruptWithChunk("Field type is different than expected");
 				}
 				saveloads.push_back(*sld_it->save_load);

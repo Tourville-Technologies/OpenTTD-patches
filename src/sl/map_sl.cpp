@@ -213,60 +213,116 @@ static void Load_MAPX()
 
 static void Load_WMAP()
 {
-	static_assert(sizeof(Tile) == 8);
-	static_assert(sizeof(TileExtended) == 6);
-	assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
+	if (IsSavegameVersionBefore(SLV_15_COMPANY)) {
+		assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
 
-	ReadBuffer *reader = ReadBuffer::GetCurrent();
-	const uint32_t size = Map::Size();
+		ReadBuffer *reader = ReadBuffer::GetCurrent();
+		const uint32_t size = Map::Size();
 
-	if constexpr (std::endian::native == std::endian::little) {
-		reader->CopyBytes((uint8_t *) _m.tile_data, size * 8);
-	} else {
-		Tile *m_start = _m.tile_data;
-		Tile *m_end = _m.tile_data + size;
-		for (Tile *m = m_start; m != m_end; m++) {
-			RawReadBuffer buf = reader->ReadRawBytes(8);
-			m->type = buf.RawReadByte();
-			m->height = buf.RawReadByte();
-			uint16_t m2 = buf.RawReadByte();
-			m2 |= ((uint16_t) buf.RawReadByte()) << 8;
-			m->m2 = m2;
-			m->m1 = buf.RawReadByte();
-			m->m3 = buf.RawReadByte();
-			m->m4 = buf.RawReadByte();
-			m->m5 = buf.RawReadByte();
-		}
-	}
-
-	TileExtended *me_start = _me.tile_data;
-	TileExtended *me_end = _me.tile_data + size;
-	if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
-		for (TileExtended *me = me_start; me != me_end; me++) {
-			RawReadBuffer buf = reader->ReadRawBytes(5);
-			me->m6 = buf.RawReadByte();
-			me->m7 = buf.RawReadByte();
-			me->m8 = buf.RawReadByte();
-			me->m9 = buf.RawReadByte();
-			me->m10 = buf.RawReadByte();
-		}
-	} else if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2) {
 		if constexpr (std::endian::native == std::endian::little) {
-			reader->CopyBytes((uint8_t *) _me.tile_data, size * 6);
+			reader->CopyBytes((uint8_t *)_m.tile_data, size * 8);
 		} else {
+			Tile *m_start = _m.tile_data;
+			Tile *m_end = _m.tile_data + size;
+			for (Tile *m = m_start; m != m_end; m++) {
+				RawReadBuffer buf = reader->ReadRawBytes(8);
+				m->type = buf.RawReadByte();
+				m->height = buf.RawReadByte();
+				uint16_t m2 = buf.RawReadByte();
+				m2 |= ((uint16_t)buf.RawReadByte()) << 8;
+				m->m2 = m2;
+				m->m1 = buf.RawReadByte();
+				m->m3 = buf.RawReadByte();
+				m->m4 = buf.RawReadByte();
+				m->m5 = buf.RawReadByte();
+			}
+		}
+
+		TileExtended *me_start = _me.tile_data;
+		TileExtended *me_end = _me.tile_data + size;
+		if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
 			for (TileExtended *me = me_start; me != me_end; me++) {
-				RawReadBuffer buf = reader->ReadRawBytes(6);
+				RawReadBuffer buf = reader->ReadRawBytes(3);
 				me->m6 = buf.RawReadByte();
 				me->m7 = buf.RawReadByte();
-				uint16_t m8 = buf.RawReadByte();
-				m8 |= ((uint16_t) buf.RawReadByte()) << 8;
-				me->m8 = m8;
+				me->m8 = buf.RawReadByte();
+				me->m9 = 0;
+				me->m10 = 0;
+			}
+		} else if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2) {
+			if constexpr (std::endian::native == std::endian::little) {
+				reader->CopyBytes((uint8_t *)_me.tile_data, size * 4);
+			} else {
+				for (TileExtended *me = me_start; me != me_end; me++) {
+					RawReadBuffer buf = reader->ReadRawBytes(4);
+					me->m6 = buf.RawReadByte();
+					me->m7 = buf.RawReadByte();
+					uint16_t m8 = buf.RawReadByte();
+					m8 |= ((uint16_t)buf.RawReadByte()) << 8;
+					me->m8 = m8;
+					me->m9 = 0;
+					me->m10 = 0;
+				}
+			}
+		} else {
+			NOT_REACHED();
+		}
+	} else {
+		static_assert(sizeof(Tile) == 8);
+		static_assert(sizeof(TileExtended) == 6);
+		assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
+
+		ReadBuffer *reader = ReadBuffer::GetCurrent();
+		const uint32_t size = Map::Size();
+
+		if constexpr (std::endian::native == std::endian::little) {
+			reader->CopyBytes((uint8_t *)_m.tile_data, size * 8);
+		} else {
+			Tile *m_start = _m.tile_data;
+			Tile *m_end = _m.tile_data + size;
+			for (Tile *m = m_start; m != m_end; m++) {
+				RawReadBuffer buf = reader->ReadRawBytes(8);
+				m->type = buf.RawReadByte();
+				m->height = buf.RawReadByte();
+				uint16_t m2 = buf.RawReadByte();
+				m2 |= ((uint16_t)buf.RawReadByte()) << 8;
+				m->m2 = m2;
+				m->m1 = buf.RawReadByte();
+				m->m3 = buf.RawReadByte();
+				m->m4 = buf.RawReadByte();
+				m->m5 = buf.RawReadByte();
+			}
+		}
+
+		TileExtended *me_start = _me.tile_data;
+		TileExtended *me_end = _me.tile_data + size;
+		if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
+			for (TileExtended *me = me_start; me != me_end; me++) {
+				RawReadBuffer buf = reader->ReadRawBytes(5);
+				me->m6 = buf.RawReadByte();
+				me->m7 = buf.RawReadByte();
+				me->m8 = buf.RawReadByte();
 				me->m9 = buf.RawReadByte();
 				me->m10 = buf.RawReadByte();
 			}
+		} else if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2) {
+			if constexpr (std::endian::native == std::endian::little) {
+				reader->CopyBytes((uint8_t *)_me.tile_data, size * 6);
+			} else {
+				for (TileExtended *me = me_start; me != me_end; me++) {
+					RawReadBuffer buf = reader->ReadRawBytes(6);
+					me->m6 = buf.RawReadByte();
+					me->m7 = buf.RawReadByte();
+					uint16_t m8 = buf.RawReadByte();
+					m8 |= ((uint16_t)buf.RawReadByte()) << 8;
+					me->m8 = m8;
+					me->m9 = buf.RawReadByte();
+					me->m10 = buf.RawReadByte();
+				}
+			}
+		} else {
+			NOT_REACHED();
 		}
-	} else {
-		NOT_REACHED();
 	}
 }
 

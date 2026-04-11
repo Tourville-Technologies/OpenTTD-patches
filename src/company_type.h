@@ -32,6 +32,7 @@ static constexpr Owner OWNER_END{0xF4}; ///< Last + 1 owner
 static constexpr Owner INVALID_OWNER = Owner::Invalid(); ///< An invalid owner
 
 static const uint8_t MAX_COMPANIES = CompanyID::End().base();
+static const uint8_t OLD_MAX_COMPANIES = 0x0F;
 static const uint MAX_LENGTH_PRESIDENT_NAME_CHARS = 32; ///< The maximum length of a president name in characters including '\0'
 static const uint MAX_LENGTH_COMPANY_NAME_CHARS   = 32; ///< The maximum length of a company name in characters including '\0'
 

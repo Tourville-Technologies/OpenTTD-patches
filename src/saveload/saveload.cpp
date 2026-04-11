@@ -1841,6 +1841,7 @@ std::vector<SaveLoad> SlTableHeader(const SaveLoadTable &slt)
 				uint8_t correct_type = GetSavegameFileType(*sld_it->second);
 				if (correct_type != type) {
 					Debug(sl, 1, "Field type for '{}' was expected to be 0x{:02X} but 0x{:02X} was found", key, correct_type, type);
+					Debug(sl, 1, "Savegame version before MORE_COMPANIES: {}", IsSavegameVersionBefore(SLV_15_COMPANY));
 					SlErrorCorrupt("Field type is different than expected");
 				}
 				saveloads.emplace_back(*sld_it->second);
