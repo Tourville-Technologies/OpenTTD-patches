@@ -652,6 +652,9 @@ void SetupEngines()
 {
 	CloseWindowByClass(WC_ENGINE_PREVIEW);
 	_engine_pool.CleanPool();
+	Debug(sl, 0, "_engine_mngr.mappings.size(): {}", _engine_mngr.mappings.size());
+	Debug(sl, 0, "EngineOverrideManager::NUM_DEFAULT_ENGINES: {}", EngineOverrideManager::NUM_DEFAULT_ENGINES);
+
 
 	assert(_engine_mngr.mappings.size() >= EngineOverrideManager::NUM_DEFAULT_ENGINES);
 	[[maybe_unused]] EngineID index = EngineID::Begin();

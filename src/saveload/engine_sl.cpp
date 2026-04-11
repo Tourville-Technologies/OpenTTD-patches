@@ -102,6 +102,7 @@ struct EIDSChunkHandler : ChunkHandler {
 
 		uint index = 0;
 		for (EngineIDMapping &eid : _engine_mngr.mappings) {
+			Debug(sl, 0, "SAVE: ENGINEIDMAPPING: {}", _engine_mngr.mappings.size());
 			SlSetArrayIndex(index);
 			SlObject(&eid, _engine_id_mapping_desc);
 			index++;
@@ -118,7 +119,6 @@ struct EIDSChunkHandler : ChunkHandler {
 			EngineIDMapping *eid = &_engine_mngr.mappings.emplace_back();
 			SlObject(eid, slt);
 		}
-
 		_engine_mngr.ReIndex();
 	}
 };

@@ -214,6 +214,7 @@ static void Load_MAPX()
 static void Load_WMAP()
 {
 	if (IsSavegameVersionBefore(SLV_15_COMPANY)) {
+		Debug(sl, 0, "Using BEFORE SLV_15_COMPANY LOADER");
 		assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
 
 		ReadBuffer *reader = ReadBuffer::GetCurrent();
@@ -268,6 +269,7 @@ static void Load_WMAP()
 			NOT_REACHED();
 		}
 	} else {
+		Debug(sl, 0, "Using AFTER SLV_15_COMPANY LOADER");
 		static_assert(sizeof(Tile) == 8);
 		static_assert(sizeof(TileExtended) == 6);
 		assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
