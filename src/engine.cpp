@@ -1063,7 +1063,7 @@ void EnginesDailyLoop()
 					InvalidateWindowClassesData(WindowClass::EnginePreview);
 					e->preview_company = CompanyID::Invalid();
 				}
-			} else if (CountBits(e->preview_asked.base()) < MAX_COMPANIES) {
+			} else if (e->preview_asked.Count() < MAX_COMPANIES) {
 				e->preview_company = GetPreviewCompany(e);
 
 				if (e->preview_company == CompanyID::Invalid()) {

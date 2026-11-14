@@ -267,9 +267,11 @@ class Layouter : public std::vector<const ParagraphLayouter::Line *> {
 		{
 			size_t result = 0;
 			HashCombine(result, robin_hood::hash_int(to_underlying(fs.fontsize) << 16 | fs.cur_colour.ToNetwork()));
+			HashCombine(result, robin_hood::hash_int(fs.cur_colour.rgb));
 			const auto &colour_stack = fs.colour_stack.c;
-			if (!colour_stack.empty()) {
-				HashCombine(result, robin_hood::hash_bytes(colour_stack.data(), colour_stack.size() * sizeof(colour_stack[0])));
+			for (const ExtendedTextColour &colour : colour_stack) {
+				HashCombine(result, robin_hood::hash_int(colour.ToNetwork()));
+				HashCombine(result, robin_hood::hash_int(colour.rgb));
 			}
 			return result;
 		}

@@ -81,6 +81,7 @@ namespace {
 		 * Expected number of cycles per second of the performance element. Use 1 if unknown or not relevant.
 		 * The rate is used for highlighting slow-running elements in the GUI.
 		 */
+		PerformanceData() : PerformanceData(1) { }
 		explicit PerformanceData(double expected_rate) : expected_rate(expected_rate) { }
 
 		/**
@@ -362,37 +363,22 @@ void ShowFrametimeGraphWindow(PerformanceElement elem);
 
 
 /** Order of the performance elements in the user interface. */
-static constexpr EnumIndexArray<PerformanceElement, PerformanceElement, PerformanceElement::End> DISPLAY_ORDER_PFE = {
-	PerformanceElement::GameLoop,
-	PerformanceElement::GameLoopEconomy,
-	PerformanceElement::GameLoopTrains,
-	PerformanceElement::GameLoopRoadVehicles,
-	PerformanceElement::GameLoopShips,
-	PerformanceElement::GameLoopAircraft,
-	PerformanceElement::GameLoopLandscape,
-	PerformanceElement::AllScripts,
-	PerformanceElement::GameScript,
-	PerformanceElement::AI0,
-	PerformanceElement::AI1,
-	PerformanceElement::AI2,
-	PerformanceElement::AI3,
-	PerformanceElement::AI4,
-	PerformanceElement::AI5,
-	PerformanceElement::AI6,
-	PerformanceElement::AI7,
-	PerformanceElement::AI8,
-	PerformanceElement::AI9,
-	PerformanceElement::AI10,
-	PerformanceElement::AI11,
-	PerformanceElement::AI12,
-	PerformanceElement::AI13,
-	PerformanceElement::AI14,
-	PerformanceElement::GameLoopLinkGraph,
-	PerformanceElement::Drawing,
-	PerformanceElement::ViewportDrawing,
-	PerformanceElement::Video,
-	PerformanceElement::Sound,
-};
+static constexpr auto DISPLAY_ORDER_PFE = []() {
+	EnumIndexArray<PerformanceElement, PerformanceElement, PerformanceElement::End> order{};
+	uint index = 0;
+	for (PerformanceElement element : {PerformanceElement::GameLoop, PerformanceElement::GameLoopEconomy, PerformanceElement::GameLoopTrains,
+			PerformanceElement::GameLoopRoadVehicles, PerformanceElement::GameLoopShips, PerformanceElement::GameLoopAircraft,
+			PerformanceElement::GameLoopLandscape, PerformanceElement::AllScripts, PerformanceElement::GameScript}) {
+		order[static_cast<PerformanceElement>(index++)] = element;
+	}
+	for (uint company = 0; company < MAX_COMPANIES; ++company) {
+		order[static_cast<PerformanceElement>(index++)] = static_cast<PerformanceElement>(to_underlying(PerformanceElement::AI0) + company);
+	}
+	for (PerformanceElement element : {PerformanceElement::GameLoopLinkGraph, PerformanceElement::Drawing, PerformanceElement::ViewportDrawing, PerformanceElement::Video, PerformanceElement::Sound}) {
+		order[static_cast<PerformanceElement>(index++)] = element;
+	}
+	return order;
+}();
 
 /**
  * Get the \c CompanyID associated with the AI of the given \c PerformanceElement.
@@ -491,7 +477,7 @@ struct FramerateWindow : Window {
 	{
 		this->InitNested(number);
 		this->UpdateData();
-		this->num_displayed = this->num_active;
+		this->num_displayed = std::min(this->num_active, 20);
 
 		/* Window is always initialised to MIN_ELEMENTS height, resize to contain num_displayed */
 		ResizeWindow(this, 0, (std::max(MIN_ELEMENTS, this->num_displayed) - MIN_ELEMENTS) * GetCharacterHeight(FontSize::Normal));

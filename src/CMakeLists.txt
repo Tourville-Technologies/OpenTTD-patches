@@ -123,6 +123,8 @@ add_files(
     command_type.h
     command_type_fwd_declare.h
     company_base.h
+    company_colour.cpp
+    company_colour.h
     company_cmd.cpp
     company_cmd.h
     company_func.h

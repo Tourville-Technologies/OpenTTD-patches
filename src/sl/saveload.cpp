@@ -21,6 +21,7 @@
  */
 
 #include "../stdafx.h"
+#include "../core/backup_type.hpp"
 #include "../debug.h"
 #include "../station_base.h"
 #include "../thread.h"
@@ -4314,6 +4315,13 @@ static SaveLoadResult DoLoad(std::shared_ptr<LoadFilter> reader, bool load_check
 		 * any mapsize information. Pre-initialize to 256x256 to not to
 		 * confuse old games */
 		InitializeGame(256, 256, true, true);
+		/* Saves without MAPS reuse this initialized landscape. Old map chunks
+		 * do not overwrite the additional owner bytes, so clear them before
+		 * reading any tile data. Extended map chunks supply their own values. */
+		for (TileIndex tile(0); tile < Map::Size(); ++tile) {
+			_me[tile].m9 = 0;
+			_me[tile].m10 = 0;
+		}
 
 		GamelogReset();
 
@@ -4425,6 +4433,7 @@ static SaveLoadResult DoLoad(std::shared_ptr<LoadFilter> reader, bool load_check
 		/* After loading fix up savegame for any internal changes that
 		 * might have occurred since then. If it fails, load back the old game. */
 		if (!AfterLoadGame()) {
+			Debug(sl, 0, "Savegame conversion failed: {}", GetSaveLoadErrorMessage().GetDecodedString());
 			GamelogStopAction();
 			return SaveLoadResult::ReInit;
 		}
@@ -4478,6 +4487,7 @@ SaveLoadResult SaveOrLoad(const std::string &filename, SaveLoadOperation fop, De
 	try {
 		/* Load a TTDLX or TTDPatch game */
 		if (fop == SaveLoadOperation::Load && dft == DetailedFileType::OldGameFile) {
+			AutoRestoreBackup legacy_owner_backup(_legacy_company_owners, true);
 			ResetSaveloadData();
 
 			InitializeGame(256, 256, true, true); // set a mapsize of 256x256 for TTDPatch games or it might get confused

@@ -100,6 +100,8 @@ enum SelectCompanyLiveryWidgets : WidgetID {
 	WID_SCL_SEC_COL_DROP_SEL, ///< Container for secondary color dropdown, which can be hidden.
 	WID_SCL_MATRIX,           ///< Matrix.
 	WID_SCL_MATRIX_SCROLLBAR, ///< Matrix scrollbar.
+	WID_SCL_RGB_PRIMARY,      ///< Enter primary company hex colour.
+	WID_SCL_RGB_SECONDARY,    ///< Enter secondary company hex colour.
 };
 
 

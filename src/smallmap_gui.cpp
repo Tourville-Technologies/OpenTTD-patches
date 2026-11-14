@@ -8,6 +8,7 @@
 /** @file smallmap_gui.cpp GUI that shows a small map of the world with metadata like owner or height. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "core/backup_type.hpp"
 #include "clear_map.h"
 #include "industry.h"
@@ -314,7 +315,7 @@ void BuildOwnerLegend()
 
 	int i = NUM_NO_COMPANY_ENTRIES;
 	for (const Company *c : Company::Iterate()) {
-		_legend_land_owners[i].colour = GetColourGradient(c->colour, Shade::Light);
+		_legend_land_owners[i].colour = GetCompanyPixelColour(c->index, Shade::Light);
 		_legend_land_owners[i].company = c->index;
 		_legend_land_owners[i].show_on_map = true;
 		_legend_land_owners[i].col_break = false;
@@ -1251,6 +1252,12 @@ void SmallMapWindow::RebuildColourIndexIfNecessary()
 
 /* virtual */ void SmallMapWindow::OnPaint()
 {
+	const NWidgetBase *legend = this->GetWidget<NWidgetBase>(WID_SM_LEGEND);
+	uint columns = this->GetNumberColumnsLegend(legend->current_x);
+	Scrollbar *scrollbar = this->GetScrollbar(WID_SM_LEGEND_SCROLLBAR);
+	uint entries = this->map_type == SmallMapType::Owners ? _smallmap_company_count : this->map_type == SmallMapType::Industries ? _smallmap_industry_count : 0;
+	scrollbar->SetCount(CeilDiv(entries, columns));
+	scrollbar->SetCapacity(this->GetNumberRowsLegend(columns));
 	if (this->map_type == SmallMapType::Owners) {
 		for (const LegendAndColour &tbl : _legend_table[this->map_type]) {
 			if (tbl.end) break;
@@ -1308,8 +1315,13 @@ void SmallMapWindow::DrawLegend(const Rect &text, const Rect &icon, bool highlig
 			Rect text = origin.Indent(this->legend_width + WidgetDimensions::scaled.hsep_normal, rtl);
 			Rect icon = origin.WithWidth(this->legend_width, rtl).Shrink(0, padding, 0, 0);
 
+			bool scrollable = this->map_type == SmallMapType::Owners || this->map_type == SmallMapType::Industries;
+			uint first = scrollable ? this->GetScrollbar(WID_SM_LEGEND_SCROLLBAR)->GetPosition() * columns : 0;
+			uint entry = 0;
 			for (const LegendAndColour &tbl : _legend_table[this->map_type]) {
 				if (tbl.end) break;
+				if (entry++ < first) continue;
+				if (scrollable && entry > first + columns * number_of_rows) break;
 				if (tbl.col_break || ((this->map_type == SmallMapType::Industries || this->map_type == SmallMapType::Owners || this->map_type == SmallMapType::LinkStats) && i++ >= number_of_rows)) {
 					/* Column break needed, continue at top, COLUMN_WIDTH pixels
 					 * (one "row") to the right. */
@@ -1402,7 +1414,8 @@ inline uint SmallMapWindow::GetNumberRowsLegend(uint columns) const
 	/* Reserve one column for link colours */
 	uint num_rows = this->min_number_of_fixed_rows;
 	if (this->map_type == SmallMapType::LinkStats) num_rows = std::max(num_rows, CeilDiv(_smallmap_cargo_count, columns - 1));
-	if (this->map_type == SmallMapType::Industries) num_rows = std::max(num_rows, CeilDiv(std::max(_smallmap_industry_count, _smallmap_company_count), columns));
+	if (this->map_type == SmallMapType::Industries) num_rows = std::max(num_rows, std::min<uint>(12, CeilDiv(_smallmap_industry_count, columns)));
+	if (this->map_type == SmallMapType::Owners) num_rows = std::max(num_rows, std::min<uint>(12, CeilDiv(_smallmap_company_count, columns)));
 	return num_rows;
 }
 
@@ -1472,7 +1485,7 @@ int SmallMapWindow::GetPositionOnLegend(Point pt)
 	if (rtl) x = wi->current_x - x;
 	uint column = (x - WidgetDimensions::scaled.framerect.left) / this->column_width;
 
-	return (column * number_of_rows) + line;
+	return (column * number_of_rows) + line + ((this->map_type == SmallMapType::Owners || this->map_type == SmallMapType::Industries) ? this->GetScrollbar(WID_SM_LEGEND_SCROLLBAR)->GetPosition() * columns : 0);
 }
 
 /* virtual */ void SmallMapWindow::OnMouseOver([[maybe_unused]] Point pt, WidgetID widget)
@@ -2006,7 +2019,11 @@ static constexpr std::initializer_list<NWidgetPart> _nested_smallmap_display = {
 
 /** Widget parts of the smallmap legend bar. */
 static constexpr std::initializer_list<NWidgetPart> _nested_smallmap_bar = {
-	NWidget(WWT_PANEL, Colours::Brown, WID_SM_LEGEND), SetFill(1, 0), SetResize(1, 1),
+	NWidget(WWT_PANEL, Colours::Brown),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(WWT_PANEL, Colours::Brown, WID_SM_LEGEND), SetFill(1, 0), SetResize(1, 1), SetScrollbar(WID_SM_LEGEND_SCROLLBAR),
+			NWidget(NWID_VSCROLLBAR, Colours::Brown, WID_SM_LEGEND_SCROLLBAR),
+		EndContainer(),
 	EndContainer(),
 };
 

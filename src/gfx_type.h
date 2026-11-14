@@ -297,7 +297,8 @@ DECLARE_INCREMENT_DECREMENT_OPERATORS(Colours)
 
 /** Colour for pixel/line drawing. */
 struct PixelColour {
-	uint8_t p; ///< Palette index.
+	uint8_t p; ///< Palette index, also used as an 8bpp fallback.
+	uint32_t rgb = 0; ///< Optional opaque RGB colour (0xFFRRGGBB); zero uses the palette.
 
 	constexpr PixelColour() : p(0) {}
 	explicit constexpr PixelColour(uint8_t p) : p(p) {}
@@ -352,10 +353,11 @@ struct ExtendedTextColour {
 	 * @param pc The pixel colour for this colour.
 	 * @param flags The flags.
 	 */
-	constexpr ExtendedTextColour(PixelColour pc, ExtendedTextColourFlags flags = {}) : colour(static_cast<TextColour>(pc.p)), flags(flags.Set(ExtendedTextColourFlag::IsPaletteColour)) {}
+	constexpr ExtendedTextColour(PixelColour pc, ExtendedTextColourFlags flags = {}) : colour(static_cast<TextColour>(pc.p)), flags(flags.Set(ExtendedTextColourFlag::IsPaletteColour)), rgb(pc.rgb) {}
 
 	TextColour colour; ///< The colour
 	ExtendedTextColourFlags flags{}; ///< The flags.
+	uint32_t rgb = 0; ///< Optional native opaque RGB value; network text retains the palette fallback.
 
 	/**
 	 * Compare with another instance of this class.

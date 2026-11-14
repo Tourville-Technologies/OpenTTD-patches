@@ -34,6 +34,8 @@ struct TileExtended {
 	uint8_t  m6; ///< General purpose
 	uint8_t  m7; ///< Primarily used for newgrf support
 	uint16_t m8; ///< General purpose
+	uint8_t m9; ///< High owner bits: tile (0..2), road (3..5).
+	uint8_t m10; ///< High tram owner bits (0..3).
 };
 
 /**

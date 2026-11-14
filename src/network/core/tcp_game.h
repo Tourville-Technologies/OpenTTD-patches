@@ -584,7 +584,7 @@ protected:
 
 	/**
 	 * Update the clients knowledge of which company is password protected:
-	 * uint16_t Bitwise representation of each company
+	 * uint16_t[15] Company password bits, least significant word first (240-company protocol)
 	 * @param p The packet that was just received.
 	 */
 	virtual NetworkRecvStatus ReceiveServerCompanyUpdate(Packet &p);

@@ -8,6 +8,7 @@
 /** @file vehicle.cpp Base implementations of all vehicles. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "error.h"
 #include "roadveh.h"
 #include "ship.h"
@@ -3288,6 +3289,8 @@ static PaletteID GetEngineColourMap(EngineID engine_type, CompanyID company, Eng
 	const Livery *livery = GetEngineLivery(engine_type, company, parent_engine_type, v, _settings_client.gui.liveries, ignore_group);
 
 	map += livery->GetRecolourOffset(twocc);
+	const Livery &defaults = Company::Get(company)->livery[LiveryScheme::Default];
+	map = GetCompanyRGBPalette(map, company, livery->colour1 == defaults.colour1, twocc && livery->colour2 == defaults.colour2);
 
 	/* Update cache */
 	if (v != nullptr && !ignore_group) const_cast<Vehicle *>(v)->colourmap = map;

@@ -122,12 +122,13 @@ void DrawCharCentered(char32_t c, const Rect &r, TextColour colour);
 
 struct PixelColourOrPaletteID {
 	uint32_t value;
+	uint32_t rgb = 0;
 
 	constexpr PixelColourOrPaletteID() : value(0) {}
-	constexpr PixelColourOrPaletteID(PixelColour colour) : value(colour.p) {}
+	constexpr PixelColourOrPaletteID(PixelColour colour) : value(colour.p), rgb(colour.rgb) {}
 	constexpr PixelColourOrPaletteID(PaletteID pal) : value(pal) {}
 
-	PixelColour AsPixelColour() const { return PixelColour{static_cast<uint8_t>(this->value)}; }
+	PixelColour AsPixelColour() const { PixelColour c{static_cast<uint8_t>(this->value)}; c.rgb = this->rgb; return c; }
 	PaletteID AsPaletteID() const { return static_cast<PaletteID>(this->value); }
 };
 

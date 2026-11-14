@@ -37,10 +37,12 @@
  */
 static void PaySharingFee(Vehicle *v, Owner infra_owner, Money cost)
 {
-	Company *c = Company::Get(v->owner);
+	Company *c = Company::GetIfValid(v->owner);
+	if (c == nullptr || !Company::IsValidID(infra_owner) || infra_owner == v->owner || cost <= 0) return;
 	if (!_settings_game.economy.sharing_payment_in_debt) {
 		/* Do not allow fee payment to drop (money - loan) below 0. */
-		cost = std::min(cost, (c->money - c->current_loan) << 8);
+		Money available = std::max<Money>(0, c->money - c->current_loan);
+		cost = std::min(cost, available * 256);
 		if (cost <= 0) return;
 	}
 	v->profit_this_year -= cost;

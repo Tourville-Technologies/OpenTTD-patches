@@ -1709,6 +1709,7 @@ std::unique_ptr<NWidgetBase> MakeNWidgets(std::span<const NWidgetPart> nwid_part
 std::unique_ptr<NWidgetBase> MakeWindowNWidgetTree(std::span<const NWidgetPart> nwid_parts, NWidgetStacked **shade_select);
 
 std::unique_ptr<NWidgetBase> MakeCompanyButtonRows(WidgetID widget_first, WidgetID widget_last, Colours button_colour, int max_length, StringID button_tooltip, bool resizable = true);
+std::unique_ptr<NWidgetBase> MakeScrollableCompanyPanel(std::unique_ptr<NWidgetBase> content, WidgetID scrollbar, Colours colour, uint height = 100);
 
 void SetupWidgetDimensions();
 

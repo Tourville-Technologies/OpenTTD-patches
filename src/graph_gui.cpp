@@ -8,6 +8,7 @@
 /** @file graph_gui.cpp GUI that shows performance graphs. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include <ranges>
 #include "misc/history_func.hpp"
 #include "graph_gui.h"
@@ -135,7 +136,7 @@ static std::unique_ptr<NWidgetBase> MakeNWidgetCompanyLines()
 		panel->SetToolTip(STR_GRAPH_KEY_COMPANY_SELECTION_TOOLTIP);
 		vert->Add(std::move(panel));
 	}
-	return vert;
+	return MakeScrollableCompanyPanel(std::move(vert), WID_GL_SCROLLBAR, Colours::Brown, 240);
 }
 
 static constexpr std::initializer_list<NWidgetPart> _nested_graph_legend_widgets = {
@@ -174,7 +175,7 @@ struct ValuesInterval {
 
 struct BaseGraphWindow : Window {
 protected:
-	static const int GRAPH_MAX_DATASETS     =  64;
+	static const int GRAPH_MAX_DATASETS     =  MAX_COMPANIES;
 	static constexpr PixelColour GRAPH_BASE_COLOUR      =  GREY_SCALE(2);
 	static constexpr PixelColour GRAPH_GRID_COLOUR      =  GREY_SCALE(3);
 	static constexpr PixelColour GRAPH_AXIS_LINE_COLOUR =  GREY_SCALE(1);
@@ -231,6 +232,9 @@ protected:
 		return ReplaceWallclockMinutesUnit() ? MONTHLY_SCALE_WALLCLOCK_REPLACE : MONTHLY_SCALE_WALLCLOCK;
 	}
 
+	CompanyMask excluded_companies{};
+	bool company_datasets = false;
+	bool IsDatasetExcluded(uint index) const { return this->company_datasets ? this->excluded_companies.Test(CompanyID(index)) : HasBit(this->excluded_data, index); }
 	uint64_t excluded_data = 0; ///< bitmask of datasets hidden by the player.
 	uint64_t excluded_range = 0; ///< bitmask of ranges hidden by the player.
 	uint64_t masked_range = 0; ///< bitmask of ranges that are not available for the current data.
@@ -313,7 +317,7 @@ protected:
 		current_interval.lowest  = INT64_MAX;
 
 		for (const DataSet &dataset : this->data) {
-			if (HasBit(this->excluded_data, dataset.exclude_bit)) continue;
+			if (this->IsDatasetExcluded(dataset.exclude_bit)) continue;
 			if (HasBit(this->excluded_range, dataset.range_bit)) continue;
 			if (HasBit(this->masked_range, dataset.range_bit)) continue;
 
@@ -592,7 +596,7 @@ protected:
 		uint pointoffs2 = pointwidth - pointoffs1;
 
 		auto draw_dataset = [&](const DataSet &dataset, PixelColour colour) {
-			if (HasBit(this->excluded_data, dataset.exclude_bit)) return;
+			if (this->IsDatasetExcluded(dataset.exclude_bit)) return;
 			if (HasBit(this->excluded_range, dataset.range_bit)) return;
 			if (HasBit(this->masked_range, dataset.range_bit)) return;
 
@@ -855,7 +859,7 @@ public:
 		uint8_t new_highlight_data = UINT8_MAX;
 		if (widget == this->dataset_mouseover_widget) {
 			auto dataset_index = this->GetDatasetIndex(pt.y);
-			if (dataset_index.has_value() && !HasBit(this->excluded_data, *dataset_index)) new_highlight_data = *dataset_index;
+			if (dataset_index.has_value() && !this->IsDatasetExcluded(*dataset_index)) new_highlight_data = *dataset_index;
 		}
 
 		if (this->highlight_data == new_highlight_data && this->highlight_range == new_highlight_range) return;
@@ -941,13 +945,14 @@ public:
 			mo += 12;
 		}
 
-		if (!initialize && this->excluded_data == excluded_companies.base() && this->num_on_x_axis == nums &&
+		if (!initialize && this->excluded_companies == excluded_companies && this->num_on_x_axis == nums &&
 				this->year == yr && this->month == mo) {
 			/* There's no reason to get new stats */
 			return;
 		}
 
-		this->excluded_data = excluded_companies.base();
+		this->company_datasets = true;
+		this->excluded_companies = excluded_companies;
 		this->num_on_x_axis = nums;
 		this->year = yr;
 		this->month = mo;
@@ -958,7 +963,7 @@ public:
 			if (c == nullptr) continue;
 
 			DataSet &dataset = this->data.emplace_back();
-			dataset.colour = GetColourGradient(c->colour, Shade::Lighter);
+			dataset.colour = GetCompanyPixelColour(c->index, Shade::Normal);
 			dataset.exclude_bit = k.base();
 
 			for (int j = this->num_on_x_axis, i = 0; --j >= 0;) {
@@ -1336,6 +1341,7 @@ struct DeliveredCargoGraphWindow : ExcludingCargoBaseGraphWindow {
 		}
 
 		this->data.clear();
+		this->company_datasets = false;
 		this->excluded_data = 0;
 		this->num_on_x_axis = nums;
 		this->year = yr;
@@ -2564,7 +2570,7 @@ static std::unique_ptr<NWidgetBase> MakePerformanceDetailPanels()
 /** Make a number of rows with buttons for each company for the performance rating detail window. @copydoc NWidgetFunctionType */
 std::unique_ptr<NWidgetBase> MakeCompanyButtonRowsGraphGUI()
 {
-	return MakeCompanyButtonRows(WID_PRD_COMPANY_FIRST, WID_PRD_COMPANY_LAST, Colours::Brown, 8, STR_PERFORMANCE_DETAIL_SELECT_COMPANY_TOOLTIP);
+	return MakeScrollableCompanyPanel(MakeCompanyButtonRows(WID_PRD_COMPANY_FIRST, WID_PRD_COMPANY_LAST, Colours::Brown, 8, STR_PERFORMANCE_DETAIL_SELECT_COMPANY_TOOLTIP), WID_PRD_SCROLLBAR, Colours::Brown);
 }
 
 static constexpr std::initializer_list<NWidgetPart> _nested_performance_rating_detail_widgets = {

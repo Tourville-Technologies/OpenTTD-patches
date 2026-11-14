@@ -75,6 +75,8 @@ std::string_view GetNetworkRevisionString()
 			/* Replace the git hash in revision string. */
 			network_revision.replace(hash_end, std::string::npos, githash_suffix);
 		}
+		if (network_revision.size() > NETWORK_REVISION_LENGTH - 9) network_revision.resize(NETWORK_REVISION_LENGTH - 9);
+		network_revision += "-c240rgb";
 		assert(network_revision.size() < NETWORK_REVISION_LENGTH); // size does not include terminator, constant does, hence strictly less than
 		Debug(net, 3, "Network revision name: {}", network_revision);
 	}
@@ -104,6 +106,10 @@ bool IsNetworkCompatibleVersion(std::string_view other, bool extended)
 {
 	std::string_view our_revision = GetNetworkRevisionString();
 	if (our_revision == other) return true;
+	/* The company mask packet and owner IDs differ from standard JGRPP. */
+	if (!other.ends_with("-c240rgb")) return false;
+	other.remove_suffix(8);
+	our_revision.remove_suffix(8);
 
 	/* If this version is tagged, then the revision string must be a complete match,
 	 * since there is no git hash suffix in it.

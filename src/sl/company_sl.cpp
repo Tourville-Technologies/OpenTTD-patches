@@ -464,6 +464,8 @@ static const NamedSaveLoad _company_desc[] = {
 	NSL("current_loan",                 SLE_CONDVAR(CompanyProperties, current_loan,          SLE_INT64,                   SLV_65, SL_MAX_VERSION)),
 	NSLT("max_loan",                        SLE_VAR(CompanyProperties, max_loan,              SLE_INT64)),
 
+	NSL("colour_rgb", SLE_CONDVAR_X(CompanyProperties, colour_rgb, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANY_RGB24))),
+	NSL("colour2_rgb", SLE_CONDVAR_X(CompanyProperties, colour2_rgb, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANY_RGB24))),
 	NSL("colour",                           SLE_VAR(CompanyProperties, colour,                SLE_UINT8)),
 	NSL("money_fraction",                   SLE_VAR(CompanyProperties, money_fraction,        SLE_UINT8)),
 	NSL("",                            SLE_CONDNULL(1,  SL_MIN_VERSION,  SLV_58)), ///< avail_railtypes
@@ -487,8 +489,9 @@ static const NamedSaveLoad _company_desc[] = {
 	NSL("months_of_bankruptcy",             SLE_VAR(CompanyProperties, months_of_bankruptcy,  SLE_UINT8)),
 	NSL("bankrupt_last_asked",        SLE_CONDVAR_X(CompanyProperties, bankrupt_last_asked,   SLE_UINT8,        SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_BANKRUPTCY_EXTRA))),
 	NSL("bankrupt_flags",             SLE_CONDVAR_X(CompanyProperties, bankrupt_flags,        SLE_UINT8,        SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_BANKRUPTCY_EXTRA, 2))),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_FILE_U8  | SLE_VAR_U16,  SL_MIN_VERSION, SLV_104)),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_UINT16,                  SLV_104, SL_MAX_VERSION)),
+	NSL("bankrupt_asked",               SLE_CONDVAR_X(CompanyProperties, bankrupt_asked.bits[0],        SLE_FILE_U8  | SLE_VAR_U16,  SL_MIN_VERSION, SLV_104, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("bankrupt_asked",               SLE_CONDVAR_X(CompanyProperties, bankrupt_asked.bits[0],        SLE_UINT16,                  SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("bankrupt_asked", SLE_CONDARR_X(CompanyProperties, bankrupt_asked.bits, SLE_UINT16, CompanyMask::WORD_COUNT, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240))),
 	NSL("bankrupt_timeout",                 SLE_VAR(CompanyProperties, bankrupt_timeout,      SLE_INT16)),
 	NSL("bankrupt_value",               SLE_CONDVAR(CompanyProperties, bankrupt_value,        SLE_VAR_I64 | SLE_FILE_I32,  SL_MIN_VERSION, SLV_65)),
 	NSL("bankrupt_value",               SLE_CONDVAR(CompanyProperties, bankrupt_value,        SLE_INT64,                   SLV_65, SL_MAX_VERSION)),
@@ -676,9 +679,11 @@ static void Load_PLYP()
 	size_t size = SlGetFieldLength();
 	CompanyMask invalid_mask = {};
 	if (SlXvIsFeaturePresent(XSLFI_COMPANY_PW, 2)) {
-		if (size <= 2) return;
-		invalid_mask.edit_base() = SlReadUint16();
-		size -= 2;
+		const size_t words = SlXvIsFeaturePresent(XSLFI_COMPANY_PW, 3) ? CompanyMask::WORD_COUNT : 1;
+		if (size == 0) return;
+		if (size < words * 2) SlErrorCorrupt("Truncated company password mask");
+		for (size_t i = 0; i < words; ++i) invalid_mask.bits[i] = SlReadUint16();
+		size -= words * 2;
 	}
 	if (size <= 16 + 24 + 16 || (_networking && !_network_server)) {
 		SlSkipBytes(size);
@@ -721,7 +726,7 @@ static void Load_PLYP()
 				std::string password;
 				password.resize(SlReadUint32LengthField());
 				ReadBuffer::GetCurrent()->CopyBytes((uint8_t *)password.data(), password.size());
-				if (!HasBit(invalid_mask.base(), cid)) {
+				if (!invalid_mask.Test(CompanyID(cid))) {
 					NetworkServerSetCompanyPassword((CompanyID)cid, password, true);
 				}
 			}
@@ -747,8 +752,8 @@ static void Save_PLYP()
 		if (_saved_PLYP_data.empty()) {
 			SlSetLength(0);
 		} else {
-			SlSetLength(2 + _saved_PLYP_data.size());
-			SlWriteUint16(_saved_PLYP_invalid_mask);
+			SlSetLength(CompanyMask::WORD_COUNT * 2 + _saved_PLYP_data.size());
+			for (uint16_t word : _saved_PLYP_invalid_mask.bits) SlWriteUint16(word);
 			MemoryDumper::GetCurrent()->CopyBytes((const uint8_t *)_saved_PLYP_data.data(), _saved_PLYP_data.size());
 		}
 		return;
@@ -786,8 +791,8 @@ static void Save_PLYP()
 	/* Encrypt in place */
 	crypto_aead_lock(buffer.data(), mac.data(), _network_company_password_storage_key.data(), nonce.data(), nullptr, 0, buffer.data(), buffer.size());
 
-	SlSetLength(2 + 16 + 24 + 16 + buffer.size());
-	SlWriteUint16(0); // Invalid mask
+	SlSetLength(CompanyMask::WORD_COUNT * 2 + 16 + 24 + 16 + buffer.size());
+	for (size_t i = 0; i < CompanyMask::WORD_COUNT; ++i) SlWriteUint16(0); // Invalid mask
 	static_assert(_network_company_password_storage_token.size() == 16);
 	MemoryDumper::GetCurrent()->CopyBytes(_network_company_password_storage_token.data(), 16);
 	MemoryDumper::GetCurrent()->CopyBytes(nonce);

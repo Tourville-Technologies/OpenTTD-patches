@@ -89,6 +89,8 @@ public:
 	PerformanceLeagueWindow(WindowDesc &desc, WindowNumber window_number) : Window(desc)
 	{
 		this->invalidation_policy = WindowInvalidationPolicy::NoQueue;
+		this->companies.ForceRebuild();
+		this->BuildCompanyList();
 		this->InitNested(window_number);
 		this->companies.ForceRebuild();
 		this->companies.NeedResort();
@@ -155,7 +157,7 @@ public:
 		this->text_width = widest_width + WidgetDimensions::scaled.hsep_indent * 3; // Keep some extra spacing
 
 		size.width = WidgetDimensions::scaled.framerect.Horizontal() + this->rank_width + WidgetDimensions::scaled.hsep_wide + this->icon.width + WidgetDimensions::scaled.hsep_wide + this->text_width;
-		size.height = this->line_height * MAX_COMPANIES + WidgetDimensions::scaled.framerect.Vertical();
+		size.height = this->line_height * std::max<uint>(3, static_cast<uint>(this->companies.size())) + WidgetDimensions::scaled.framerect.Vertical();
 	}
 
 	void OnGameTick() override
@@ -175,11 +177,19 @@ public:
 		if (data == 0) {
 			/* This needs to be done in command-scope to enforce rebuilding before resorting invalid data */
 			this->companies.ForceRebuild();
+			if (gui_scope) { this->BuildCompanyList(); this->ReInit(); }
 		} else {
 			this->companies.ForceResort();
 		}
 	}
 };
+
+static std::unique_ptr<NWidgetBase> MakePerformanceLeaguePanel()
+{
+	auto panel = std::make_unique<NWidgetBackground>(WWT_PANEL, Colours::Brown, WID_PLT_BACKGROUND);
+	panel->SetMinimalSize(400, 0);
+	return MakeScrollableCompanyPanel(std::move(panel), WID_PLT_SCROLLBAR, Colours::Brown, 240);
+}
 
 static constexpr std::initializer_list<NWidgetPart> _nested_performance_league_widgets = {
 	NWidget(NWID_HORIZONTAL),
@@ -188,7 +198,12 @@ static constexpr std::initializer_list<NWidgetPart> _nested_performance_league_w
 		NWidget(WWT_SHADEBOX, Colours::Brown),
 		NWidget(WWT_STICKYBOX, Colours::Brown),
 	EndContainer(),
-	NWidget(WWT_PANEL, Colours::Brown, WID_PLT_BACKGROUND), SetMinimalSize(400, 0), SetMinimalTextLines(15, WidgetDimensions::unscaled.framerect.Vertical()),
+	NWidgetFunction(MakePerformanceLeaguePanel),
+	NWidget(WWT_PANEL, Colours::Brown), SetFill(1, 0),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(NWID_SPACER), SetFill(1, 0),
+			NWidget(WWT_RESIZEBOX, Colours::Brown),
+		EndContainer(),
 	EndContainer(),
 };
 
@@ -400,7 +415,9 @@ public:
 		if (widget != WID_SLT_BACKGROUND) return;
 
 		auto *wid = this->GetWidget<NWidgetResizeBase>(WID_SLT_BACKGROUND);
-		int index = (pt.y - WidgetDimensions::scaled.framerect.top - wid->pos_y - this->header_height) / this->line_height;
+		int row_y = pt.y - WidgetDimensions::scaled.framerect.top - wid->pos_y - this->header_height;
+		if (row_y < 0) return;
+		int index = row_y / this->line_height;
 		if (index >= 0 && static_cast<uint>(index) < this->rows.size()) {
 			const LeagueTableElement *lte = this->rows[index].second;
 			HandleLinkClick(lte->link);
@@ -419,6 +436,13 @@ public:
 	}
 };
 
+static std::unique_ptr<NWidgetBase> MakeScriptLeaguePanel()
+{
+	auto panel = std::make_unique<NWidgetBackground>(WWT_PANEL, Colours::Brown, WID_SLT_BACKGROUND);
+	panel->SetMinimalSize(400, 0);
+	return MakeScrollableCompanyPanel(std::move(panel), WID_SLT_SCROLLBAR, Colours::Brown, 240);
+}
+
 static constexpr std::initializer_list<NWidgetPart> _nested_script_league_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, Colours::Brown),
@@ -426,7 +450,12 @@ static constexpr std::initializer_list<NWidgetPart> _nested_script_league_widget
 		NWidget(WWT_SHADEBOX, Colours::Brown),
 		NWidget(WWT_STICKYBOX, Colours::Brown),
 	EndContainer(),
-	NWidget(WWT_PANEL, Colours::Brown, WID_SLT_BACKGROUND), SetMinimalSize(400, 0), SetMinimalTextLines(15, WidgetDimensions::unscaled.framerect.Vertical()),
+	NWidgetFunction(MakeScriptLeaguePanel),
+	NWidget(WWT_PANEL, Colours::Brown), SetFill(1, 0),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(NWID_SPACER), SetFill(1, 0),
+			NWidget(WWT_RESIZEBOX, Colours::Brown),
+		EndContainer(),
 	EndContainer(),
 };
 

@@ -43,4 +43,6 @@ DEF_CMD_TUPLE_NT (Commands::SellShareInCompany,       CmdSellShareInCompany,    
 DEF_CMD_TUPLE_NT (Commands::BuyCompany,               CmdBuyCompany,            {},                                         CommandType::MoneyManagement, CmdDataT<CompanyID, bool>)
 DEF_CMD_TUPLE_NT (Commands::DeclineBuyCompany,        CmdDeclineBuyCompany,     CMD_NO_EST,                                 CommandType::ServerSetting,   CmdDataT<CompanyID>)
 
+DEF_CMD_TUPLE_NT (Commands::SetCompanyRGBColour, CmdSetCompanyRGBColour, {}, CommandType::CompanySetting, CmdDataT<bool, uint32_t>)
+
 #endif /* COMPANY_CMD_H */

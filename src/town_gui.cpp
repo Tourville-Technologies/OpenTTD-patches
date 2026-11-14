@@ -70,7 +70,10 @@ static constexpr std::initializer_list<NWidgetPart> _nested_town_authority_widge
 		NWidget(WWT_DEFSIZEBOX, Colours::Brown),
 		NWidget(WWT_STICKYBOX, Colours::Brown),
 	EndContainer(),
-	NWidget(WWT_PANEL, Colours::Brown, WID_TA_RATING_INFO), SetMinimalSize(317, 92), SetResize(1, 1), EndContainer(),
+	NWidget(NWID_HORIZONTAL),
+		NWidget(WWT_PANEL, Colours::Brown, WID_TA_RATING_INFO), SetMinimalSize(317, 92), SetResize(1, 1), SetScrollbar(WID_TA_RATING_SCROLLBAR), EndContainer(),
+		NWidget(NWID_VSCROLLBAR, Colours::Brown, WID_TA_RATING_SCROLLBAR),
+	EndContainer(),
 	NWidget(WWT_PANEL, Colours::Brown, WID_TA_COMMAND_LIST), SetMinimalSize(317, 52), SetResize(1, 0), SetToolTip(STR_LOCAL_AUTHORITY_ACTIONS_TOOLTIP), EndContainer(),
 	NWidget(WWT_PANEL, Colours::Brown, WID_TA_ACTION_INFO), SetMinimalSize(317, 52), SetResize(1, 0), EndContainer(),
 	NWidget(NWID_HORIZONTAL),
@@ -164,6 +167,14 @@ public:
 		this->SetWidgetDisabledState(WID_TA_SETTING, ChangeSettingsDisabled());
 		this->GetWidget<NWidgetStacked>(WID_TA_BTN_SEL)->SetDisplayedPlane(this->sel_index >= 0x100 ? 1 : 0);
 
+		if (!this->IsShaded()) {
+			Scrollbar *scrollbar = this->GetScrollbar(WID_TA_RATING_SCROLLBAR);
+			uint count = 0;
+			for (const Company *c : Company::Iterate()) if (this->town->have_ratings.Test(c->index) || this->town->exclusivity == c->index) ++count;
+			const Rect ratings = this->GetWidget<NWidgetBase>(WID_TA_RATING_INFO)->GetCurrentRect().Shrink(WidgetDimensions::scaled.framerect);
+			scrollbar->SetCount(count);
+			scrollbar->SetCapacity(std::max<int>(1, ratings.Height() / this->resize.step_height - 1));
+		}
 		this->DrawWidgets();
 		if (!this->IsShaded()) this->DrawRatings();
 	}
@@ -197,9 +208,12 @@ public:
 		Rect exclusive = r.Indent(this->icon_size.width + WidgetDimensions::scaled.hsep_normal, rtl).WithWidth(this->exclusive_size.width, rtl);
 		Rect text      = r.Indent(this->icon_size.width + WidgetDimensions::scaled.hsep_normal + this->exclusive_size.width + WidgetDimensions::scaled.hsep_normal, rtl);
 
+		Scrollbar *scrollbar = this->GetScrollbar(WID_TA_RATING_SCROLLBAR);
+		uint row = 0;
 		/* Draw list of companies */
 		for (const Company *c : Company::Iterate()) {
 			if ((this->town->have_ratings.Test(c->index) || this->town->exclusivity == c->index)) {
+				if (!scrollbar->IsVisible(row++)) continue;
 				DrawCompanyIcon(c->index, icon.left, text.top + icon_y_offset);
 
 				if (this->town->exclusivity == c->index) {
@@ -212,11 +226,6 @@ public:
 			}
 		}
 
-		text.bottom = text.top - 1;
-		if (text.bottom > r.bottom) {
-			/* If the company list is too big to fit, mark ourself dirty and draw again. */
-			ResizeWindow(this, 0, text.bottom - r.bottom, false);
-		}
 	}
 
 	std::string GetWidgetString(WidgetID widget, StringID stringid) const override

@@ -16,13 +16,14 @@
 /** Font cache for mocking basic use of fonts. */
 class MockFontCache : public FontCache {
 public:
+	inline static const Sprite *glyph = nullptr; ///< Optional encoded glyph for rendering tests.
 	MockFontCache(FontSize fs) : FontCache(fs)
 	{
 		this->height = FontCache::GetDefaultFontHeight(this->fs);
 	}
 
 	void ClearFontCache() override {}
-	const Sprite *GetGlyph(GlyphID) override { return nullptr; }
+	const Sprite *GetGlyph(GlyphID) override { return glyph; }
 	uint GetGlyphWidth(GlyphID) override { return this->height / 2; }
 	bool GetDrawGlyphShadow() override { return false; }
 	GlyphID MapCharToGlyph(char32_t key, [[maybe_unused]] bool allow_fallback = true) override { return key; }

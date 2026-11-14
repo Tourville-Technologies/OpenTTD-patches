@@ -24,14 +24,13 @@
  */
 uint32_t VehicleListIdentifier::Pack() const
 {
-	uint8_t c = this->company == OWNER_NONE ? 0xF : this->company.base();
-	assert(c < (1 << 4));
-	assert(to_underlying(this->vtype) < (1 << 2));
-	assert(this->index < (1 << 20));
 	assert(this->type < VehicleListType::End);
-	static_assert(to_underlying(VehicleListType::End) <= (1 << 3));
-
-	return c << 28 | to_underlying(this->type) << 23 | to_underlying(this->vtype) << 26 | this->index;
+	/* Station, depot, group and slot indices fit in 16 bits. Lists keyed by a
+	 * vehicle need 20 bits, but can recover their vehicle type from that vehicle. */
+	bool vehicle_list = this->type == VehicleListType::VehicleSharedOrders || this->type == VehicleListType::SingleVehicle;
+	assert(this->index < (vehicle_list ? (1U << 20) : (1U << 16)));
+	return this->index | (vehicle_list ? 0 : (to_underlying(this->vtype) << 16)) |
+		(uint32_t(this->company.base()) << 20) | (uint32_t(to_underlying(this->type)) << 28);
 }
 
 /**
@@ -41,13 +40,19 @@ uint32_t VehicleListIdentifier::Pack() const
  */
 bool VehicleListIdentifier::UnpackIfValid(uint32_t data)
 {
-	uint8_t c     = GB(data, 28, 4);
-	this->company = c == 0xF ? OWNER_NONE : (CompanyID)c;
-	this->type    = (VehicleListType)GB(data, 23, 3);
-	this->vtype   = (VehicleType)GB(data, 26, 2);
-	this->index   = GB(data, 0, 20);
-
-	return this->type < VehicleListType::End;
+	this->company = CompanyID(GB(data, 20, 8));
+	this->type = VehicleListType(GB(data, 28, 3));
+	if (this->type >= VehicleListType::End || (this->company >= MAX_COMPANIES && this->company != OWNER_NONE)) return false;
+	bool vehicle_list = this->type == VehicleListType::VehicleSharedOrders || this->type == VehicleListType::SingleVehicle;
+	this->index = GB(data, 0, vehicle_list ? 20 : 16);
+	if (vehicle_list) {
+		const Vehicle *vehicle = Vehicle::GetIfValid(VehicleID(this->index));
+		if (vehicle == nullptr) return false;
+		this->vtype = vehicle->type;
+	} else {
+		this->vtype = VehicleType(GB(data, 16, 2));
+	}
+	return true;
 }
 
 /**

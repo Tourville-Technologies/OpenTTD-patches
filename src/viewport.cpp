@@ -61,6 +61,7 @@
  */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "clear_map.h"
 #include "tree_map.h"
 #include "industry.h"
@@ -163,6 +164,7 @@ struct StringSpriteToDraw {
 	StringID string;
 	uint16_t width;
 	Colours colour;
+	CompanyID company = CompanyID::Invalid(); ///< Actual owner for RGB label frames and text.
 	ViewportStringFlags flags;
 	int32_t x;
 	int32_t y;
@@ -170,12 +172,13 @@ struct StringSpriteToDraw {
 
 	StringSpriteToDraw(int x, int y, ViewportStringFlags flags, uint16_t width) : width(width), flags(flags), x(x), y(y) {}
 
-	void FillDetails(StringID string, uint64_t params_1, uint64_t params_2, Colours colour)
+	void FillDetails(StringID string, uint64_t params_1, uint64_t params_2, Colours colour, CompanyID company = CompanyID::Invalid())
 	{
 		this->string = string;
 		this->params[0] = params_1;
 		this->params[1] = params_2;
 		this->colour = colour;
+		this->company = company;
 	}
 };
 
@@ -2094,7 +2097,7 @@ static void ViewportAddSignStrings(ViewportDrawerDynamic *vdd, DrawPixelInfo *dp
 			} else {
 				colour = _company_colours[si->owner];
 			}
-			str->FillDetails(STR_SIGN_NAME, si->index.base(), 0, colour);
+			str->FillDetails(STR_SIGN_NAME, si->index.base(), 0, colour, Company::IsValidID(si->owner) ? si->owner : CompanyID::Invalid());
 		}
 	}
 }
@@ -2117,10 +2120,11 @@ static void ViewportAddStationStrings(ViewportDrawerDynamic *vdd, DrawPixelInfo 
 		if (str == nullptr) continue;
 
 		Colours colour = (st->owner == OWNER_NONE || !st->IsInUse()) ? Colours::Grey : _company_colours[st->owner];
+		CompanyID company = st->IsInUse() && Company::IsValidID(st->owner) ? st->owner : CompanyID::Invalid();
 		if (Station::IsExpected(st)) { /* Station */
-			str->FillDetails(small ? STR_STATION_NAME : STR_VIEWPORT_STATION, st->index.base(), st->facilities.base(), colour);
+			str->FillDetails(small ? STR_STATION_NAME : STR_VIEWPORT_STATION, st->index.base(), st->facilities.base(), colour, company);
 		} else { /* Waypoint */
-			str->FillDetails(STR_WAYPOINT_NAME, st->index.base(), 0, colour);
+			str->FillDetails(STR_WAYPOINT_NAME, st->index.base(), 0, colour, company);
 		}
 	}
 }
@@ -2596,14 +2600,27 @@ static void ViewportDrawStrings(ViewportDrawerDynamic *vdd, ZoomLevel zoom, cons
 
 		ExtendedTextColour colour{TextColour::White};
 		if (ss.flags.Test(ViewportStringFlag::ColourRect)) {
-			if (ss.colour != Colours::Invalid) DrawFrameRect(x, y, x + w - 1, y + h - 1, ss.colour, {});
+			if (ss.colour != Colours::Invalid) {
+				if (ss.company != CompanyID::Invalid()) {
+					DrawCompanyFrameRect({x, y, x + w - 1, y + h - 1}, ss.company, {});
+				} else {
+					DrawFrameRect(x, y, x + w - 1, y + h - 1, ss.colour, {});
+				}
+			}
 			colour = TextColour::Black;
+			if (ss.company != CompanyID::Invalid()) {
+				PixelColour background = GetCompanyPixelColour(ss.company, Shade::Light);
+				if (background.rgb != 0) colour = GetContrastColour(background);
+			}
 		} else if (ss.flags.Test(ViewportStringFlag::TransparentRect)) {
 			DrawFrameRect(x, y, x + w - 1, y + h - 1, ss.colour, FrameFlag::Transparent);
 		}
 
 		if (ss.flags.Test(ViewportStringFlag::TextColour)) {
-			if (ss.colour != Colours::Invalid) colour = ExtendedTextColour{GetColourGradient(ss.colour, Shade::Lighter)};
+			if (ss.colour != Colours::Invalid) colour = ExtendedTextColour{ss.company != CompanyID::Invalid() ? GetCompanyPixelColour(ss.company, Shade::Lighter) : GetColourGradient(ss.colour, Shade::Lighter)};
+		} else if (ss.flags.Test(ViewportStringFlag::TransparentRect) && ss.company != CompanyID::Invalid()) {
+			PixelColour company_colour = GetCompanyPixelColour(ss.company, Shade::Lighter);
+			if (company_colour.rgb != 0) colour = ExtendedTextColour{company_colour};
 		}
 
 		int left = x + WidgetDimensions::scaled.fullbevel.left;

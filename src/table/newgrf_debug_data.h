@@ -607,8 +607,8 @@ class NIHVehicle : public NIHelper {
 						e->info.cargo_type, e->info.refit_mask, e->info.refit_cost);
 				output.Print("    Cargo age period: {}, cargo load speed: {}",
 						e->info.cargo_age_period, e->info.load_amount);
-				output.Print("    Company availability: {:X}, climates: {:X}",
-						e->company_avail, e->info.climates);
+				output.Print("    Company availability (low 16): {:X}, climates: {:X}",
+						e->company_avail.base(), e->info.climates);
 
 				{
 					output.buffer.format("    Engine Flags:");

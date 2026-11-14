@@ -8,6 +8,7 @@
 /** @file newgrf_object.cpp Handling of object NewGRFs. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "company_base.h"
 #include "company_func.h"
 #include "debug.h"
@@ -501,6 +502,7 @@ static void DrawTileLayout(TileInfo *ti, const TileLayoutSpriteGroup *group, con
 	auto processor = group->ProcessRegisters(nullptr);
 	auto dts = processor.GetLayout();
 	PaletteID palette = (spec->flags.Test(ObjectFlag::Uses2CC) ? SPR_2CCMAP_BASE : PALETTE_RECOLOUR_START) + Object::GetByTile(ti->tile)->recolour_offset;
+	palette = GetCompanyRGBPalette(palette, GetTileOwner(ti->tile), true, spec->flags.Test(ObjectFlag::Uses2CC));
 
 	SpriteID image = dts.ground.sprite;
 	PaletteID pal = dts.ground.pal;

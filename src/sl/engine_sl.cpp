@@ -83,6 +83,10 @@ void CopyTempEngineData()
 		e->preview_wait        = se->preview_wait;
 		e->company_avail       = se->company_avail;
 		e->company_hidden      = se->company_hidden;
+		if (SlXvIsFeatureMissing(XSLFI_COMPANIES_240)) {
+			if ((e->company_avail.base() & 0x7FFF) == 0x7FFF) e->company_avail.Set();
+			if ((e->preview_asked.base() & 0x7FFF) == 0x7FFF) e->preview_asked.Set();
+		}
 		e->name                = se->name;
 	}
 

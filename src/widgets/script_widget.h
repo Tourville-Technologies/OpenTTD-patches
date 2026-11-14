@@ -40,6 +40,7 @@ enum ScriptDebugWidgets : WidgetID {
 	WID_SCRD_RELOAD_TOGGLE,        ///< Reload button.
 	WID_SCRD_LOG_PANEL,            ///< Panel where the log is in.
 	WID_SCRD_VSCROLLBAR,           ///< Vertical scrollbar of the log panel.
+	WID_SCRD_COMPANY_SCROLLBAR,    ///< Company selector scrollbar.
 	WID_SCRD_COMPANY_BUTTON_START, ///< Buttons in the VIEW.
 	WID_SCRD_COMPANY_BUTTON_END = WID_SCRD_COMPANY_BUTTON_START + MAX_COMPANIES - 1, ///< Last possible button in the VIEW.
 	WID_SCRD_BREAK_STRING_WIDGETS, ///< The panel to handle the breaking on string.

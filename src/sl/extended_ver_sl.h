@@ -23,6 +23,8 @@ enum SaveLoadVersion : uint16_t;
  */
 enum SlXvFeatureIndex {
 	XSLFI_NULL                          = 0,      ///< Unused value, to indicate that no extended feature test is in use
+	XSLFI_COMPANY_RGB24,                          ///< True-colour company liveries
+	XSLFI_COMPANIES_240,                          ///< 240 companies, owner bits and company masks
 	XSLFI_VERSION_LABEL,                          ///< Version label
 	XSLFI_UPSTREAM_VERSION,                       ///< Corresponding upstream savegame version
 	XSLFI_TRACE_RESTRICT,                         ///< Trace restrict

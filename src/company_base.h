@@ -101,6 +101,8 @@ struct CompanyProperties {
 	Money current_loan = 0;                  ///< Amount of money borrowed from the bank.
 	Money max_loan = COMPANY_MAX_LOAN_DEFAULT; ///< Max allowed amount of the loan or COMPANY_MAX_LOAN_DEFAULT.
 
+	uint32_t colour_rgb = UINT32_MAX;         ///< Optional primary RGB; UINT32_MAX uses the standard palette.
+	uint32_t colour2_rgb = UINT32_MAX;        ///< Optional secondary RGB.
 	Colours colour = Colours::Begin;         ///< Company colour.
 
 	uint8_t block_preview = 0;               ///< Number of quarters that the company is not allowed to get new exclusive engine previews (see CompaniesGenStatistics).

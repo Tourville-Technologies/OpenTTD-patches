@@ -8,6 +8,7 @@
 /** @file gfx.cpp Handling of drawing text and other gfx related stuff. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "gfx_func.h"
 #include "gfx_layout.h"
 #include "progress.h"
@@ -72,7 +73,23 @@ DrawPixelInfo *_cur_dpi;
 struct GfxBlitterCtx {
 	const DrawPixelInfo *dpi;
 	const uint8_t *colour_remap_ptr = nullptr;
+	struct CompanyRemap {
+		std::array<uint8_t, 256> indexed;
+		std::array<Colour, 256> rgb;
+	};
+	std::optional<CompanyRemap> company_remap;
+	const Colour *colour_remap_rgb = nullptr;
+	void SetCompanyRGB(PaletteID palette)
+	{
+		if ((palette & COMPANY_RGB_PALETTE) == 0) return;
+		auto &remap = this->company_remap.emplace();
+		if (BuildCompanyRGBRemap(palette, this->colour_remap_ptr, remap.indexed, remap.rgb)) {
+			this->colour_remap_ptr = remap.indexed.data();
+			this->colour_remap_rgb = remap.rgb.data();
+		}
+	}
 	uint8_t string_colourremap[3]; ///< Recoloursprite for stringdrawing. The grf loader ensures that #SpriteType::Font sprites only use colours 0 to 2.
+	std::array<Colour, 3> string_colourremap_rgb;
 	int sprite_brightness_adjust = 0;
 
 	GfxBlitterCtx(const DrawPixelInfo *dpi) : dpi(dpi) {}
@@ -516,6 +533,14 @@ void GfxBlitterCtx::SetColourRemap(ExtendedTextColour colour)
 	this->string_colourremap[1] = raw_colour ? to_underlying(colour.colour) : _string_colourmap[to_underlying(colour.colour)].p;
 	this->string_colourremap[2] = no_shade ? 0 : 1;
 	this->colour_remap_ptr = this->string_colourremap;
+	this->colour_remap_rgb = nullptr;
+	if (colour.rgb != 0) {
+		/* A black RGB foreground must remain opaque even if its fallback is index 0. */
+		if (this->string_colourremap[1] == 0 || this->string_colourremap[1] >= PALETTE_ANIM_START) this->string_colourremap[1] = 1;
+		this->string_colourremap_rgb.fill(Colour(0, 0, 0, 0));
+		this->string_colourremap_rgb[1] = Colour(colour.rgb);
+		this->colour_remap_rgb = this->string_colourremap_rgb.data();
+	}
 }
 
 /**
@@ -683,7 +708,9 @@ static int DrawLayoutLine(const ParagraphLayouter::Line &line, int y, int left, 
 	}
 
 	if (underline) {
-		GfxFillRect(left, y + h, right, y + h + WidgetDimensions::scaled.bevel.top - 1, PixelColour{ctx.string_colourremap[1]});
+		PixelColour colour{ctx.string_colourremap[1]};
+		if (ctx.colour_remap_rgb != nullptr) colour.rgb = ctx.colour_remap_rgb[1].data;
+		GfxFillRect(left, y + h, right, y + h + WidgetDimensions::scaled.bevel.top - 1, colour);
 	}
 
 	return align.h == AlignmentH::ForceRight ? left : right;
@@ -1062,11 +1089,14 @@ static BlitterMode GetBlitterMode(PaletteID pal)
  */
 void DrawSpriteViewport(const SpritePointerHolder &sprite_store, const DrawPixelInfo *dpi, SpriteID img, PaletteID pal, int x, int y, const SubSprite *sub)
 {
+	PaletteID company_palette = pal;
+	pal = GetCompanyRGBBasePalette(pal);
 	GfxBlitterCtx ctx(dpi);
 	SpriteID real_sprite = GB(img, 0, SPRITE_WIDTH);
 	if (HasBit(img, PALETTE_MODIFIER_TRANSPARENT)) {
 		pal = GB(pal, 0, PALETTE_WIDTH);
 		ctx.colour_remap_ptr = sprite_store.GetRecolourSprite(pal);
+		ctx.SetCompanyRGB(company_palette);
 		GfxMainBlitterViewport(ctx, sprite_store.GetSprite(real_sprite, SpriteType::Normal), x, y, pal == PALETTE_TO_TRANSPARENT ? BlitterMode::Transparent : BlitterMode::TransparentRemap, sub, real_sprite);
 	} else if (pal != PAL_NONE) {
 		if (HasBit(pal, PALETTE_TEXT_RECOLOUR)) {
@@ -1080,14 +1110,17 @@ void DrawSpriteViewport(const SpritePointerHolder &sprite_store, const DrawPixel
 			int sign_bit = 1 << (PALETTE_BRIGHTNESS_WIDTH - 1);
 			ctx.sprite_brightness_adjust = (adjust ^ sign_bit) - sign_bit;
 		}
+		ctx.SetCompanyRGB(company_palette);
 		GfxMainBlitterViewport(ctx, sprite_store.GetSprite(real_sprite, SpriteType::Normal), x, y, GetBlitterMode(pal), sub, real_sprite);
 	} else {
+		ctx.SetCompanyRGB(company_palette);
 		GfxMainBlitterViewport(ctx, sprite_store.GetSprite(real_sprite, SpriteType::Normal), x, y, BlitterMode::Normal, sub, real_sprite);
 	}
 }
 
 void PrepareDrawSpriteViewportSpriteStore(SpritePointerHolder &sprite_store, const DrawPixelInfo *dpi, SpriteID img, PaletteID pal)
 {
+	pal = GetCompanyRGBBasePalette(pal);
 	SpriteID real_sprite = GB(img, 0, SPRITE_WIDTH);
 	sprite_store.CacheSprite(real_sprite, SpriteType::Normal, dpi->zoom);
 	if (HasBit(img, PALETTE_MODIFIER_TRANSPARENT)) {
@@ -1110,11 +1143,14 @@ void PrepareDrawSpriteViewportSpriteStore(SpritePointerHolder &sprite_store, con
  */
 void DrawSprite(SpriteID img, PaletteID pal, int x, int y, const SubSprite *sub, ZoomLevel zoom)
 {
+	PaletteID company_palette = pal;
+	pal = GetCompanyRGBBasePalette(pal);
 	GfxBlitterCtx ctx(_cur_dpi);
 	SpriteID real_sprite = GB(img, 0, SPRITE_WIDTH);
 	if (HasBit(img, PALETTE_MODIFIER_TRANSPARENT)) {
 		pal = GB(pal, 0, PALETTE_WIDTH);
 		ctx.colour_remap_ptr = GetNonSprite(pal, SpriteType::Recolour);
+		ctx.SetCompanyRGB(company_palette);
 		GfxMainBlitter(ctx, GetSprite(real_sprite, SpriteType::Normal, LowZoomMask(zoom)), x, y, pal == PALETTE_TO_TRANSPARENT ? BlitterMode::Transparent : BlitterMode::TransparentRemap, sub, real_sprite, zoom);
 	} else if (pal != PAL_NONE) {
 		if (HasBit(pal, PALETTE_TEXT_RECOLOUR)) {
@@ -1122,8 +1158,10 @@ void DrawSprite(SpriteID img, PaletteID pal, int x, int y, const SubSprite *sub,
 		} else {
 			ctx.colour_remap_ptr = GetNonSprite(GB(pal, 0, PALETTE_WIDTH), SpriteType::Recolour);
 		}
+		ctx.SetCompanyRGB(company_palette);
 		GfxMainBlitter(ctx, GetSprite(real_sprite, SpriteType::Normal, LowZoomMask(zoom)), x, y, GetBlitterMode(pal), sub, real_sprite, zoom);
 	} else {
+		ctx.SetCompanyRGB(company_palette);
 		GfxMainBlitter(ctx, GetSprite(real_sprite, SpriteType::Normal, LowZoomMask(zoom)), x, y, BlitterMode::Normal, sub, real_sprite, zoom);
 	}
 }
@@ -1220,6 +1258,7 @@ static void GfxBlitter(const GfxBlitterCtx &ctx, const Sprite *sprite, int x, in
 	bp.dst = dpi->dst_ptr;
 	bp.pitch = dpi->pitch;
 	bp.remap = ctx.colour_remap_ptr;
+	bp.remap_rgb = ctx.colour_remap_rgb;
 	bp.brightness_adjust = ctx.sprite_brightness_adjust;
 
 	if (bp.width <= 0) return;

@@ -84,6 +84,8 @@ static void DeallocateMapStorage()
  * @param size_x the width of the map along the NE/SW edge
  * @param size_y the 'height' of the map along the SE/NW edge
  */
+bool _legacy_company_owners = false;
+
 void AllocateMap(uint size_x, uint size_y)
 {
 	Debug(map, 2, "Min/max map size {}/{}, max map tiles {}", MIN_MAP_SIZE, MAX_MAP_SIZE, MAX_MAP_TILES);

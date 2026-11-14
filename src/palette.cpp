@@ -363,7 +363,7 @@ void DoPaletteAnimations()
  */
 TextColour GetContrastColour(PixelColour background, uint8_t threshold)
 {
-	Colour c = _cur_palette.palette[background.p];
+	Colour c = background.rgb != 0 ? Colour(background.rgb) : _cur_palette.palette[background.p];
 	/* Compute brightness according to http://www.w3.org/TR/AERT#color-contrast.
 	 * The following formula computes 1000 * brightness^2, with brightness being in range 0 to 255. */
 	uint sq1000_brightness = c.r * c.r * 299 + c.g * c.g * 587 + c.b * c.b * 114;

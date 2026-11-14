@@ -27,6 +27,7 @@
 #include "dropdown_type.h"
 #include "tilehighlight_func.h"
 #include "company_base.h"
+#include "company_colour.h"
 #include "company_cmd.h"
 #include "core/geometry_func.hpp"
 #include "object_cmd.h"
@@ -672,6 +673,7 @@ private:
 		LiverySchemes schemes{}; ///< Selected schemes.
 		GroupID group = GroupID::Invalid(); ///< Selected group.
 	} sel{}; ///< Current selection.
+	bool editing_primary_rgb = true;
 	LiveryClass livery_class{};
 	Dimension square{};
 	uint rows = 0;
@@ -687,12 +689,6 @@ private:
 		bool primary = widget == WID_SCL_PRI_COL_DROPDOWN;
 		uint8_t default_col{};
 
-		/* Disallow other company colours for the primary colour */
-		if (this->livery_class < LiveryClass::GroupRail && this->sel.schemes.Test(LiveryScheme::Default) && primary) {
-			for (const Company *c : Company::Iterate()) {
-				if (c->index != _local_company) used_colours.Set(c->colour);
-			}
-		}
 
 		const Company *c = Company::Get((CompanyID)this->window_number);
 
@@ -842,6 +838,11 @@ public:
 				break;
 			}
 
+			case WID_SCL_RGB_PRIMARY:
+			case WID_SCL_RGB_SECONDARY:
+				size.width = std::max(size.width, GetStringBoundingBox(fmt::format("{} #FFFFFF", GetString(widget == WID_SCL_RGB_PRIMARY ? STR_COMPANY_RGB_PRIMARY : STR_COMPANY_RGB_SECONDARY))).width + padding.width);
+				break;
+
 			case WID_SCL_SEC_COL_DROPDOWN:
 				if (!_loaded_newgrf_features.has_2CC) break;
 				[[fallthrough]];
@@ -866,6 +867,8 @@ public:
 		bool disabled = this->livery_class < LiveryClass::GroupRail ? this->sel.schemes.None() : (this->sel.group == GroupID::Invalid());
 		this->SetWidgetDisabledState(WID_SCL_PRI_COL_DROPDOWN, !local || disabled);
 		this->SetWidgetDisabledState(WID_SCL_SEC_COL_DROPDOWN, !local || disabled);
+		this->SetWidgetDisabledState(WID_SCL_RGB_PRIMARY, !local);
+		this->SetWidgetDisabledState(WID_SCL_RGB_SECONDARY, !local);
 
 		this->BuildGroupList((CompanyID)this->window_number);
 
@@ -877,6 +880,12 @@ public:
 		switch (widget) {
 			case WID_SCL_CAPTION:
 				return GetString(STR_LIVERY_CAPTION, this->window_number);
+			case WID_SCL_RGB_PRIMARY:
+			case WID_SCL_RGB_SECONDARY: {
+				const Company *c = Company::Get(CompanyID(this->window_number));
+				uint32_t rgb = widget == WID_SCL_RGB_PRIMARY ? c->colour_rgb : c->colour2_rgb;
+				return rgb == COMPANY_RGB_DEFAULT ? GetString(widget == WID_SCL_RGB_PRIMARY ? STR_COMPANY_RGB_PRIMARY : STR_COMPANY_RGB_SECONDARY) : fmt::format("{} #{:06X}", GetString(widget == WID_SCL_RGB_PRIMARY ? STR_COMPANY_RGB_PRIMARY : STR_COMPANY_RGB_SECONDARY), rgb);
+			}
 
 			case WID_SCL_PRI_COL_DROPDOWN:
 			case WID_SCL_SEC_COL_DROPDOWN: {
@@ -936,6 +945,7 @@ public:
 		int text_offs   = (ir.Height() - GetCharacterHeight(FontSize::Normal)) / 2;
 
 		int y = ir.top;
+		const Company *c = Company::Get(CompanyID(this->window_number));
 
 		/* Helper function to draw livery info. */
 		auto draw_livery = [&](std::string_view str, const Livery &livery, bool is_selected, bool is_default_scheme, int indent) {
@@ -943,19 +953,26 @@ public:
 			DrawString(sch.left + (rtl ? 0 : indent), sch.right - (rtl ? indent : 0), y + text_offs, str, is_selected ? TextColour::White : TextColour::Black);
 
 			/* Text below the first dropdown. */
-			DrawSprite(SPR_SQUARE, GetColourPalette(livery.colour1), pri_squ.left, y + square_offs);
-			DrawString(pri.left, pri.right, y + text_offs, (is_default_scheme || livery.in_use.Test(Livery::Flag::Primary)) ? STR_COLOUR_DARK_BLUE + to_underlying(livery.colour1) : STR_COLOUR_DEFAULT, is_selected ? TextColour::White : TextColour::Gold);
+			bool primary_rgb = c->colour_rgb != COMPANY_RGB_DEFAULT && livery.colour1 == c->livery[LiveryScheme::Default].colour1;
+			DrawSprite(SPR_SQUARE, GetCompanyRGBPalette(GetColourPalette(livery.colour1), c->index, primary_rgb), pri_squ.left, y + square_offs);
+			std::string primary_name = primary_rgb ? fmt::format("#{:06X}", c->colour_rgb) : GetString((is_default_scheme || livery.in_use.Test(Livery::Flag::Primary)) ? STR_COLOUR_DARK_BLUE + to_underlying(livery.colour1) : STR_COLOUR_DEFAULT);
+			DrawString(pri.left, pri.right, y + text_offs, primary_name, is_selected ? TextColour::White : TextColour::Gold);
 
 			/* Text below the second dropdown. */
 			if (sec.right > sec.left) { // Second dropdown has non-zero size.
 				DrawSprite(SPR_SQUARE, GetColourPalette(livery.colour2), sec_squ.left, y + square_offs);
-				DrawString(sec.left, sec.right, y + text_offs, (is_default_scheme || livery.in_use.Test(Livery::Flag::Secondary)) ? STR_COLOUR_DARK_BLUE + to_underlying(livery.colour2) : STR_COLOUR_DEFAULT, is_selected ? TextColour::White : TextColour::Gold);
+				bool secondary_rgb = c->colour2_rgb != COMPANY_RGB_DEFAULT && livery.colour2 == c->livery[LiveryScheme::Default].colour2;
+				if (secondary_rgb) {
+					PixelColour pixel = GetColourGradient(livery.colour2, Shade::Normal);
+					pixel.rgb = GetCompanyRGBShade(c->colour2_rgb, Shade::Normal).data;
+					GfxFillRect(Rect{sec_squ.left, y + square_offs, sec_squ.left + int(this->square.width) - 1, y + square_offs + int(this->square.height) - 1}, pixel);
+				}
+				std::string secondary_name = secondary_rgb ? fmt::format("#{:06X}", c->colour2_rgb) : GetString((is_default_scheme || livery.in_use.Test(Livery::Flag::Secondary)) ? STR_COLOUR_DARK_BLUE + to_underlying(livery.colour2) : STR_COLOUR_DEFAULT);
+				DrawString(sec.left, sec.right, y + text_offs, secondary_name, is_selected ? TextColour::White : TextColour::Gold);
 			}
 
 			y += this->line_height;
 		};
-
-		const Company *c = Company::Get((CompanyID)this->window_number);
 
 		if (livery_class < LiveryClass::GroupRail) {
 			int pos = this->vscroll->GetPosition();
@@ -1013,6 +1030,16 @@ public:
 				this->SetDirty();
 				break;
 
+			case WID_SCL_RGB_PRIMARY:
+			case WID_SCL_RGB_SECONDARY: {
+				if (CompanyID(this->window_number) != _local_company) return;
+				this->editing_primary_rgb = widget == WID_SCL_RGB_PRIMARY;
+				const Company *c = Company::Get(CompanyID(this->window_number));
+				uint32_t rgb = this->editing_primary_rgb ? c->colour_rgb : c->colour2_rgb;
+				ShowQueryString(rgb == COMPANY_RGB_DEFAULT ? std::string{} : fmt::format("#{:06X}", rgb), STR_COMPANY_RGB_CAPTION, 8, this, CS_ALPHANUMERAL, QueryStringFlag::AcceptUnchanged);
+				break;
+			}
+
 			case WID_SCL_PRI_COL_DROPDOWN: // First colour dropdown
 				ShowColourDropDownMenu(WID_SCL_PRI_COL_DROPDOWN);
 				break;
@@ -1048,6 +1075,17 @@ public:
 	void OnResize() override
 	{
 		this->vscroll->SetCapacityFromWidget(this, WID_SCL_MATRIX);
+	}
+
+	void OnQueryTextFinished(std::optional<std::string> str) override
+	{
+		if (!str.has_value() || CompanyID(this->window_number) != _local_company) return;
+		std::optional<uint32_t> colour = str->empty() ? std::optional<uint32_t>(COMPANY_RGB_DEFAULT) : ParseCompanyRGBColour(*str);
+		if (!colour.has_value()) {
+			ShowErrorMessage(GetEncodedString(STR_COMPANY_RGB_INVALID), {}, WarningLevel::Error);
+			return;
+		}
+		Command<Commands::SetCompanyRGBColour>::Post(this->editing_primary_rgb, *colour);
 	}
 
 	void OnDropdownSelect(WidgetID widget, int index, int) override
@@ -1140,6 +1178,10 @@ static constexpr std::initializer_list<NWidgetPart> _nested_select_company_liver
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_MATRIX, Colours::Grey, WID_SCL_MATRIX), SetMinimalSize(275, 0), SetResize(1, 0), SetFill(1, 1), SetMatrixDataTip(1, 0, STR_LIVERY_PANEL_TOOLTIP), SetScrollbar(WID_SCL_MATRIX_SCROLLBAR),
 		NWidget(NWID_VSCROLLBAR, Colours::Grey, WID_SCL_MATRIX_SCROLLBAR),
+	EndContainer(),
+	NWidget(NWID_HORIZONTAL),
+		NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_SCL_RGB_PRIMARY), SetStringTip(STR_COMPANY_RGB_PRIMARY, STR_COMPANY_RGB_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
+		NWidget(WWT_PUSHTXTBTN, Colours::Grey, WID_SCL_RGB_SECONDARY), SetStringTip(STR_COMPANY_RGB_SECONDARY, STR_COMPANY_RGB_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PANEL, Colours::Grey, WID_SCL_SPACER_DROPDOWN), SetFill(1, 1), SetResize(1, 0), EndContainer(),

@@ -130,6 +130,7 @@ inline constexpr WidgetDimensions WidgetDimensions::unscaled = {
 
 /* widget.cpp */
 void DrawFrameRect(int left, int top, int right, int bottom, Colours colour, FrameFlags flags);
+void DrawCompanyFrameRect(const Rect &r, CompanyID company, FrameFlags flags);
 
 inline void DrawFrameRect(const Rect &r, Colours colour, FrameFlags flags)
 {

@@ -72,6 +72,7 @@
 #include "roadstop_base.h"
 #include "core/backup_type.hpp"
 #include "company_cmd.h"
+#include "company_colour.h"
 #include "misc_cmd.h"
 #include "order_backup.h"
 #include "cheat_func.h"
@@ -2347,6 +2348,40 @@ static bool ConSayClient(std::span<std::string_view> argv)
 	return true;
 }
 
+/** Query/set exact company colours, including from dedicated-server RCON. */
+static bool ConCompanyColourHex(std::span<std::string_view> argv)
+{
+	if (argv.empty()) {
+		IConsolePrint(CC_HELP, "Usage: company_colour_hex <company-no> [primary|secondary <RRGGBB|default>]. Company numbers are 1..240.");
+		return true;
+	}
+	if (argv.size() != 2 && argv.size() != 4) return false;
+	auto id = ParseCompanyID(argv[1]);
+	Company *c = id.has_value() ? Company::GetIfValid(*id) : nullptr;
+	if (c == nullptr) {
+		IConsolePrint(CC_ERROR, "Invalid company number.");
+		return true;
+	}
+	if (argv.size() == 2) {
+		auto colour = [](uint32_t rgb) { return rgb == COMPANY_RGB_DEFAULT ? std::string("default") : fmt::format("#{:06X}", rgb); };
+		IConsolePrint(CC_DEFAULT, "Company {}: primary {}, secondary {}", c->index.base() + 1, colour(c->colour_rgb), colour(c->colour2_rgb));
+		return true;
+	}
+	if (_networking && !_network_server && c->index != _local_company) {
+		IConsolePrint(CC_ERROR, "Only the server can change another company's colours.");
+		return true;
+	}
+	if (argv[2] != "primary" && argv[2] != "secondary") return false;
+	auto rgb = argv[3] == "default" ? std::optional<uint32_t>(COMPANY_RGB_DEFAULT) : ParseCompanyRGBColour(argv[3]);
+	if (!rgb.has_value()) {
+		IConsolePrint(CC_ERROR, "Expected six hexadecimal digits (optionally #RRGGBB), or default.");
+		return true;
+	}
+	AutoRestoreBackup company(_current_company, c->index);
+	Command<Commands::SetCompanyRGBColour>::Post(argv[2] == "primary", *rgb);
+	return true;
+}
+
 static bool ConCompanyPassword(std::span<std::string_view> argv)
 {
 	if (argv.empty()) {
@@ -4570,6 +4605,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("authorized_key",          ConNetworkAuthorizedKey, ConHookServerOnly);
 	IConsole::AliasRegister("ak", "authorized_key %+");
 
+	IConsole::CmdRegister("company_colour_hex",      ConCompanyColourHex);
 	IConsole::CmdRegister("company_pw",              ConCompanyPassword,  ConHookNeedNetwork);
 	IConsole::AliasRegister("company_password",      "company_pw %+");
 	IConsole::CmdRegister("company_pw_hash",         ConCompanyPasswordHash, ConHookServerOnly);

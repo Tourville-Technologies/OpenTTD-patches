@@ -964,8 +964,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::SendCompanyUpdate()
 {
 	auto p = std::make_unique<Packet>(this, PacketGameType::ServerCompanyUpdate, TCP_MTU);
 
-	static_assert(sizeof(_network_company_passworded) <= sizeof(uint16_t));
-	p->Send_uint16(_network_company_passworded.base());
+	for (uint16_t word : _network_company_passworded.bits) p->Send_uint16(word);
 	this->SendPacket(std::move(p));
 	return NetworkRecvStatus::Okay;
 }

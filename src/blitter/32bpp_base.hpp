@@ -49,6 +49,11 @@ public:
 		return _cur_palette.palette[index];
 	}
 
+	static inline Colour ResolveRGBRemap(const BlitterParams *bp, uint index, Colour fallback)
+	{
+		return bp->remap_rgb != nullptr && bp->remap_rgb[index].a != 0 ? bp->remap_rgb[index] : fallback;
+	}
+
 	/**
 	 * Compose a colour based on RGBA values and the current pixel value.
 	 * @param r The red component of the colour to blend between 0 and 255 (inclusive).

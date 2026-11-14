@@ -10,6 +10,7 @@
 #include "stdafx.h"
 #include "core/backup_type.hpp"
 #include "company_func.h"
+#include "company_colour.h"
 #include "settings_gui.h"
 #include "strings_id_type.h"
 #include "window_gui.h"
@@ -308,17 +309,18 @@ WidgetID GetWidgetFromPos(const Window *w, int x, int y)
  * @param colour Colour table to use. @see Colours
  * @param flags  Flags controlling how to draw the frame. @see FrameFlags
  */
-void DrawFrameRect(int left, int top, int right, int bottom, Colours colour, FrameFlags flags)
+static void DrawFrameRectImpl(int left, int top, int right, int bottom, Colours colour, FrameFlags flags, CompanyID company)
 {
 	if (flags.Test(FrameFlag::Transparent)) {
 		GfxFillRect(left, top, right, bottom, PALETTE_TO_TRANSPARENT, FillRectMode::Recolour);
 	} else {
 		assert(colour < Colours::End);
 
-		const PixelColour dark         = GetColourGradient(colour, Shade::Dark);
-		const PixelColour medium_dark  = GetColourGradient(colour, Shade::Light);
-		const PixelColour medium_light = GetColourGradient(colour, Shade::Lighter);
-		const PixelColour light        = GetColourGradient(colour, Shade::Lightest);
+		auto shade = [&](Shade shade) { return company == CompanyID::Invalid() ? GetColourGradient(colour, shade) : GetCompanyPixelColour(company, shade); };
+		const PixelColour dark         = shade(Shade::Dark);
+		const PixelColour medium_dark  = shade(Shade::Light);
+		const PixelColour medium_light = shade(Shade::Lighter);
+		const PixelColour light        = shade(Shade::Lightest);
 		PixelColour interior;
 
 		Rect outer = {left, top, right, bottom};                   // Outside rectangle
@@ -341,6 +343,17 @@ void DrawFrameRect(int left, int top, int right, int bottom, Colours colour, Fra
 			GfxFillRect(inner.left,  inner.top, inner.right, inner.bottom, interior); // Inner
 		}
 	}
+}
+
+void DrawFrameRect(int left, int top, int right, int bottom, Colours colour, FrameFlags flags)
+{
+	DrawFrameRectImpl(left, top, right, bottom, colour, flags, CompanyID::Invalid());
+}
+
+/** Draw an owned label frame using the company's full colour gradient. */
+void DrawCompanyFrameRect(const Rect &r, CompanyID company, FrameFlags flags)
+{
+	DrawFrameRectImpl(r.left, r.top, r.right, r.bottom, _company_colours[company], flags, company);
 }
 
 /**
@@ -753,7 +766,9 @@ void DrawCaption(const Rect &r, Colours colour, Owner owner, TextColour text_col
 	DrawFrameRect(ir, colour, company_owned ? FrameFlags{FrameFlag::Lowered, FrameFlag::Darkened, FrameFlag::BorderOnly} : FrameFlags{FrameFlag::Lowered, FrameFlag::Darkened});
 
 	if (company_owned) {
-		GfxFillRect(ir.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(_company_colours[owner], Shade::Normal));
+		PixelColour background = GetCompanyPixelColour(owner, Shade::Normal);
+		GfxFillRect(ir.Shrink(WidgetDimensions::scaled.bevel), background);
+		if (background.rgb != 0) text_colour = GetContrastColour(background);
 	}
 
 	if (str.empty()) return;
@@ -3478,6 +3493,86 @@ std::unique_ptr<NWidgetBase> MakeWindowNWidgetTree(std::span<const NWidgetPart> 
  * @param resizable Whether the rows are resizable.
  * @return Panel with rows of company buttons.
  */
+/** Clipped viewport retaining individual company widgets and their selection state. */
+class NWidgetCompanyScroll : public NWidgetContainer {
+	WidgetID scrollbar;
+	uint height;
+	Scrollbar *sb = nullptr;
+	bool rtl = false;
+
+	void Layout()
+	{
+		if (this->sb == nullptr) return;
+		auto &content = this->children.front();
+		content->AssignSizePosition(SizingType::Resize, this->pos_x, this->pos_y - this->sb->GetPosition(), this->current_x, content->smallest_y, this->rtl);
+	}
+public:
+	NWidgetCompanyScroll(WidgetID scrollbar, uint height) : NWidgetContainer(NWID_VERTICAL), scrollbar(scrollbar), height(height) {}
+	void SetupSmallestSize(Window *w) override
+	{
+		auto &content = this->children.front();
+		content->SetupSmallestSize(w);
+		this->smallest_x = content->smallest_x;
+		this->smallest_y = std::min<uint>(content->smallest_y, ScaleGUITrad(this->height));
+		this->fill_x = this->resize_x = 1;
+		this->fill_y = this->resize_y = 1;
+		if (w != nullptr) {
+			this->sb = w->GetScrollbar(this->scrollbar);
+			this->sb->SetCount(content->smallest_y);
+			this->sb->SetStepSize(ScaleGUITrad(20));
+		}
+	}
+	void AssignSizePosition(SizingType sizing, int x, int y, uint width, uint height, bool rtl) override
+	{
+		this->StoreSizePosition(sizing, x, y, width, height);
+		this->rtl = rtl;
+		if (this->sb != nullptr) this->sb->SetCapacity(height);
+		this->Layout();
+	}
+	void Draw(const Window *w) override
+	{
+		this->Layout();
+		DrawPixelInfo dpi;
+		if (!FillDrawPixelInfo(&dpi, this->pos_x, this->pos_y, this->current_x, this->current_y)) return;
+		dpi.left += this->pos_x;
+		dpi.top += this->pos_y;
+		AutoRestoreBackup backup(_cur_dpi, &dpi);
+		this->NWidgetContainer::Draw(w);
+		this->base_flags.Reset(WidgetBaseFlag::Dirty);
+	}
+	NWidgetCore *GetWidgetFromPos(int x, int y) override
+	{
+		this->Layout();
+		return this->NWidgetContainer::GetWidgetFromPos(x, y);
+	}
+	void FillDirtyWidgets(std::vector<NWidgetBase *> &dirty) override
+	{
+		/* Keep invalidation inside the viewport, including offscreen buttons. */
+		dirty.push_back(this);
+	}
+};
+
+std::unique_ptr<NWidgetBase> MakeScrollableCompanyPanel(std::unique_ptr<NWidgetBase> content, WidgetID scrollbar, Colours colour, uint height)
+{
+	/* Attach the wheel to every button, including nested rows. */
+	auto attach = [&](NWidgetBase *widget) {
+		if (auto *core = dynamic_cast<NWidgetCore *>(widget)) ApplyNWidgetPartAttribute(SetScrollbar(scrollbar), core);
+		/* Containers expose descendants through their widget lookup. */
+		WidgetLookup lookup;
+		widget->FillWidgetLookup(lookup);
+		for (auto &[index, entry] : lookup) {
+			if (auto *core = dynamic_cast<NWidgetCore *>(entry)) ApplyNWidgetPartAttribute(SetScrollbar(scrollbar), core);
+		}
+	};
+	attach(content.get());
+	auto viewport = std::make_unique<NWidgetCompanyScroll>(scrollbar, height);
+	viewport->Add(std::move(content));
+	auto row = std::make_unique<NWidgetHorizontal>();
+	row->Add(std::move(viewport));
+	row->Add(std::make_unique<NWidgetScrollbar>(NWID_VSCROLLBAR, colour, scrollbar));
+	return row;
+}
+
 std::unique_ptr<NWidgetBase> MakeCompanyButtonRows(WidgetID widget_first, WidgetID widget_last, Colours button_colour, int max_length, StringID button_tooltip, bool resizable)
 {
 	assert(max_length >= 1);

@@ -6072,3 +6072,10 @@ STR_BADGE_CONFIG_FILTERS                                        :{WHITE}Badge Fi
 STR_BADGE_CONFIG_PREVIEW                                        :Preview Image
 STR_BADGE_CONFIG_NAME                                           :Name
 STR_BADGE_FILTER_ANY_LABEL                                      :Any {STRING}
+
+STR_COMPANY_RGB_PRIMARY                                         :Primary hex colour
+STR_COMPANY_RGB_SECONDARY                                       :Secondary hex colour
+STR_COMPANY_RGB_TOOLTIP                                         :Enter a 24-bit company colour as #RRGGBB. Leave empty to restore the standard palette. Applies to the default company livery and vehicles using its colours
+STR_COMPANY_RGB_CAPTION                                         :Company colour (#RRGGBB)
+STR_COMPANY_RGB_INVALID                                         :Enter exactly six hexadecimal digits, optionally preceded by #
+

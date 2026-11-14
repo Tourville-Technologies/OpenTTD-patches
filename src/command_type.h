@@ -772,6 +772,7 @@ enum class Commands : uint8_t {
 
 	DesyncCheck,                            ///< Force desync checks to be run
 
+	SetCompanyRGBColour,                    ///< Set an optional 24-bit company colour.
 	End,                                    ///< Must ALWAYS be on the end of this list!! (period)
 };
 

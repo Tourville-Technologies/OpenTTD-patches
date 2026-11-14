@@ -216,15 +216,17 @@ static const SaveLoad _town_desc[] = {
 	SLE_CONDSTR(Town, name, VarTypes::STR | StringValidationSetting::AllowControlCode, 0, SaveLoadVersion::ReplaceCustomNameArray, SaveLoadVersion::MaxVersion),
 
 	    SLE_VAR(Town, flags,                 VarTypes::U8),
-	SLE_CONDVAR(Town, statues, VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies),
-	SLE_CONDVAR(Town, statues, VarTypes::U16, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
+	SLE_GENERAL_NAME(SaveLoadType::Variable, "statues", Town, statues.bits[0], VarFileType::U8 | VarMemType::U16, 0, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies, 0),
+	SLE_GENERAL_NAME(SaveLoadType::Array, "statues_240", Town, statues.bits, VarTypes::U16, CompanyMask::WORD_COUNT, SaveLoadVersion::MinVersion, SaveLoadVersion::MaxVersion, 0),
+	SLE_GENERAL_NAME(SaveLoadType::Variable, "statues", Town, statues.bits[0], VarTypes::U16, 0, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion, 0),
 
-	SLE_CONDVAR(Town, have_ratings, VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies),
-	SLE_CONDVAR(Town, have_ratings, VarTypes::U16, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
+	SLE_GENERAL_NAME(SaveLoadType::Variable, "have_ratings", Town, have_ratings.bits[0], VarFileType::U8 | VarMemType::U16, 0, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies, 0),
+	SLE_GENERAL_NAME(SaveLoadType::Array, "have_ratings_240", Town, have_ratings.bits, VarTypes::U16, CompanyMask::WORD_COUNT, SaveLoadVersion::MinVersion, SaveLoadVersion::MaxVersion, 0),
+	SLE_GENERAL_NAME(SaveLoadType::Variable, "have_ratings", Town, have_ratings.bits[0], VarTypes::U16, 0, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion, 0),
 	SLE_CONDARR(Town, ratings, VarTypes::I16, 8, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies),
-	SLE_CONDARR(Town, ratings, VarTypes::I16, MAX_COMPANIES, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
+	SLE_CONDARR(Town, ratings, VarTypes::I16, LEGACY_MAX_COMPANIES, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
 	SLE_CONDARR(Town, unwanted, VarFileType::I8 | VarMemType::U8, 8, SaveLoadVersion::TownTolerancePauseMode, SaveLoadVersion::MoreCompanies),
-	SLE_CONDARR(Town, unwanted, VarFileType::I8 | VarMemType::U8, MAX_COMPANIES, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
+	SLE_CONDARR(Town, unwanted, VarFileType::I8 | VarMemType::U8, LEGACY_MAX_COMPANIES, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
 
 	/* Slots 0 and 2 are passengers and mail respectively for old saves. */
 	SLEG_CONDVAR("supplied[CT_PASSENGERS].old_max", _old_pass_supplied[LAST_MONTH].production, VarFileType::U16 | VarMemType::U32, SaveLoadVersion::MinVersion, SaveLoadVersion::LargerTownCargoStatistics),

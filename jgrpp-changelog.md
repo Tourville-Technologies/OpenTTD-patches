@@ -10,6 +10,19 @@
 * Fix click to edit behaviour for label orders.
 * Bump trunk base from commit 12208d12048e747cd5c76bada4c5ddaab573efc4 to commit 141b4e5eecdd8442763b31facfdd3372961bedbf.
 
+### 240-company extension (2026-10-21)
+* Add selectable 24-bit hex company colours for primary and secondary default liveries, with save/load and multiplayer support.
+* Apply RGB colours to OpenGL graph lines, sign and station label frames/text, and company-owned title bars, with readable text contrast.
+* Add scrolling and resizing to company and script league tables.
+* Validate infrastructure-sharing costs, revenue and vehicle profit across all 240 company IDs; ignore public/invalid recipients and preserve debt limits.
+* Support up to 240 companies, including tile, road and tram ownership.
+* Extend company masks, town ratings, engine availability, cargo monitors and vehicle-list identifiers.
+* Support all companies in graphs, multiplayer password updates and saved server passwords.
+* Extend AI performance measurements and the scrolling performance display to all company slots.
+* Add scrolling to company selectors, graph legends, town ratings and minimap legends.
+* Allow companies to share palette colours, choosing the least-used colours for new companies.
+* Mark extended saves and multiplayer revisions to prevent incompatible builds from interpreting the new formats.
+
 ### v0.73.4 (2026-10-12)
 * Fix crash which could occur with some extra-zoom and/or 32bpp NewGRFs/basesets.
 * Fix crash editing scheduled dispatch tag conditional orders when no tags were usable.

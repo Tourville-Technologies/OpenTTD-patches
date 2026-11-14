@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "company_base.h"
+#include "company_colour.h"
 #include "company_cmd.h"
 #include "company_func.h"
 #include "company_gui.h"
@@ -190,7 +191,7 @@ void SetLocalCompany(CompanyID new_company)
 ExtendedTextColour GetDrawStringCompanyColour(CompanyID company)
 {
 	if (!Company::IsValidID(company)) return ExtendedTextColour{GetColourGradient(Colours::White, Shade::Normal)};
-	return ExtendedTextColour{GetColourGradient(_company_colours[company], Shade::Normal)};
+	return ExtendedTextColour{GetCompanyPixelColour(company, Shade::Normal)};
 }
 
 /**
@@ -200,7 +201,7 @@ ExtendedTextColour GetDrawStringCompanyColour(CompanyID company)
  */
 PaletteID GetCompanyPalette(CompanyID company)
 {
-	return GetColourPalette(_company_colours[company]);
+	return GetCompanyRGBPalette(GetColourPalette(_company_colours[company]), company);
 }
 
 /**
@@ -564,6 +565,13 @@ static Colours GenerateCompanyColour()
 	std::stable_sort(colours.begin(), colours.end(), [](Colours a, Colours b) {
 		return _colour_sort[a] > _colour_sort[b];
 	});
+
+	EnumIndexArray<uint, Colours, Colours::End> usage{};
+	for (const Company *c : Company::Iterate()) ++usage[c->colour];
+	const uint min_usage = *std::min_element(usage.begin(), usage.end());
+	if (min_usage > 0) {
+		for (Colours colour : colours) if (usage[colour] == min_usage) return colour;
+	}
 
 	/* Move the colours that look similar to each company's colour to the side */
 	for (const Company *c : Company::Iterate()) {
@@ -1256,6 +1264,38 @@ void UpdateCompanyLiveries(Company *c)
 	UpdateCompanyGroupLiveries(c);
 }
 
+/** Refresh every display/cache derived from a company livery. */
+static void CompanyColourChanged(Company *c)
+{
+	ResetVehicleColourMap();
+	InvalidateTemplateReplacementImages();
+	MarkWholeScreenDirty();
+
+	/* All graph related to companies use the company colour. */
+	InvalidateWindowData(WindowClass::IncomeGraph, 0);
+	InvalidateWindowData(WindowClass::OperatingProfitGraph, 0);
+	InvalidateWindowData(WindowClass::DeliveredCargoGraph, 0);
+	InvalidateWindowData(WindowClass::PerformanceGraph, 0);
+	InvalidateWindowData(WindowClass::CompanyValueGraph, 0);
+	InvalidateWindowData(WindowClass::LinkGraphLegend, 0);
+	/* The smallmap owner view also stores the company colours. */
+	BuildOwnerLegend();
+	InvalidateWindowData(WindowClass::SmallMap, 0, 1);
+
+	extern void MarkAllViewportMapLandscapesDirty();
+	MarkAllViewportMapLandscapesDirty();
+
+	/* Company colour data is indirectly cached. */
+	for (Vehicle *v : Vehicle::Iterate()) {
+		if (v->owner == _current_company) {
+			v->InvalidateNewGRFCache();
+			v->InvalidateImageCache();
+		}
+	}
+
+	UpdateObjectColours(c);
+}
+
 /**
  * Change the company's company-colour
  * @param flags operation to perform
@@ -1273,14 +1313,9 @@ CommandCost CmdSetCompanyColour(DoCommandFlags flags, LiveryScheme scheme, bool 
 
 	Company *c = Company::Get(_current_company);
 
-	/* Ensure no two companies have the same primary colour */
-	if (scheme == LiveryScheme::Default && primary) {
-		for (const Company *cc : Company::Iterate()) {
-			if (cc != c && cc->colour == colour) return CMD_ERROR;
-		}
-	}
 
 	if (flags.Test(DoCommandFlag::Execute)) {
+		if (scheme == LiveryScheme::Default) (primary ? c->colour_rgb : c->colour2_rgb) = COMPANY_RGB_DEFAULT;
 		if (primary) {
 			if (scheme != LiveryScheme::Default) c->livery[scheme].in_use.Set(Livery::Flag::Primary, colour != Colours::Invalid);
 			if (colour == Colours::Invalid) colour = c->livery[LiveryScheme::Default].colour1;
@@ -1319,33 +1354,19 @@ CommandCost CmdSetCompanyColour(DoCommandFlags flags, LiveryScheme scheme, bool 
 			}
 		}
 
-		ResetVehicleColourMap();
-		InvalidateTemplateReplacementImages();
-		MarkWholeScreenDirty();
+		CompanyColourChanged(c);
+	}
+	return CommandCost();
+}
 
-		/* All graph related to companies use the company colour. */
-		InvalidateWindowData(WindowClass::IncomeGraph, 0);
-		InvalidateWindowData(WindowClass::OperatingProfitGraph, 0);
-		InvalidateWindowData(WindowClass::DeliveredCargoGraph, 0);
-		InvalidateWindowData(WindowClass::PerformanceGraph, 0);
-		InvalidateWindowData(WindowClass::CompanyValueGraph, 0);
-		InvalidateWindowData(WindowClass::LinkGraphLegend, 0);
-		/* The smallmap owner view also stores the company colours. */
-		BuildOwnerLegend();
-		InvalidateWindowData(WindowClass::SmallMap, 0, 1);
-
-		extern void MarkAllViewportMapLandscapesDirty();
-		MarkAllViewportMapLandscapesDirty();
-
-		/* Company colour data is indirectly cached. */
-		for (Vehicle *v : Vehicle::Iterate()) {
-			if (v->owner == _current_company) {
-				v->InvalidateNewGRFCache();
-				v->InvalidateImageCache();
-			}
-		}
-
-		UpdateObjectColours(c);
+/** Set a primary or secondary RGB override; UINT32_MAX restores the standard palette. */
+CommandCost CmdSetCompanyRGBColour(DoCommandFlags flags, bool primary, uint32_t rgb)
+{
+	if (rgb > 0xFFFFFF && rgb != COMPANY_RGB_DEFAULT) return CMD_ERROR;
+	if (flags.Test(DoCommandFlag::Execute)) {
+		Company *c = Company::Get(_current_company);
+		(primary ? c->colour_rgb : c->colour2_rgb) = rgb;
+		CompanyColourChanged(c);
 	}
 	return CommandCost();
 }

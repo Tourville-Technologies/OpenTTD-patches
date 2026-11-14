@@ -124,7 +124,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								*dst = c;
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0));
+								if (r != 0) *dst = AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0));
 							}
 							dst++;
 							src_px++;
@@ -139,7 +139,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								*dst = ComposeColourRGBANoCheck(c.r, c.g, c.b, c.a, *dst);
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0)), src_px->a, *dst);
+								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0)), src_px->a, *dst);
 							}
 							dst++;
 							src_px++;
@@ -157,7 +157,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								*dst = ComposeColourRGBA(g, g, g, src_px->a, *dst);
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8));
+								if (r != 0) *dst = AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8));
 							}
 							dst++;
 							src_px++;
@@ -173,7 +173,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								}
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8)), src_px->a, *dst);
+								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8)), src_px->a, *dst);
 							}
 							dst++;
 							src_px++;

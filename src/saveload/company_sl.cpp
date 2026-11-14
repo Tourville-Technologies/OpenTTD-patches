@@ -384,8 +384,9 @@ static const SaveLoad _company_desc[] = {
 	SLE_CONDVAR(CompanyProperties, num_valid_stat_ent, VarTypes::U8, SaveLoadVersion::MinVersion, SaveLoadVersion::SaveloadListLength),
 
 	    SLE_VAR(CompanyProperties, months_of_bankruptcy,  VarTypes::U8),
-	SLE_CONDVAR(CompanyProperties, bankrupt_asked, VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies),
-	SLE_CONDVAR(CompanyProperties, bankrupt_asked, VarTypes::U16, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion),
+	SLE_GENERAL_NAME(SaveLoadType::Variable, "bankrupt_asked", CompanyProperties, bankrupt_asked.bits[0], VarFileType::U8 | VarMemType::U16, 0, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCompanies, 0),
+	SLE_GENERAL_NAME(SaveLoadType::Array, "bankrupt_asked_240", CompanyProperties, bankrupt_asked.bits, VarTypes::U16, CompanyMask::WORD_COUNT, SaveLoadVersion::MinVersion, SaveLoadVersion::MaxVersion, 0),
+	SLE_GENERAL_NAME(SaveLoadType::Variable, "bankrupt_asked", CompanyProperties, bankrupt_asked.bits[0], VarTypes::U16, 0, SaveLoadVersion::MoreCompanies, SaveLoadVersion::MaxVersion, 0),
 	    SLE_VAR(CompanyProperties, bankrupt_timeout,      VarTypes::I16),
 	SLE_CONDVAR(CompanyProperties, bankrupt_value, VarFileType::I32 | VarMemType::I64, SaveLoadVersion::MinVersion, SaveLoadVersion::UnifyCurrency),
 	SLE_CONDVAR(CompanyProperties, bankrupt_value, VarTypes::I64, SaveLoadVersion::UnifyCurrency, SaveLoadVersion::MaxVersion),

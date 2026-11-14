@@ -58,6 +58,7 @@ public:
 	/** Parameters related to blitting. */
 	struct BlitterParams {
 		const void *sprite; ///< Pointer to the sprite how ever the encoder stored it
+		const Colour *remap_rgb = nullptr; ///< Optional per-input RGB entries; alpha zero uses remap.
 		const uint8_t *remap;  ///< XXX -- Temporary storage for remap array
 		int brightness_adjust; ///< Brightness adjustment
 

@@ -8,6 +8,7 @@
 /** @file build_vehicle_gui.cpp GUI for building vehicles. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "engine_base.h"
 #include "engine_cmd.h"
 #include "engine_func.h"
@@ -2145,7 +2146,7 @@ struct BuildVehicleWindow : BuildVehicleWindowBase {
 
 			default:
 				if (IsInsideMM(widget, this->badge_filters.first, this->badge_filters.second)) {
-					PaletteID palette = SPR_2CCMAP_BASE + Company::Get(_local_company)->GetCompanyRecolourOffset(LiveryScheme::Default);
+					PaletteID palette = GetCompanyRGBPalette(SPR_2CCMAP_BASE + Company::Get(_local_company)->GetCompanyRecolourOffset(LiveryScheme::Default), _local_company, true, true);
 					ShowDropDownList(this, this->GetWidget<NWidgetBadgeFilter>(widget)->GetDropDownList(palette), -1, widget, 0, DropDownOption::Filterable);
 				}
 				break;

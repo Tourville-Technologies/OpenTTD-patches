@@ -179,7 +179,7 @@ static void ConvertTownOwner()
 		switch (GetTileType(tile)) {
 			case TileType::Road:
 				if (GB(_m[tile].m5, 4, 2) == to_underlying(RoadTileType::Crossing) && HasBit(_m[tile].m3, 7)) {
-					_m[tile].m3 = OWNER_TOWN.base();
+					_m[tile].m3 = 15;
 				}
 				[[fallthrough]];
 
@@ -656,6 +656,24 @@ void IterateVehicleAndOrderListOrders(F func)
 bool AfterLoadGame()
 {
 	SetSignalHandlers();
+	AutoRestoreBackup legacy_owner_backup(_legacy_company_owners, SlXvIsFeatureMissing(XSLFI_COMPANIES_240));
+	if (_legacy_company_owners) {
+		for (Company *company : Company::Iterate()) {
+			if ((company->bankrupt_asked.base() & 0x7FFF) == 0x7FFF) company->bankrupt_asked.Set();
+		}
+		for (BaseStation *st : BaseStation::Iterate()) st->owner = ConvertLegacyOwner(st->owner);
+		for (Vehicle *vehicle : Vehicle::Iterate()) vehicle->owner = ConvertLegacyOwner(vehicle->owner);
+		for (Sign *sign : Sign::Iterate()) sign->owner = ConvertLegacyOwner(sign->owner);
+		for (Industry *industry : Industry::Iterate()) {
+			industry->owner = ConvertLegacyOwner(industry->owner);
+			industry->founder = ConvertLegacyOwner(industry->founder);
+		}
+		for (Town *town : Town::Iterate()) {
+			town->exclusivity = ConvertLegacyOwner(town->exclusivity);
+			for (uint i = LEGACY_MAX_COMPANIES; i < MAX_COMPANIES; ++i) town->ratings[i] = RATING_INITIAL;
+		}
+		_local_company = ConvertLegacyOwner(_local_company);
+	}
 
 	const uint32_t map_size = Map::Size();
 
@@ -1140,7 +1158,7 @@ bool AfterLoadGame()
 					} else {
 						/* Restore the signals */
 						ResetSignalHandlers();
-						return false;
+						SlErrorCorruptFmt("Invalid legacy station graphics {} at tile {}", gfx, t);
 					}
 					SB(_me[t].m6, 3, 3, to_underlying(st));
 					break;
@@ -1164,7 +1182,7 @@ bool AfterLoadGame()
 				BaseStation *bst = BaseStation::GetByTile(t);
 
 				/* Sanity check */
-				if (!IsBuoy(t) && bst->owner != GetTileOwner(t)) SlErrorCorrupt("Wrong owner for station tile");
+				if (!IsBuoy(t) && bst->owner != GetTileOwner(t)) SlErrorCorruptFmt("Wrong owner for station tile {}: station owner {}, tile owner {}", t, bst->owner, GetTileOwner(t));
 
 				/* Set up station spread */
 				bst->spread.Add(t);
@@ -1238,7 +1256,7 @@ bool AfterLoadGame()
 				case TileType::Road:
 					_m[t].m4 |= (_m[t].m2 << 4);
 					if (GB(_m[t].m5, 4, 2) == to_underlying(RoadTileType::Depot)) break;
-					if ((GB(_m[t].m5, 4, 2) == to_underlying(RoadTileType::Crossing) ? (Owner)_m[t].m3 : GetTileOwner(t)) == OWNER_TOWN) {
+					if ((GB(_m[t].m5, 4, 2) == to_underlying(RoadTileType::Crossing) ? ConvertLegacyOwner(Owner(_m[t].m3)) : GetTileOwner(t)) == OWNER_TOWN) {
 						SetTownIndex(t, CalcClosestTownFromTile(t)->index);
 					} else {
 						SetTownIndex(t, TownID::Begin());
@@ -1394,7 +1412,7 @@ bool AfterLoadGame()
 					if (!IsStationRoadStop(t)) break;
 
 					if (fix_roadtypes) SB(_me[t].m7, 6, 2, GB(_m[t].m3, 0, 3));
-					SB(_me[t].m7, 0, 5, (HasBit(_me[t].m6, 2) ? OWNER_TOWN : GetTileOwner(t)).base());
+					SB(_me[t].m7, 0, 5, ToLegacyOwner(HasBit(_me[t].m6, 2) ? OWNER_TOWN : GetTileOwner(t)).base());
 					SB(_m[t].m3, 4, 4, _m[t].m1);
 					_m[t].m4 = 0;
 					break;
@@ -1405,8 +1423,8 @@ bool AfterLoadGame()
 						if (fix_roadtypes) SB(_me[t].m7, 6, 2, GB(_m[t].m3, 0, 3));
 
 						Owner o = GetTileOwner(t);
-						SB(_me[t].m7, 0, 5, o.base()); // road owner
-						SB(_m[t].m3, 4, 4, (o == OWNER_NONE ? OWNER_TOWN : o).base()); // tram owner
+						SB(_me[t].m7, 0, 5, ToLegacyOwner(o).base()); // road owner
+						SB(_m[t].m3, 4, 4, ToLegacyOwner(o == OWNER_NONE ? OWNER_TOWN : o).base()); // tram owner
 					}
 					SB(_me[t].m6, 2, 4, GB(_m[t].m2, 4, 4)); // bridge type
 					SB(_me[t].m7, 5, 1, GB(_m[t].m4, 7, 1)); // snow/desert
@@ -2157,7 +2175,7 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(SLV_83)) {
 		for (TileIndex t(0); t < map_size; t++) {
 			if (IsShipDepotTile(t)) {
-				_m[t].m4 = (TileHeight(t) == 0 ? OWNER_WATER : OWNER_NONE).base();
+				_m[t].m4 = ToLegacyOwner(TileHeight(t) == 0 ? OWNER_WATER : OWNER_NONE).base();
 			}
 		}
 	}
@@ -4610,6 +4628,25 @@ bool AfterLoadGame()
 	 * Delay this until all train and track updates have been performed.
 	 */
 	if (IsSavegameVersionBefore(SLV_164)) FixupTrainLengths();
+
+	if (_legacy_company_owners) {
+		for (TileIndex tile(0); tile < map_size; ++tile) {
+			TileType type = GetTileType(tile);
+			if (type == TileType::House || type == TileType::Industry || type == TileType::Void) continue;
+			Owner tile_owner = GetTileOwner(tile);
+			bool road = MayHaveRoad(tile);
+			Owner road_owner = road ? GetRoadOwner(tile, RoadTramType::Road) : OWNER_NONE;
+			Owner tram_owner = road ? GetRoadOwner(tile, RoadTramType::Tram) : OWNER_NONE;
+			_legacy_company_owners = false;
+			SetTileOwner(tile, tile_owner);
+			if (road) {
+				SetRoadOwner(tile, RoadTramType::Road, road_owner);
+				SetRoadOwner(tile, RoadTramType::Tram, tram_owner);
+			}
+			_legacy_company_owners = true;
+		}
+		_legacy_company_owners = false;
+	}
 
 	/* This needs to be done after conversion. */
 	RebuildViewportKdtree();

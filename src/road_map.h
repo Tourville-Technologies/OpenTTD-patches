@@ -297,12 +297,13 @@ inline bool HasTileAnyRoadType(TileIndex t, RoadTypes rts)
 inline Owner GetRoadOwner(TileIndex t, RoadTramType rtt)
 {
 	dbg_assert(MayHaveRoad(t));
-	if (rtt == RoadTramType::Road) return (Owner)GB(IsNormalRoadTile(t) ? _m[t].m1 : _me[t].m7, 0, 5);
-
-	/* Trams don't need OWNER_TOWN, and remapping OWNER_NONE
-	 * to OWNER_TOWN makes it use one bit less */
-	Owner o = static_cast<Owner>(GB(_m[t].m3, 4, 4));
-	return o == OWNER_TOWN ? OWNER_NONE : o;
+	if (rtt == RoadTramType::Road) {
+		if (IsNormalRoadTile(t)) return GetTileOwner(t);
+		Owner owner(GB(_me[t].m7, 0, 5) | (GB(_me[t].m9, 3, 3) << 5));
+		return _legacy_company_owners ? ConvertLegacyOwner(owner) : owner;
+	}
+	Owner owner(GB(_m[t].m3, 4, 4) | (GB(_me[t].m10, 0, 4) << 4));
+	return _legacy_company_owners && owner == Owner(15) ? OWNER_NONE : owner;
 }
 
 /**
@@ -313,10 +314,17 @@ inline Owner GetRoadOwner(TileIndex t, RoadTramType rtt)
  */
 inline void SetRoadOwner(TileIndex t, RoadTramType rtt, Owner o)
 {
+	if (_legacy_company_owners) o = rtt == RoadTramType::Tram && o == OWNER_NONE ? Owner(15) : ToLegacyOwner(o);
 	if (rtt == RoadTramType::Road) {
-		SB(IsNormalRoadTile(t) ? _m[t].m1 : _me[t].m7, 0, 5, o.base());
+		if (IsNormalRoadTile(t)) {
+			SetTileOwner(t, o);
+		} else {
+			SB(_me[t].m7, 0, 5, o.base() & 0x1F);
+			SB(_me[t].m9, 3, 3, o.base() >> 5);
+		}
 	} else {
-		SB(_m[t].m3, 4, 4, (o == OWNER_NONE ? OWNER_TOWN : o).base());
+		SB(_m[t].m3, 4, 4, o.base() & 0x0F);
+		SB(_me[t].m10, 0, 4, o.base() >> 4);
 	}
 }
 

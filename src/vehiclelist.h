@@ -51,7 +51,8 @@ struct VehicleListIdentifier {
 
 	static VehicleType UnPackVehicleType(uint32_t data)
 	{
-		return (VehicleType)GB(data, 26, 2);
+		VehicleListIdentifier identifier;
+		return identifier.UnpackIfValid(data) ? identifier.vtype : VehicleType::Invalid;
 	}
 
 	using WindowNumber = int32_t;

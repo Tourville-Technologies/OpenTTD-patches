@@ -17,6 +17,7 @@
 enum GraphLegendWidgets : WidgetID {
 	WID_GL_BACKGROUND,    ///< Background of the window.
 
+	WID_GL_SCROLLBAR,     ///< Company list scrollbar.
 	WID_GL_FIRST_COMPANY, ///< First company in the legend.
 	WID_GL_LAST_COMPANY = WID_GL_FIRST_COMPANY + MAX_COMPANIES - 1, ///< Last company in the legend.
 };
@@ -54,6 +55,7 @@ enum PerformanceRatingDetailsWidgets : WidgetID {
 	WID_PRD_SCORE_FIRST, ///< First entry in the score list.
 	WID_PRD_SCORE_LAST = WID_PRD_SCORE_FIRST + to_underlying(ScoreID::End) - 1, ///< Last entry in the score list.
 
+	WID_PRD_SCROLLBAR,    ///< Company selector scrollbar.
 	WID_PRD_COMPANY_FIRST, ///< First company.
 	WID_PRD_COMPANY_LAST  = WID_PRD_COMPANY_FIRST + MAX_COMPANIES - 1, ///< Last company.
 };

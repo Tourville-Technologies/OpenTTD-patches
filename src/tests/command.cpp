@@ -124,6 +124,16 @@ TEST_CASE("TupleRefCmdData tests")
 	CHECK(TestGeneralCommandPayload<Commands::CompanyControl>(payload2, PayloadChecker{{ 1, 2, 3, 4, 5 }}));
 }
 
+TEST_CASE("RGB company colour command network serialisation", "[company240][rgb]")
+{
+	for (uint32_t rgb : {0u, 0x123ABCu, 0xFFFFFFu, UINT32_MAX}) {
+		for (bool primary : {false, true}) {
+			auto payload = CmdPayload<Commands::SetCompanyRGBColour>::Make(primary, rgb);
+			CHECK(TestGeneralCommandPayload<Commands::SetCompanyRGBColour>(payload, [](std::span<const uint8_t> data) { return !data.empty(); }));
+		}
+	}
+}
+
 TEST_CASE("Command string sanitise tests")
 {
 	auto non_string = CmdPayload<Commands::AddPlan>::Make();

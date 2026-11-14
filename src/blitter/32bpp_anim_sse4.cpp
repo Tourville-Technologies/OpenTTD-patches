@@ -196,7 +196,7 @@ bmno_full_transparency:
 							const Colour srcm = (Colour) (m_src); \
 							const uint m = (uint8_t) (m_m); \
 							const uint r = remap[m]; \
-							const Colour cmap = (this->LookupColourInPalette(r).data & 0x00FFFFFF) | (srcm.data & 0xFF000000); \
+							const Colour cmap = (ResolveRGBRemap(bp, m, this->LookupColourInPalette(r)).data & 0x00FFFFFF) | (srcm.data & 0xFF000000); \
 							m_colour = r == 0 ? m_colour : cmap; \
 							m_colour = m != 0 ? m_colour : srcm; \
 							}
@@ -274,7 +274,7 @@ bmcr_full_transparency:
 						const uint r = remap[src_mv->m];
 						*anim = (animated && src->a == 255) ? r | ((uint16_t) src_mv->v << 8 ) : 0;
 						if (r != 0) {
-							Colour remapped_colour = AdjustBrightneSSE(this->LookupColourInPalette(r), src_mv->v);
+							Colour remapped_colour = AdjustBrightneSSE(ResolveRGBRemap(bp, src_mv->m, this->LookupColourInPalette(r)), src_mv->v);
 							if (src->a == 255) {
 								*dst = remapped_colour;
 							} else {
@@ -342,7 +342,7 @@ bmcr_alpha_blend_single:
 						}
 					} else {
 						uint r = remap[src_mv->m];
-						if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), src_mv->v), src->a, *dst);
+						if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, src_mv->m, this->LookupColourInPalette(r)), src_mv->v), src->a, *dst);
 					}
 					src_mv++;
 					dst++;
@@ -407,7 +407,7 @@ bmcr_alpha_blend_single:
 						const uint r = remap[mv.m];
 						*anim = (animated && src->a == 255) ? r | ((uint16_t) mv.v << 8) : 0;
 						if (r != 0) {
-							Colour remapped_colour = AdjustBrightneSSE(this->LookupColourInPalette(r), mv.v);
+							Colour remapped_colour = AdjustBrightneSSE(ResolveRGBRemap(bp, mv.m, this->LookupColourInPalette(r)), mv.v);
 							if (src->a == 255) {
 								*dst = remapped_colour;
 							} else {

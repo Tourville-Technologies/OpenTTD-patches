@@ -173,7 +173,8 @@ inline Owner GetTileOwner(TileIndex tile)
 	dbg_assert_tile(IsValidTile(tile), tile);
 	dbg_assert_tile(!IsTileType(tile, TileType::House) && !IsTileType(tile, TileType::Industry), tile);
 
-	return static_cast<Owner>(GB(_m[tile].m1, 0, 5));
+	Owner owner(GB(_m[tile].m1, 0, 5) | (GB(_me[tile].m9, 0, 3) << 5));
+	return _legacy_company_owners ? ConvertLegacyOwner(owner) : owner;
 }
 
 /**
@@ -192,7 +193,9 @@ inline void SetTileOwner(TileIndex tile, Owner owner)
 	dbg_assert_tile(IsValidTile(tile), tile);
 	dbg_assert_tile(!IsTileType(tile, TileType::House) && !IsTileType(tile, TileType::Industry), tile);
 
-	SB(_m[tile].m1, 0, 5, owner.base());
+	if (_legacy_company_owners) owner = ToLegacyOwner(owner);
+	SB(_m[tile].m1, 0, 5, owner.base() & 0x1F);
+	SB(_me[tile].m9, 0, 3, owner.base() >> 5);
 }
 
 /**

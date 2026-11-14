@@ -8,6 +8,7 @@
 /** @file spritecache.cpp Caching of sprites. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "core/alloc_func.hpp"
 #include "random_access_file_type.h"
 #include "spriteloader/grf.hpp"
@@ -1053,7 +1054,12 @@ uint32_t GetSpriteMainColour(SpriteID sprite_id, PaletteID palette_id)
 	SpriteCache *sc = GetSpriteCache(sprite_id);
 	if (sc->GetType() != SpriteType::Normal) return 0;
 
-	const uint8_t * const remap = (palette_id == PAL_NONE ? nullptr : GetNonSprite(GB(palette_id, 0, PALETTE_WIDTH), SpriteType::Recolour));
+	PaletteID base_palette = GetCompanyRGBBasePalette(palette_id);
+	const uint8_t *remap = (base_palette == PAL_NONE ? nullptr : GetNonSprite(GB(base_palette, 0, PALETTE_WIDTH), SpriteType::Recolour));
+	std::array<uint8_t, 256> fallback;
+	std::array<Colour, 256> rgb;
+	bool custom_rgb = BuildCompanyRGBRemap(palette_id, remap, fallback, rgb);
+	if (custom_rgb) remap = fallback.data();
 
 	SpriteFile &file = *sc->file;
 	size_t file_pos = sc->file_pos;
@@ -1086,7 +1092,7 @@ uint32_t GetSpriteMainColour(SpriteID sprite_id, PaletteID palette_id)
 						if (rgb_max == 0) rgb_max = DEFAULT_BRIGHTNESS;
 
 						/* Convert the mapping channel to a RGB value */
-						const Colour c = AdjustBrightness(_cur_palette.palette[m], rgb_max);
+						const Colour c = AdjustBrightness(custom_rgb && rgb[pixel->m].a != 0 ? rgb[pixel->m] : _cur_palette.palette[m], rgb_max);
 
 						if (c.a != 0) {
 							r += c.r;
@@ -1125,7 +1131,7 @@ uint32_t GetSpriteMainColour(SpriteID sprite_id, PaletteID palette_id)
 			for (uint x = sprite->width * sprite->height; x != 0; x--) {
 				if (pixel->a != 0) {
 					const uint col_index = remap != nullptr ? remap[pixel->m] : pixel->m;
-					const Colour c = _cur_palette.palette[col_index];
+					const Colour c = custom_rgb && rgb[pixel->m].a != 0 ? rgb[pixel->m] : _cur_palette.palette[col_index];
 					r += c.r;
 					g += c.g;
 					b += c.b;
