@@ -2,6 +2,10 @@
 
 * * *
 
+### more-companies 1.0.1
+* Fix a crash when opening the map of the world caused by incorrectly nested legend widgets.
+* Prevent division by zero when calculating legend rows in narrow world-map windows, including the cargo-flow view.
+
 ### v0.73.5 (2026-11-01)
 * Fix certain NewGRF station, road stop, object classes being changed to a different type on savegame load.
 * Fix extra movement step after reversing at an end of line, which could cause train crashes or reservation problems.

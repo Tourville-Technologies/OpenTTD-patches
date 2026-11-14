@@ -1413,7 +1413,7 @@ inline uint SmallMapWindow::GetNumberRowsLegend(uint columns) const
 {
 	/* Reserve one column for link colours */
 	uint num_rows = this->min_number_of_fixed_rows;
-	if (this->map_type == SmallMapType::LinkStats) num_rows = std::max(num_rows, CeilDiv(_smallmap_cargo_count, columns - 1));
+	if (this->map_type == SmallMapType::LinkStats) num_rows = std::max(num_rows, CeilDiv(_smallmap_cargo_count, std::max(2U, columns) - 1));
 	if (this->map_type == SmallMapType::Industries) num_rows = std::max(num_rows, std::min<uint>(12, CeilDiv(_smallmap_industry_count, columns)));
 	if (this->map_type == SmallMapType::Owners) num_rows = std::max(num_rows, std::min<uint>(12, CeilDiv(_smallmap_company_count, columns)));
 	return num_rows;
@@ -2022,6 +2022,7 @@ static constexpr std::initializer_list<NWidgetPart> _nested_smallmap_bar = {
 	NWidget(WWT_PANEL, Colours::Brown),
 		NWidget(NWID_HORIZONTAL),
 			NWidget(WWT_PANEL, Colours::Brown, WID_SM_LEGEND), SetFill(1, 0), SetResize(1, 1), SetScrollbar(WID_SM_LEGEND_SCROLLBAR),
+			EndContainer(),
 			NWidget(NWID_VSCROLLBAR, Colours::Brown, WID_SM_LEGEND_SCROLLBAR),
 		EndContainer(),
 	EndContainer(),

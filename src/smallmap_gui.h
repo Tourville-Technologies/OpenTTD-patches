@@ -141,7 +141,8 @@ protected:
 	 */
 	inline uint GetNumberColumnsLegend(uint width) const
 	{
-		return width / this->column_width;
+		/* Narrow windows must still have a column for row and scrollbar calculations. */
+		return std::max(1U, width / this->column_width);
 	}
 
 	/**
