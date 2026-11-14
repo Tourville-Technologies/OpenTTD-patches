@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai_config.cpp Implementation of AIConfig. */
@@ -21,14 +21,14 @@
 {
 	assert(company < MAX_COMPANIES);
 
-	if (source == SSS_DEFAULT && _game_mode == GM_MENU) source = SSS_FORCE_NEWGAME;
+	if (source == ScriptSettingSource::Default && _game_mode == GameMode::Menu) source = ScriptSettingSource::ForceNewGame;
 
-	if (source == SSS_DEFAULT) {
+	if (source == ScriptSettingSource::Default) {
 		Company *c = Company::GetIfValid(company);
 		if (c != nullptr && c->ai_config != nullptr) return c->ai_config.get();
 	}
 
-	auto &config = (source == SSS_FORCE_NEWGAME) ? _settings_newgame.script_config.ai[company] : _settings_game.script_config.ai[company];
+	auto &config = (source == ScriptSettingSource::ForceNewGame) ? _settings_newgame.script_config.ai[company] : _settings_game.script_config.ai[company];
 	if (config == nullptr) config = std::make_unique<AIConfig>();
 
 	return config.get();

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file thread.h Base of all threads. */
@@ -30,6 +30,11 @@ inline void CSleep(int milliseconds)
  * @param name Name to set for the thread..
  */
 void SetCurrentThreadName(const std::string &name);
+
+/**
+ * Clear any resources associated with a previous call to SetCurrentThreadName, may do nothing.
+ */
+void ClearCurrentThreadName();
 
 /**
  * Get the name of the current thread, if any.
@@ -108,6 +113,8 @@ inline bool StartNewThread(std::thread *thr, std::string_view name, TFn&& _Fx, T
 
 				/* Call user function with the given arguments. */
 				F(A...);
+
+				ClearCurrentThreadName();
 			}, std::string{name}, std::forward<TFn>(_Fx), std::forward<TArgs>(_Ax)...);
 
 		if (thr != nullptr) {

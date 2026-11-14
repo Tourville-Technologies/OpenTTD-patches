@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file engine_base.h Base class for engines. */
@@ -11,6 +11,7 @@
 #define ENGINE_BASE_H
 
 #include "engine_type.h"
+#include "newgrf.h"
 #include "vehicle_type.h"
 #include "core/alloc_type.hpp"
 #include "core/enum_type.hpp"
@@ -35,6 +36,7 @@ enum class EngineDisplayFlag : uint8_t {
 	Shaded, ///< Set if engine should be masked.
 };
 
+/** Bitset of \c EngineDisplayFlag elements. */
 using EngineDisplayFlags = EnumBitSet<EngineDisplayFlag, uint8_t>;
 
 typedef Pool<Engine, EngineID, 64> EnginePool;
@@ -68,7 +70,7 @@ struct Engine : EnginePool::PoolItem<&_engine_pool> {
 	CompanyID preview_company = CompanyID::Invalid();    ///< Company which is currently being offered a preview \c CompanyID::Invalid() means no company.
 	uint8_t preview_wait = 0;                            ///< Daily countdown timer for timeout of offering the engine to the #preview_company company.
 	uint8_t original_image_index = 0;                    ///< Original vehicle image index, thus the image index of the overridden vehicle
-	VehicleType type = VEH_INVALID;                      ///< %Vehicle type, ie #VEH_ROAD, #VEH_TRAIN, etc.
+	VehicleType type = VehicleType::Invalid;             ///< %Vehicle type, ie #VehicleType::Road, #VehicleType::Train, etc.
 
 	EngineDisplayFlags display_flags{};                  ///< NOSAVE client-side-only display flags for build engine list.
 	EngineID display_last_variant = EngineID::Invalid(); ///< NOSAVE client-side-only last variant selected.
@@ -94,12 +96,11 @@ struct Engine : EnginePool::PoolItem<&_engine_pool> {
 	std::unique_ptr<EngineRefitCapacityValue[], FreeDeleter> refit_capacity_values;
 
 private:
-	/* Vehicle-type specific information. */
+	/** Vehicle-type specific information. */
 	std::variant<std::monostate, RailVehicleInfo, RoadVehicleInfo, ShipVehicleInfo, AircraftVehicleInfo> vehicle_info{};
 
 public:
-	Engine() {}
-	Engine(VehicleType type, uint16_t local_id);
+	Engine(EngineID index, VehicleType type, uint16_t local_id);
 	bool IsEnabled() const;
 
 	/**
@@ -179,7 +180,7 @@ public:
 	 */
 	inline bool IsGroundVehicle() const
 	{
-		return this->type == VEH_TRAIN || this->type == VEH_ROAD;
+		return this->type == VehicleType::Train || this->type == VehicleType::Road;
 	}
 
 	/**
@@ -188,7 +189,7 @@ public:
 	 */
 	inline bool IsArticulatedCallbackVehicleType() const
 	{
-		return this->type == VEH_TRAIN || this->type == VEH_ROAD || this->type == VEH_SHIP;
+		return this->type == VehicleType::Train || this->type == VehicleType::Road || this->type == VehicleType::Ship;
 	}
 
 	/**
@@ -201,7 +202,7 @@ public:
 		return this->grf_prop.grffile;
 	}
 
-	uint32_t GetGRFID() const;
+	GrfID GetGRFID() const;
 
 	struct EngineTypeFilter {
 		VehicleType vt;

@@ -2,19 +2,22 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file 32bpp_sse_func.hpp Functions related to SSE 32 bpp blitter. */
+/**
+ * @file 32bpp_sse_func.hpp Functions related to SSE 32 bpp blitter.
+ *
+ * @attention
+ * This file is compiled multiple times with different defines for SSE_VERSION and MARGIN_NORMAL_THRESHOLD.
+ * Be careful when declaring things with external linkage.
+ * Use INTERNAL_LINKAGE instead, i.e. "static".
+ */
 
 #ifndef BLITTER_32BPP_SSE_FUNC_HPP
 #define BLITTER_32BPP_SSE_FUNC_HPP
 
-/* ATTENTION
- * This file is compiled multiple times with different defines for SSE_VERSION and MARGIN_NORMAL_THRESHOLD.
- * Be careful when declaring things with external linkage.
- * Use internal linkage instead, i.e. "static".
- */
+/** Prefix all things in this file with this specifier to make them linked internally only. */
 #define INTERNAL_LINKAGE static
 
 #ifdef WITH_SSE
@@ -116,7 +119,6 @@ INTERNAL_LINKAGE inline __m128i DarkenTwoPixels(__m128i src, __m128i dst, const 
 	return _mm_packus_epi16(dstAB, dstAB);
 }
 
-IGNORE_UNINITIALIZED_WARNING_START
 GNU_TARGET(SSE_TARGET)
 INTERNAL_LINKAGE Colour ReallyAdjustBrightness(Colour colour, uint8_t brightness)
 {
@@ -147,7 +149,6 @@ INTERNAL_LINKAGE Colour ReallyAdjustBrightness(Colour colour, uint8_t brightness
 	ret = _mm_packus_epi16(ret, ret);      // PACKUSWB, saturate and pack.
 	return alpha32 | _mm_cvtsi128_si32(ret);
 }
-IGNORE_UNINITIALIZED_WARNING_STOP
 
 /** ReallyAdjustBrightness() is not called that often.
  * Inlining this function implies a far jump, which has a huge latency.
@@ -210,7 +211,6 @@ INTERNAL_LINKAGE inline __m128i AdjustBrightnessOfTwoPixels([[maybe_unused]] __m
  * @param bp further blitting parameters
  * @param zoom zoom level at which we are drawing
  */
-IGNORE_UNINITIALIZED_WARNING_START
 template <BlitterMode mode, Blitter_32bppSSE2::ReadMode read_mode, Blitter_32bppSSE2::BlockType bt_last, bool translucent>
 GNU_TARGET(SSE_TARGET)
 #if (SSE_VERSION == 2)
@@ -237,7 +237,7 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 		bm_normal_brightness |= bm_normal_brightness << 16;
 	}
 
-	if (read_mode != RM_WITH_MARGIN) {
+	if (read_mode != ReadMode::WithMargin) {
 		src_rgba_line += bp->skip_left;
 		src_mv_line += bp->skip_left;
 	}
@@ -267,8 +267,8 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 		const Colour *src = src_rgba_line + META_LENGTH;
 		if (mode == BlitterMode::ColourRemap || mode == BlitterMode::CrashRemap || mode == BlitterMode::ColourRemapWithBrightness) src_mv = src_mv_line;
 
-		if (read_mode == RM_WITH_MARGIN) {
-			assert(bt_last == BT_NONE); // or you must ensure block type is preserved
+		if (read_mode == ReadMode::WithMargin) {
+			assert(bt_last == BlockType::None); // or you must ensure block type is preserved
 			src += src_rgba_line[0].data;
 			dst += src_rgba_line[0].data;
 			if (mode == BlitterMode::ColourRemap || mode == BlitterMode::CrashRemap || mode == BlitterMode::ColourRemapWithBrightness) src_mv += src_rgba_line[0].data;
@@ -299,7 +299,7 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 					dst += 2;
 				}
 
-				if ((bt_last == BT_NONE && effective_width & 1) || bt_last == BT_ODD) {
+				if ((bt_last == BlockType::None && effective_width & 1) || bt_last == BlockType::Odd) {
 					__m128i srcABCD = _mm_cvtsi32_si128(src->data);
 					__m128i dstABCD = _mm_cvtsi32_si128(dst->data);
 					dst->data = _mm_cvtsi128_si32(AlphaBlendTwoPixels(srcABCD, dstABCD, ALPHA_BLEND_PARAM_1, ALPHA_BLEND_PARAM_2, ALPHA_BLEND_PARAM_3));
@@ -322,7 +322,7 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 							const Colour srcm = (Colour) (m_src); \
 							const uint m = (uint8_t) (m_m); \
 							const uint r = remap[m]; \
-							const Colour cmap = (this->LookupColourInPalette(r).data & 0x00FFFFFF) | (srcm.data & 0xFF000000); \
+							const Colour cmap = (ResolveRGBRemap(bp, m, this->LookupColourInPalette(r)).data & 0x00FFFFFF) | (srcm.data & 0xFF000000); \
 							m_colour = r == 0 ? m_colour : cmap; \
 							m_colour = m != 0 ? m_colour : srcm; \
 							}
@@ -353,7 +353,7 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 					src_mv += 2;
 				}
 
-				if ((bt_last == BT_NONE && effective_width & 1) || bt_last == BT_ODD) {
+				if ((bt_last == BlockType::None && effective_width & 1) || bt_last == BlockType::Odd) {
 #else
 				for (uint x = (uint) effective_width; x > 0; x--) {
 #endif
@@ -362,7 +362,7 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 					if (src_mv->m) {
 						const uint r = remap[src_mv->m];
 						if (r != 0) {
-							Colour remapped_colour = AdjustBrightneSSE(this->LookupColourInPalette(r), src_mv->v);
+							Colour remapped_colour = AdjustBrightneSSE(ResolveRGBRemap(bp, src_mv->m, this->LookupColourInPalette(r)), src_mv->v);
 							if (src->a == 255) {
 								*dst = remapped_colour;
 							} else {
@@ -398,7 +398,7 @@ bmcr_alpha_blend_single:
 					dst += 2;
 				}
 
-				if ((bt_last == BT_NONE && bp->width & 1) || bt_last == BT_ODD) {
+				if ((bt_last == BlockType::None && bp->width & 1) || bt_last == BlockType::Odd) {
 					__m128i srcABCD = _mm_cvtsi32_si128(src->data);
 					__m128i dstABCD = _mm_cvtsi32_si128(dst->data);
 					dst->data = _mm_cvtsi128_si32(DarkenTwoPixels(srcABCD, dstABCD, DARKEN_PARAM_1, DARKEN_PARAM_2));
@@ -426,7 +426,7 @@ bmcr_alpha_blend_single:
 						}
 					} else {
 						uint r = remap[src_mv->m];
-						if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), src_mv->v), src->a, *dst);
+						if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, src_mv->m, this->LookupColourInPalette(r)), src_mv->v), src->a, *dst);
 					}
 					src_mv++;
 					dst++;
@@ -459,7 +459,7 @@ bmcr_alpha_blend_single:
 					dst += 2;
 				}
 
-				if ((bt_last == BT_NONE && effective_width & 1) || bt_last == BT_ODD) {
+				if ((bt_last == BlockType::None && effective_width & 1) || bt_last == BlockType::Odd) {
 					__m128i srcABCD = _mm_cvtsi32_si128(AdjustBrightneSSE(src->data, DEFAULT_BRIGHTNESS + bp->brightness_adjust).data);
 					__m128i dstABCD = _mm_cvtsi32_si128(dst->data);
 					dst->data = _mm_cvtsi128_si32(AlphaBlendTwoPixels(srcABCD, dstABCD, ALPHA_BLEND_PARAM_1, ALPHA_BLEND_PARAM_2, ALPHA_BLEND_PARAM_3));
@@ -473,7 +473,7 @@ bmcr_alpha_blend_single:
 					if (src_mv->m) {
 						const uint r = remap[src_mv->m];
 						if (r != 0) {
-							Colour remapped_colour = AdjustBrightneSSE(this->LookupColourInPalette(r), Clamp(src_mv->v + bp->brightness_adjust, 0, 255));
+							Colour remapped_colour = AdjustBrightneSSE(ResolveRGBRemap(bp, src_mv->m, this->LookupColourInPalette(r)), Clamp(src_mv->v + bp->brightness_adjust, 0, 255));
 							if (src->a == 255) {
 								*dst = remapped_colour;
 							} else {
@@ -507,7 +507,6 @@ next_line:
 		dst_line += bp->pitch;
 	}
 }
-IGNORE_UNINITIALIZED_WARNING_STOP
 
 /**
  * Draws a sprite to a (screen) buffer. Calls adequate templated function.
@@ -531,19 +530,19 @@ bm_normal:
 				const BlockType bt_last = (BlockType) (bp->width & 1);
 				switch (bt_last) {
 					default:
-						Draw<BlitterMode::Normal, RM_WITH_SKIP, BT_EVEN, true>(bp, zoom);
+						Draw<BlitterMode::Normal, ReadMode::WithSkip, BlockType::Even, true>(bp, zoom);
 						break;
 
-					case BT_ODD:
-						Draw<BlitterMode::Normal, RM_WITH_SKIP, BT_ODD, true>(bp, zoom);
+					case BlockType::Odd:
+						Draw<BlitterMode::Normal, ReadMode::WithSkip, BlockType::Odd, true>(bp, zoom);
 						break;
 				}
 				return;
 			} else {
 				if (((const Blitter_32bppSSE_Base::SpriteData *) bp->sprite)->flags & BSF_TRANSLUCENT) {
-					Draw<BlitterMode::Normal, RM_WITH_MARGIN, BT_NONE, true>(bp, zoom);
+					Draw<BlitterMode::Normal, ReadMode::WithMargin, BlockType::None, true>(bp, zoom);
 				} else {
-					Draw<BlitterMode::Normal, RM_WITH_MARGIN, BT_NONE, false>(bp, zoom);
+					Draw<BlitterMode::Normal, ReadMode::WithMargin, BlockType::None, false>(bp, zoom);
 				}
 				return;
 			}
@@ -552,26 +551,26 @@ bm_normal:
 		case BlitterMode::ColourRemap:
 			if (((const Blitter_32bppSSE_Base::SpriteData *) bp->sprite)->flags & BSF_NO_REMAP) goto bm_normal;
 			if (bp->skip_left != 0 || bp->width <= MARGIN_REMAP_THRESHOLD) {
-				Draw<BlitterMode::ColourRemap, RM_WITH_SKIP, BT_NONE, true>(bp, zoom);
+				Draw<BlitterMode::ColourRemap, ReadMode::WithSkip, BlockType::None, true>(bp, zoom);
 			} else {
-				Draw<BlitterMode::ColourRemap, RM_WITH_MARGIN, BT_NONE, true>(bp, zoom);
+				Draw<BlitterMode::ColourRemap, ReadMode::WithMargin, BlockType::None, true>(bp, zoom);
 			}
 			return;
 
-		case BlitterMode::Transparent: Draw<BlitterMode::Transparent, RM_NONE, BT_NONE, true>(bp, zoom); return;
-		case BlitterMode::TransparentRemap: Draw<BlitterMode::TransparentRemap, RM_NONE, BT_NONE, true>(bp, zoom); return;
-		case BlitterMode::CrashRemap: Draw<BlitterMode::CrashRemap, RM_NONE, BT_NONE, true>(bp, zoom); return;
-		case BlitterMode::BlackRemap: Draw<BlitterMode::BlackRemap, RM_NONE, BT_NONE, true>(bp, zoom); return;
+		case BlitterMode::Transparent: Draw<BlitterMode::Transparent, ReadMode::None, BlockType::None, true>(bp, zoom); return;
+		case BlitterMode::TransparentRemap: Draw<BlitterMode::TransparentRemap, ReadMode::None, BlockType::None, true>(bp, zoom); return;
+		case BlitterMode::CrashRemap: Draw<BlitterMode::CrashRemap, ReadMode::None, BlockType::None, true>(bp, zoom); return;
+		case BlitterMode::BlackRemap: Draw<BlitterMode::BlackRemap, ReadMode::None, BlockType::None, true>(bp, zoom); return;
 
 		case BlitterMode::ColourRemapWithBrightness:
 			if (!(((const Blitter_32bppSSE_Base::SpriteData *) bp->sprite)->flags & BSF_NO_REMAP)) {
-				Draw<BlitterMode::ColourRemapWithBrightness, RM_NONE, BT_NONE, true>(bp, zoom);
+				Draw<BlitterMode::ColourRemapWithBrightness, ReadMode::None, BlockType::None, true>(bp, zoom);
 				return;
 			}
 			[[fallthrough]];
 
 		case BlitterMode::NormalWithBrightness:
-			Draw<BlitterMode::NormalWithBrightness, RM_NONE, BT_NONE, true>(bp, zoom);
+			Draw<BlitterMode::NormalWithBrightness, ReadMode::None, BlockType::None, true>(bp, zoom);
 			return;
 	}
 }

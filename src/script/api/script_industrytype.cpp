@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_industrytype.cpp Implementation of ScriptIndustryType. */
@@ -16,6 +16,7 @@
 #include "../../industry.h"
 #include "../../industry_cmd.h"
 #include "../../newgrf_industries.h"
+#include "../../settings_type.h"
 #include "../../core/random_func.hpp"
 
 #include "../../safeguards.h"
@@ -97,7 +98,7 @@
 	if (!IsValidIndustryType(industry_type)) return false;
 
 	const bool deity = ScriptCompanyMode::IsDeity();
-	if (::GetIndustryProbabilityCallback(industry_type, deity ? IACT_RANDOMCREATION : IACT_USERCREATION, 1) == 0) return false;
+	if (::GetIndustryProbabilityCallback(industry_type, deity ? IndustryAvailabilityCallType::RandomCreation : IndustryAvailabilityCallType::UserCreation, 1) == 0) return false;
 	if (deity) return true;
 	if (!::GetIndustrySpec(industry_type)->IsRawIndustry()) return true;
 
@@ -111,7 +112,7 @@
 
 	const bool deity = ScriptCompanyMode::IsDeity();
 	if (!deity && !::GetIndustrySpec(industry_type)->IsRawIndustry()) return false;
-	if (::GetIndustryProbabilityCallback(industry_type, deity ? IACT_RANDOMCREATION : IACT_USERCREATION, 1) == 0) return false;
+	if (::GetIndustryProbabilityCallback(industry_type, deity ? IndustryAvailabilityCallType::RandomCreation : IndustryAvailabilityCallType::UserCreation, 1) == 0) return false;
 
 	/* raw_industry_construction == 2 means "prospect" */
 	return deity || _settings_game.construction.raw_industry_construction == 2;
@@ -125,7 +126,7 @@
 
 	uint32_t seed = ScriptBase::Rand();
 	uint32_t layout_index = ScriptBase::RandRange((uint32_t)::GetIndustrySpec(industry_type)->layouts.size());
-	return ScriptObject::Command<CMD_BUILD_INDUSTRY>::Do(tile, industry_type, layout_index, true, seed);
+	return ScriptObject::Command<Commands::BuildIndustry>::Do(tile, industry_type, layout_index, true, seed);
 }
 
 /* static */ bool ScriptIndustryType::ProspectIndustry(IndustryType industry_type)
@@ -134,7 +135,7 @@
 	EnforcePrecondition(false, CanProspectIndustry(industry_type));
 
 	uint32_t seed = ScriptBase::Rand();
-	return ScriptObject::Command<CMD_BUILD_INDUSTRY>::Do(TileIndex{}, industry_type, 0, false, seed);
+	return ScriptObject::Command<Commands::BuildIndustry>::Do(TileIndex{}, industry_type, 0, false, seed);
 }
 
 /* static */ bool ScriptIndustryType::IsBuiltOnWater(IndustryType industry_type)
@@ -162,6 +163,5 @@
 {
 	EnforcePrecondition(IT_INVALID, IsInsideBS(grf_local_id, 0x00, NUM_INDUSTRYTYPES_PER_GRF));
 
-	grfid = std::byteswap(GB(grfid, 0, 32)); // Match people's expectations.
-	return _industry_mngr.GetID(grf_local_id, grfid);
+	return _industry_mngr.GetID(grf_local_id, UnflattenNewGRFLabel<GrfID>(std::byteswap(static_cast<uint32_t>(grfid))));
 }

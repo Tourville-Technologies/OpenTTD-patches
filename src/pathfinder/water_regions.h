@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
- /** @file water_regions.h Handles dividing the water in the map into regions to assist pathfinding. */
+/** @file water_regions.h Handles dividing the water in the map into regions to assist pathfinding. */
 
 #ifndef WATER_REGIONS_H
 #define WATER_REGIONS_H
@@ -35,8 +35,7 @@ constexpr WaterRegionPatchLabel INVALID_WATER_REGION_PATCH = 0;
 /**
  * Describes a single interconnected patch of water within a particular water region.
  */
-struct WaterRegionPatchDesc
-{
+struct WaterRegionPatchDesc {
 	uint32_t x; ///< The X coordinate of the water region, i.e. X=2 is the 3rd water region along the X-axis
 	uint32_t y; ///< The Y coordinate of the water region, i.e. Y=2 is the 3rd water region along the Y-axis
 	WaterRegionPatchLabel label; ///< Unique label identifying the patch within the region
@@ -48,8 +47,7 @@ struct WaterRegionPatchDesc
 /**
  * Describes a single square water region.
  */
-struct WaterRegionDesc
-{
+struct WaterRegionDesc {
 	uint32_t x; ///< The X coordinate of the water region, i.e. X=2 is the 3rd water region along the X-axis
 	uint32_t y; ///< The Y coordinate of the water region, i.e. Y=2 is the 3rd water region along the Y-axis
 

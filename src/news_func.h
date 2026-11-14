@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file news_func.h Functions related to news. */
@@ -24,8 +24,10 @@ inline void AddCompanyNewsItem(EncodedString &&headline, std::unique_ptr<Company
 
 /**
  * Adds a newsitem referencing a vehicle.
- *
- * @warning The DParams may not reference the vehicle due to autoreplace stuff. See AddVehicleAdviceNewsItem for how that can be done.
+ * @param headline The actual news message.
+ * @param type The news type.
+ * @param vehicle The vehicle the advice is on.
+ * @param station The optional station associated with the news item.
  */
 inline void AddVehicleNewsItem(EncodedString &&headline, NewsType type, VehicleID vehicle, StationID station = StationID::Invalid())
 {
@@ -34,8 +36,9 @@ inline void AddVehicleNewsItem(EncodedString &&headline, NewsType type, VehicleI
 
 /**
  * Adds a vehicle-advice news item.
- *
- * @warning DParam 0 must reference the vehicle!
+ * @param advice_type The advice given.
+ * @param headline The actual news message.
+ * @param vehicle The vehicle the advice is on.
  */
 inline void AddVehicleAdviceNewsItem(AdviceType advice_type, EncodedString &&headline, VehicleID vehicle)
 {

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_widget.h Types related to the script widgets. */
@@ -28,7 +28,7 @@ enum ScriptSettingsWidgets : WidgetID {
 	WID_SCRS_SCROLLBAR,  ///< Scrollbar to scroll through all settings.
 	WID_SCRS_RESET,      ///< Reset button.
 
-	WID_SCRS_SETTING_DROPDOWN = -1, ///< Dynamically created dropdown for changing setting value.
+	WID_SCRS_SETTING_DROPDOWN = INVALID_WIDGET, ///< Dynamically created dropdown for changing setting value.
 };
 
 /** Widgets of the #ScriptDebugWindow class. */
@@ -40,6 +40,7 @@ enum ScriptDebugWidgets : WidgetID {
 	WID_SCRD_RELOAD_TOGGLE,        ///< Reload button.
 	WID_SCRD_LOG_PANEL,            ///< Panel where the log is in.
 	WID_SCRD_VSCROLLBAR,           ///< Vertical scrollbar of the log panel.
+	WID_SCRD_COMPANY_SCROLLBAR,    ///< Company selector scrollbar.
 	WID_SCRD_COMPANY_BUTTON_START, ///< Buttons in the VIEW.
 	WID_SCRD_COMPANY_BUTTON_END = WID_SCRD_COMPANY_BUTTON_START + MAX_COMPANIES - 1, ///< Last possible button in the VIEW.
 	WID_SCRD_BREAK_STRING_WIDGETS, ///< The panel to handle the breaking on string.

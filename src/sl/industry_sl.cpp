@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industry_sl.cpp Code handling saving and loading of industries */
@@ -364,14 +364,14 @@ static void Load_INDY()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Industry *i = new (IndustryID(index)) Industry();
+		Industry *i = Industry::CreateAtIndex(IndustryID(index));
 		SlObjectLoadFiltered(i, slt);
 
 		/* Before savegame version 161, persistent storages were not stored in a pool. */
 		if (IsSavegameVersionBefore(SLV_161) && !IsSavegameVersionBefore(SLV_76)) {
 			/* Store the old persistent storage. The GRFID will be added later. */
 			assert(PersistentStorage::CanAllocateItem());
-			i->psa = new PersistentStorage(0, GSF_INVALID, TileIndex{});
+			i->psa = PersistentStorage::Create(GrfID{}, GrfSpecFeature::Invalid, TileIndex{});
 			std::copy(std::begin(_old_ind_persistent_storage.storage), std::end(_old_ind_persistent_storage.storage), std::begin(i->psa->storage));
 		}
 		if (SlXvIsFeatureMissing(XSLFI_INDUSTRY_CARGO_REORGANISE)) {
@@ -456,11 +456,11 @@ static void Load_ITBL()
 }
 
 static const ChunkHandler industry_chunk_handlers[] = {
-	{ 'INDY', Save_INDY,     Load_INDY,     Ptrs_INDY, nullptr, CH_TABLE },
-	{ 'IIDS', Save_IIDS,     Load_IIDS,     nullptr,   nullptr, CH_TABLE },
-	{ 'TIDS', Save_TIDS,     Load_TIDS,     nullptr,   nullptr, CH_TABLE },
-	{ 'IBLD', Save_IBLD,     Load_IBLD,     nullptr,   nullptr, CH_TABLE  },
-	{ 'ITBL', Save_ITBL,     Load_ITBL,     nullptr,   nullptr, CH_TABLE },
+	{ 'INDY', Save_INDY,     Load_INDY,     Ptrs_INDY, nullptr, ChunkType::Table },
+	{ 'IIDS', Save_IIDS,     Load_IIDS,     nullptr,   nullptr, ChunkType::Table },
+	{ 'TIDS', Save_TIDS,     Load_TIDS,     nullptr,   nullptr, ChunkType::Table },
+	{ 'IBLD', Save_IBLD,     Load_IBLD,     nullptr,   nullptr, ChunkType::Table  },
+	{ 'ITBL', Save_ITBL,     Load_ITBL,     nullptr,   nullptr, ChunkType::Table },
 };
 
 extern const ChunkHandlerTable _industry_chunk_handlers(industry_chunk_handlers);

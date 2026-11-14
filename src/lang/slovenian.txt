@@ -14,7 +14,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -1161,9 +1161,9 @@ STR_RIVERS_MODERATE                                             :Srednje
 STR_RIVERS_LOT                                                  :Mnogo
 
 ###length 3
-STR_DISASTER_NONE                                               :Brez
-STR_DISASTER_REDUCED                                            :Zmanjšano
-STR_DISASTER_NORMAL                                             :Normalno
+STR_BREAKDOWNS_NONE                                             :Brez
+STR_BREAKDOWNS_REDUCED                                          :Zmanjšano
+STR_BREAKDOWNS_NORMAL                                           :Normalno
 
 ###length 4
 STR_SUBSIDY_X1_5                                                :x1,5
@@ -1280,8 +1280,8 @@ STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Nastavitev cene
 STR_CONFIG_SETTING_RECESSIONS                                   :Recesije: {STRING}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :Če je omogočeno, se recesije lahko pojavijo vsakih nekaj let. Med recesijo je proizvodnja znatno nižja, povrne se v tek po recesiji.
 
-STR_CONFIG_SETTING_TRAIN_REVERSING                              :Prepovej obračanje vlakov na postajah: {STRING}
-STR_CONFIG_SETTING_TRAIN_REVERSING_HELPTEXT                     :Če je omogočeno, se vlaki ne obračajo na vmesnih postajah
+
+###length 3
 
 STR_CONFIG_SETTING_DISASTERS                                    :Nesreče: {STRING}
 STR_CONFIG_SETTING_DISASTERS_HELPTEXT                           :Preklop med pojavljanjem nesreč
@@ -1297,7 +1297,6 @@ STR_CONFIG_SETTING_AUTOSLOPE_HELPTEXT                           :Dovoli sprememb
 
 STR_CONFIG_SETTING_CATCHMENT                                    :Dovoli bolj resnični območni zajem postaj: {STRING}
 STR_CONFIG_SETTING_CATCHMENT_HELPTEXT                           :Postaje in letališča različnih tipov imajo različna področja zajema
-
 
 
 STR_CONFIG_SETTING_EXTRADYNAMITE                                :Dovoli odstanitev mestnih cest in mostov: {STRING}
@@ -1455,6 +1454,8 @@ STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES_HELPTEXT               :Če je omogoče
 ###setting-zero-is-special
 
 
+###setting-zero-is-special
+
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :Samoobnovi vozila, ko se postarajo: {STRING}
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE_HELPTEXT                   :Če je omogočeno, se vozila ob koncu življenjske dobe avtomatsko zamenjajo pod pogoji samoobnove.
 
@@ -1513,6 +1514,8 @@ STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_SMOOTH             :Zelo zglajen
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_SMOOTH                  :Zglajen
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_ROUGH                   :Valovit
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_ROUGH              :Zelo valovit
+
+###length 4
 
 STR_CONFIG_SETTING_VARIETY                                      :Raznolika distribucija: {STRING}
 STR_CONFIG_SETTING_VARIETY_HELPTEXT                             :(TerraGenesis only) Nadzor nad ravninskimi in goratimi predeli ozemlja. Ker to izravna ozemlje, nastavi drugo nastavitev na gorato.
@@ -1644,12 +1647,7 @@ STR_CONFIG_SETTING_TIMETABLE_SHOW_ARRIVAL_DEPARTURE_HELPTEXT    :Prikaži priča
 STR_CONFIG_SETTING_QUICKGOTO                                    :Hitro ustvarjanje ukazov vozila: {STRING}
 STR_CONFIG_SETTING_QUICKGOTO_HELPTEXT                           :Predizbor operacije "pojdi do", ko se odpre okno ukazov.
 
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE                            :Privzeta vrsta železnice (ob zagonu nove igre): {STRING}
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_HELPTEXT                   :Tip tirov za izbor pri novi igri ali nalaganju igre. "Prvi na razpolago" je najstarejši tip, "zadnji na razpolago" je najnovejši, "najbolj uporabljen" je, kar je večina uporabe na ozemlju.
 ###length 3
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_FIRST                      :Prvi/a/o/ na izbiro
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_LAST                       :Zadnji/a/o/ na izbiro
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_MOST_USED                  :Najbolj uporabljan/a/o
 
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION                       :Prikaz posebnih tirov: {STRING}
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION_HELPTEXT              :Rezervirani tiri naj bod odruge barve, za pomoč v težavah, ko vlak noče v polje, čez katerega vodi pot.
@@ -1740,6 +1738,7 @@ STR_CONFIG_SETTING_NOSERVICE_HELPTEXT                           :Če je omogoče
 
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS                             :Omogoči omejitve hitrosti vagonov: {STRING}
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS_HELPTEXT                    :Če je omogočeno, se upošteva tudi omejitve hitrosti posameznih vagonov pri najvišji hitrosti vlaka.
+
 
 STR_CONFIG_SETTING_DISABLE_ELRAILS                              :Onemogoči električne tire: {STRING}
 STR_CONFIG_SETTING_DISABLE_ELRAILS_HELPTEXT                     :Če je omogočeno, ni potrebna elektrifikacija železnice za električni pogon.
@@ -1963,7 +1962,7 @@ STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE_SI                  :SI (kN)
 
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT                    :Višinske enote: {STRING}
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_HELPTEXT           :Ko je omogočen prikaz višin na vmesniku, bodo prikazane v izbranih enotah.
-###length 3
+###length 4
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_IMPERIAL           :Imperične (ft)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_METRIC             :Metrične (m)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_SI                 :SI (m)
@@ -2015,7 +2014,7 @@ STR_CONFIG_ERROR_INVALID_BASE_GRAPHICS_NOT_FOUND                :{WHITE}... igno
 STR_CONFIG_ERROR_INVALID_BASE_SOUNDS_NOT_FOUND                  :{WHITE}... ignoriran osnovni zvočni set '{STRING}': ni najden
 STR_CONFIG_ERROR_INVALID_BASE_MUSIC_NOT_FOUND                   :{WHITE}... ignoriran osnovni glasbeni set '{STRING}': ni najden
 
-# Video initalization errors
+# Video initialization errors
 
 # Intro window
 STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
@@ -2224,15 +2223,13 @@ STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}{NUM} go
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES} prenešenih
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} / {BYTES} prenešenih
 
-###length 8
+###length 6
 STR_NETWORK_CONNECTING_1                                        :{BLACK}(1/6) Povezujem...
 STR_NETWORK_CONNECTING_2                                        :{BLACK}(2/6) Pooblaščam...
 STR_NETWORK_CONNECTING_3                                        :{BLACK}(3/6) Čakam...
 STR_NETWORK_CONNECTING_4                                        :{BLACK}(4/6) Prenašam zemljevid...
 STR_NETWORK_CONNECTING_5                                        :{BLACK}(5/6) Obdelujem podatke...
 STR_NETWORK_CONNECTING_6                                        :{BLACK}(6/6) Registriram...
-STR_NETWORK_CONNECTING_SPECIAL_1                                :{BLACK}Iščem informacije o igri...
-STR_NETWORK_CONNECTING_SPECIAL_2                                :{BLACK}Iščem informacije o podjetju...
 
 STR_NETWORK_CONNECTION_DISCONNECT                               :{BLACK}Odklopi
 
@@ -2458,10 +2455,10 @@ STR_STATION_BUILD_SUPPLIES_CARGO                                :{BLACK}Dobavlja
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}Združi postaje
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW}Izgradnja ločene postaje
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW}Izgradnja ločene postaje
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}Združi točke poti
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW}Zgradi ločeno točko poti
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW}Zgradi ločeno točko poti
 
 # Generic toolbar
 
@@ -2504,6 +2501,8 @@ STR_STATION_BUILD_PLATFORM_LENGTH                               :{BLACK}Dolžina
 STR_STATION_BUILD_PLATFORM_LENGTH_TOOLTIP                       :{BLACK}Izberi dolžino železniške postaje
 STR_STATION_BUILD_DRAG_DROP                                     :{BLACK}Vleci in spusti
 STR_STATION_BUILD_DRAG_DROP_TOOLTIP                             :{BLACK}Zgradi postajo s povleci in spusti
+
+
 
 
 
@@ -2749,7 +2748,7 @@ STR_LAND_AREA_INFORMATION_AIRPORT_CLASS                         :{BLACK}Vrsta le
 STR_LAND_AREA_INFORMATION_AIRPORT_NAME                          :{BLACK}Ime letališča: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME                      :{BLACK}Ime področja letališča: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_NEWGRF_NAME                           :{BLACK}NewGRF: {LTBLUE}{STRING}
-STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Sprejet tovor: {LTBLUE}
+STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Sprejet tovor: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_CARGO_EIGHTS                          :({COMMA}/8 {STRING})
 STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT                      :{BLACK}Omejitev hitrosti vlakov: {LTBLUE}{VELOCITY}
 STR_LANG_AREA_INFORMATION_ROAD_SPEED_LIMIT                      :{BLACK}Omejitev hitrosti na cestah: {LTBLUE}{VELOCITY}
@@ -2933,6 +2932,8 @@ STR_MAPGEN_SOUTHWEST                                            :{BLACK}Jugozaho
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK}Poljubno
 STR_MAPGEN_BORDER_WATER                                         :{BLACK}Voda
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK}Naključno
+
+###length 3
 STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK}Naključno
 STR_MAPGEN_BORDER_MANUAL                                        :{BLACK}Ročno
 
@@ -3223,6 +3224,7 @@ STR_GOALS_PROGRESS_COMPLETE                                     :{GREEN}{STRING}
 STR_GOALS_TOOLTIP_CLICK_ON_SERVICE_TO_CENTER                    :{BLACK}Klikni na cilj za pogled na industrijo/mesto/polje. Ctrl+Klik odpre novo okno na industrijo/mesto/polje
 
 # Goal question window
+###length 4
 STR_GOAL_QUESTION_CAPTION_QUESTION                              :Vprašanje
 STR_GOAL_QUESTION_CAPTION_INFORMATION                           :Informacije
 STR_GOAL_QUESTION_CAPTION_WARNING                               :Opozorilo
@@ -3327,14 +3329,12 @@ STR_CARGO_RATING_EXCELLENT                                      :Izvrstno
 STR_CARGO_RATING_OUTSTANDING                                    :Sijajno
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}Osredotoči pogled na lokacijo postaje. Ctrl+Klik odpre nov pogled na lokaciji postaje
-STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}Spremeni ime postaje
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK}Prikaz vsah vlakov, ki imajo to postajo na urniku
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK}Prikaz vseh cestnih vozil, ki imajo to postajo na urniku
 STR_STATION_VIEW_SCHEDULED_AIRCRAFT_TOOLTIP                     :{BLACK}Prikaz vseh letal, ki imajo to postajo na urniku
 STR_STATION_VIEW_SCHEDULED_SHIPS_TOOLTIP                        :{BLACK}Prikaz vseh ladij, ki imajo to postajo na urniku
 
-STR_STATION_VIEW_RENAME_STATION_CAPTION                         :Preimenuj postajo
 
 STR_STATION_VIEW_CLOSE_AIRPORT                                  :{BLACK}Zapri letališče
 STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Prepreči letalom pristajanje na tem letališču
@@ -3342,11 +3342,9 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Prepreč
 # Waypoint/buoy view window
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK}Osredotoči pogled na lokacijo točke poti. Ctrl+Klik odpre nov pogled na lokaciji točke poti
-STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}Spremeni ime točke poti
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK}Osredotoči pogled na lokacijo boje. Ctrl+Klik odpre nov pogled na lokaciji boje
 STR_BUOY_VIEW_RENAME_TOOLTIP                                    :{BLACK}Spremeni ime boje
 
-STR_EDIT_WAYPOINT_NAME                                          :{WHITE}Uredi ime točke poti
 
 # Finances window
 STR_FINANCES_CAPTION                                            :{WHITE}{COMPANY} Finance {BLACK}{COMPANY_NUM}
@@ -3435,7 +3433,7 @@ STR_COMPANY_INFRASTRUCTURE_VIEW_AIRPORTS                        :{WHITE}Letališ
 # Industry directory
 STR_INDUSTRY_DIRECTORY_NONE                                     :{ORANGE}- Brez -
 STR_INDUSTRY_DIRECTORY_ITEM_NOPROD                              :{ORANGE}{INDUSTRY}
-STR_INDUSTRY_DIRECTORY_ITEM_PROD3                               :{ORANGE}{INDUSTRY} {STRING}, {STRING}, {STRING}
+STR_INDUSTRY_DIRECTORY_ITEM_PROD3                               :{ORANGE}{INDUSTRY} {BLACK}{STRING}, {STRING}, {STRING}
 STR_INDUSTRY_DIRECTORY_LIST_TOOLTIP                             :{BLACK}Imena industrij - klikni na ime za pogled na industrijo. Ctrl+Klik odpre nov pogled na lokaciji industrije
 
 # Industry view
@@ -3550,6 +3548,8 @@ STR_PURCHASE_INFO_ALL_TYPES                                     :Vse vrste tovor
 STR_PURCHASE_INFO_ALL_BUT                                       :Vse, razen {CARGO_LIST}
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}Največja vlečna moč: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}Domet: {GOLD}{COMMA} polj
+
+# Vehicle sort details
 
 ###length 3
 
@@ -3701,6 +3701,7 @@ STR_DEPOT_SELL_CONFIRMATION_TEXT                                :{YELLOW}Priprav
 STR_ENGINE_PREVIEW_CAPTION                                      :{WHITE}Sporočilo od proizvajalca vozila
 STR_ENGINE_PREVIEW_MESSAGE                                      :{GOLD}Na novo smo izdelali {STRING} - ali te zanima enoletna izključna pravica do{}uporabe tega vozila, preden ga ponudimo{}na trgu?
 
+
 STR_ENGINE_PREVIEW_RAILROAD_LOCOMOTIVE                          :železniška lokomotiva
 STR_ENGINE_PREVIEW_MONORAIL_LOCOMOTIVE                          :enotirna lokomotiva
 STR_ENGINE_PREVIEW_MAGLEV_LOCOMOTIVE                            :magnetna lokomotiva
@@ -3836,7 +3837,6 @@ STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED                         :{BLACK}Teža: {
 STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED_MAX_TE                  :{BLACK}Teža: {LTBLUE}{WEIGHT_SHORT} {BLACK}Moč: {LTBLUE}{POWER}{BLACK} Max. hitrost: {LTBLUE}{VELOCITY} {BLACK}Max. T.E.: {LTBLUE}{FORCE}
 
 STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR                     :{BLACK}Letošnji dobiček: {LTBLUE}{CURRENCY_LONG} (lani: {CURRENCY_LONG})
-STR_VEHICLE_INFO_RELIABILITY_BREAKDOWNS                         :{BLACK}Zanesljivost: {LTBLUE}{COMMA}%  {BLACK}Okvare po zadnjem servisu: {LTBLUE}{COMMA}
 
 STR_VEHICLE_INFO_BUILT_VALUE                                    :{LTBLUE}{ENGINE} {BLACK}Zgrajeno: {LTBLUE}{NUM}{BLACK} Vrednost: {LTBLUE}{CURRENCY_LONG}
 STR_VEHICLE_INFO_NO_CAPACITY                                    :{BLACK}Zmogljivost: {LTBLUE}Brez{STRING}
@@ -3878,7 +3878,7 @@ STR_VEHICLE_DETAILS_TRAIN_CAPACITIES_TOOLTIP                    :{BLACK}Prikaži
 STR_VEHICLE_DETAIL_TAB_TOTAL_CARGO                              :{BLACK}Skupni tovor
 STR_VEHICLE_DETAILS_TRAIN_TOTAL_CARGO_TOOLTIP                   :{BLACK}Prikaži polno zmogljivost vlaka, razdeli glede na tip tovora
 
-STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Zmogljivost: {LTBLUE}
+STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Zmogljivost: {LTBLUE}{STRING}
 
 # Vehicle refit
 STR_REFIT_CAPTION                                               :{WHITE}{VEHICLE} (Preuredi)
@@ -3958,7 +3958,7 @@ STR_ORDER_DROP_HALT_DEPOT                                       :Stop
 STR_ORDER_CONDITIONAL_VARIABLE_TOOLTIP                          :{BLACK}Podatki vozila na osnovni preskok
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE                           :Procenti polnjenja
 STR_ORDER_CONDITIONAL_RELIABILITY                               :Zanesljivost
 STR_ORDER_CONDITIONAL_MAX_SPEED                                 :Najvišja hitrost
@@ -4308,7 +4308,7 @@ STR_ERROR_CAN_T_CHANGE_PRESIDENT                                :{WHITE}Ni mogo�
 
 STR_ERROR_MAXIMUM_PERMITTED_LOAN                                :{WHITE}... najvišje dovoljeno posojilo je {CURRENCY_LONG}
 STR_ERROR_CAN_T_BORROW_ANY_MORE_MONEY                           :{WHITE}Ni mogoča izposoja več denarja...
-STR_ERROR_LOAN_ALREADY_REPAYED                                  :{WHITE}... ni posojila za odplačati
+STR_ERROR_LOAN_ALREADY_REPAID                                   :{WHITE}... ni posojila za odplačati
 STR_ERROR_CURRENCY_REQUIRED                                     :{WHITE}... potrebuješ {CURRENCY_LONG}
 STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}Ni mogoče odplačati posojila...
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}Ni mogoča oddaja denarja, ki je izposojen od banke...
@@ -4320,7 +4320,6 @@ STR_ERROR_CAN_T_GENERATE_TOWN                                   :{WHITE}Ni mogo�
 STR_ERROR_CAN_T_RENAME_TOWN                                     :{WHITE}Ne moreš preimenovati mesta...
 STR_ERROR_CAN_T_FOUND_TOWN_HERE                                 :{WHITE}Tukaj ni mogoče zgraditi mesta...
 STR_ERROR_CAN_T_EXPAND_TOWN                                     :{WHITE}Ni mogoče širiti mesta...
-STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP_SUB                          :{WHITE}... preblizu roba zemljevida
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_TOWN                             :{WHITE}... preblizu drugemu mestu
 STR_ERROR_TOO_MANY_TOWNS                                        :{WHITE}... preveliko število mest
 STR_ERROR_NO_SPACE_FOR_TOWN                                     :{WHITE}... ni več prostora na zemljevidu
@@ -4395,11 +4394,11 @@ STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST                           :{WHITE}Najprej 
 STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING               :{WHITE}Združi z več kot eno obstoječo točko poti
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_WAYPOINT                         :{WHITE}Preblizu drugi točki poti
 
-STR_ERROR_CAN_T_BUILD_TRAIN_WAYPOINT                            :{WHITE}Tukaj ni mogoče postaviti točke poti...
+STR_ERROR_CAN_T_BUILD_RAIL_WAYPOINT                             :{WHITE}Tukaj ni mogoče postaviti točke poti...
 STR_ERROR_CAN_T_POSITION_BUOY_HERE                              :{WHITE}Tukaj ni mogoče postaviti boje...
 STR_ERROR_CAN_T_CHANGE_WAYPOINT_NAME                            :{WHITE}Ni mogoče preimenovati točke poti...
 
-STR_ERROR_CAN_T_REMOVE_TRAIN_WAYPOINT                           :{WHITE}Tukaj ni mogoče odstraniti točke poti...
+STR_ERROR_CAN_T_REMOVE_RAIL_WAYPOINT                            :{WHITE}Tukaj ni mogoče odstraniti točke poti...
 STR_ERROR_MUST_REMOVE_RAILWAYPOINT_FIRST                        :{WHITE}Najprej moraš odstraniti točko poti
 STR_ERROR_BUOY_IN_THE_WAY                                       :{WHITE}... boja na poti
 STR_ERROR_BUOY_IS_IN_USE                                        :{WHITE}... bojo uporablja drugo podjetje!

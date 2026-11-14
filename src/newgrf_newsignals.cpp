@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_newsignals.cpp NewGRF handling of new signals. */
@@ -15,6 +15,7 @@
 #include "tracerestrict.h"
 #include "string_func.h"
 #include "newgrf_dump.h"
+#include "rail_settings.h"
 
 #include <array>
 
@@ -40,13 +41,7 @@ static uint8_t MapSignalStyle(uint8_t style)
 
 uint32_t GetNewSignalsSideVariable()
 {
-	bool side;
-	switch (_settings_game.construction.train_signal_side) {
-		case 0:  side = false;                                 break; // left
-		case 2:  side = true;                                  break; // right
-		default: side = _settings_game.vehicle.road_side != 0; break; // driving side
-	}
-	return side ? 1 : 0;
+	return IsTrainSignalSideRight() ? 1 : 0;
 }
 
 /* virtual */ uint32_t NewSignalsScopeResolver::GetVariable(uint16_t variable, uint32_t parameter, GetVariableExtra &extra) const
@@ -88,7 +83,7 @@ uint32_t GetNewSignalsSideVariable()
 
 GrfSpecFeature NewSignalsResolverObject::GetFeature() const
 {
-	return GSF_SIGNALS;
+	return GrfSpecFeature::Signals;
 }
 
 /**
@@ -115,8 +110,8 @@ uint GetNewSignalsRestrictedSignalsInfo(const TraceRestrictProgram *prog, TileIn
 	if (signal_style != 0 && HasBit(_signal_style_masks.always_reserve_through, signal_style)) result |= 2;
 	if (prog != nullptr) {
 		result |= 1;
-		if ((prog->actions_used_flags & TRPAUF_RESERVE_THROUGH_ALWAYS) && !IsTileType(tile, MP_TUNNELBRIDGE)) result |= 2;
-		if ((prog->actions_used_flags & TRPAUF_REVERSE_BEHIND) && !IsTileType(tile, MP_TUNNELBRIDGE)) result |= 4;
+		if ((prog->actions_used_flags & TRPAUF_RESERVE_THROUGH_ALWAYS) && !IsTileType(tile, TileType::TunnelBridge)) result |= 2;
+		if ((prog->actions_used_flags & TRPAUF_REVERSE_BEHIND) && !IsTileType(tile, TileType::TunnelBridge)) result |= 4;
 	}
 	return result;
 }
@@ -136,7 +131,7 @@ void DumpNewSignalsSpriteGroups(SpriteGroupDumper &dumper)
 	bool first = true;
 	for (const GRFFile *grf : _new_signals_grfs) {
 		if (!first) dumper.Print("");
-		dumper.Print(fmt::format("GRF: {:08X}", std::byteswap(grf->grfid)));
+		dumper.Print(fmt::format("GRF: {}", grf->grfid));
 		first = false;
 		dumper.DumpSpriteGroup(grf->new_signals_group, 0);
 	}

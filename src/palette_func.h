@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file palette_func.h Functions related to palettes. */
@@ -61,29 +61,30 @@ static inline uint8_t GetColourBrightness(Colour colour)
  */
 inline bool IsValidColours(Colours colours)
 {
-	return colours < COLOUR_END;
+	return colours < Colours::End;
 }
 
 TextColour GetContrastColour(PixelColour background, uint8_t threshold = 128);
 
-extern PixelColour _colour_value[COLOUR_END];
+extern const EnumIndexArray<PixelColour, Colours, Colours::End> _colour_value;
 
-enum ColourShade : uint8_t {
-	SHADE_BEGIN = 0,
-	SHADE_DARKEST = SHADE_BEGIN,
-	SHADE_DARKER,
-	SHADE_DARK,
-	SHADE_NORMAL,
-	SHADE_LIGHT,
-	SHADE_LIGHTER,
-	SHADE_LIGHTEST,
-	SHADE_LIGHTEREST,
-	SHADE_END,
+/** The eight shades of each company colour. Not all shaded are used. */
+enum class Shade : uint8_t {
+	Darkest, ///< Darkest colour shade.
+	Darker, ///< Darker colour shade.
+	Dark, ///< Dark colour shade.
+	Normal, ///< Normal colour shade.
+	Light, ///< Light colour shade.
+	Lighter, ///< Lighter colour shade.
+	Lightest, ///< Lightest colour shade.
+	Lighterest, ///< Lighterest colour shade.
+
+	End, ///< End marker for iteration.
+	Begin = Shade::Darkest, ///< Begin marker for iteration.
 };
-DECLARE_INCREMENT_DECREMENT_OPERATORS(ColourShade)
 
-PixelColour GetColourGradient(Colours colour, ColourShade shade);
-void SetColourGradient(Colours colour, ColourShade shade, PixelColour palette_colour);
+PixelColour GetColourGradient(Colours colour, Shade shade);
+void SetColourGradient(Colours colour, Shade shade, PixelColour palette_colour);
 
 /**
  * Return the colour for a particular greyscale level.

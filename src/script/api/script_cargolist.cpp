@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_cargolist.cpp Implementation of ScriptCargoList and friends. */
@@ -53,7 +53,7 @@ ScriptCargoList_StationAccepting::ScriptCargoList_StationAccepting(StationID sta
 	if (!ScriptStation::IsValidStation(station_id)) return;
 
 	const Station *st = ::Station::Get(station_id);
-	for (CargoType cargo = 0; cargo < NUM_CARGO; ++cargo) {
+	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (st->goods[cargo].status.Test(GoodsEntry::State::Acceptance)) this->AddItem(cargo);
 	}
 }

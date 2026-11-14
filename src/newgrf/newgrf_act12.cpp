@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act12.cpp NewGRF Action 0x12 handler. */
@@ -10,12 +10,16 @@
 #include "../stdafx.h"
 #include "../debug.h"
 #include "../fontcache.h"
+#include "../spritecache.h"
 #include "newgrf_bytereader.h"
 #include "newgrf_internal.h"
 
 #include "../safeguards.h"
 
-/** Action 0x12 */
+/**
+ * Action 0x12 - Define fonts.
+ * @param buf Reader of the NewGRF.
+ */
 static void LoadFontGlyph(ByteReader &buf)
 {
 	/* <12> <num_def> <font_size> <num_char> <base_char>
@@ -32,21 +36,24 @@ static void LoadFontGlyph(ByteReader &buf)
 		uint8_t  num_char  = buf.ReadByte();
 		uint16_t base_char = buf.ReadWord();
 
-		if (size >= FS_END) {
+		if (size >= FontSize::End) {
 			GrfMsg(1, "LoadFontGlyph: Size {} is not supported, ignoring", size);
 		}
 
 		GrfMsg(7, "LoadFontGlyph: Loading {} glyph(s) at 0x{:04X} for size {}", num_char, base_char, size);
 
 		for (uint c = 0; c < num_char; c++) {
-			if (size < FS_END) SetUnicodeGlyph(size, base_char + c, _cur_gps.spriteid);
+			if (size < FontSize::End) SetUnicodeGlyph(size, base_char + c, _cur_gps.spriteid);
 			_cur_gps.nfo_line++;
 			LoadNextSprite(_cur_gps.spriteid++, *_cur_gps.file, _cur_gps.nfo_line);
 		}
 	}
 }
 
-/** Action 0x12 (SKIP) */
+/**
+ * Action 0x12 (SKIP).
+ * @param buf Reader of the NewGRF.
+ */
 static void SkipAct12(ByteReader &buf)
 {
 	/* <12> <num_def> <font_size> <num_char> <base_char>
@@ -72,9 +79,15 @@ static void SkipAct12(ByteReader &buf)
 	GrfMsg(3, "SkipAct12: Skipping {} sprites", _cur_gps.skip_sprites);
 }
 
+/** @copydoc GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x12>::FileScan(ByteReader &buf) { SkipAct12(buf); }
+/** @copydoc GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x12>::SafetyScan(ByteReader &buf) { SkipAct12(buf); }
+/** @copydoc GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x12>::LabelScan(ByteReader &buf) { SkipAct12(buf); }
+/** @copydoc GrfActionHandler::Init */
 template <> void GrfActionHandler<0x12>::Init(ByteReader &buf) { SkipAct12(buf); }
+/** @copydoc GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x12>::Reserve(ByteReader &buf) { SkipAct12(buf); }
+/** @copydoc GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x12>::Activation(ByteReader &buf) { LoadFontGlyph(buf); }

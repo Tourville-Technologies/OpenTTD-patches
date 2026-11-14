@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_node_rail.hpp Node tailored for rail pathfinding. */
@@ -16,8 +16,7 @@
 #include "yapf_type.hpp"
 
 /** key for cached segment cost for rail YAPF */
-struct CYapfRailSegmentKey
-{
+struct CYapfRailSegmentKey {
 	using HashKey = uint32_t;
 
 	uint32_t value;
@@ -65,8 +64,7 @@ struct CYapfRailSegmentKey
 };
 
 /** cached segment cost for rail YAPF */
-struct CYapfRailSegment
-{
+struct CYapfRailSegment {
 	typedef CYapfRailSegmentKey Key;
 
 	CYapfRailSegmentKey key;
@@ -132,7 +130,7 @@ struct CYapfRailNode : CYapfNodeT<CYapfNodeKeyTrackDir, CYapfRailNode> {
 			this->last_non_reserve_through_signal_tile = INVALID_TILE;
 			this->last_non_reserve_through_signal_td   = INVALID_TRACKDIR;
 			this->flags_u.inherited_flags              = 0;
-			this->last_red_signal_type                 = SIGTYPE_BLOCK;
+			this->last_red_signal_type                 = SignalType::Block;
 			/* We use PBS as initial signal type because if we are in
 			 * a PBS section and need to route, i.e. we're at a safe
 			 * waiting point of a station, we need to account for the
@@ -143,7 +141,7 @@ struct CYapfRailNode : CYapfNodeT<CYapfNodeKeyTrackDir, CYapfRailNode> {
 			 * then avoiding that train with help of the reservation
 			 * costs is not a bad thing, actually it would probably
 			 * be a good thing to do. */
-			this->last_signal_type = SIGTYPE_PBS;
+			this->last_signal_type = SignalType::Path;
 		} else {
 			this->num_signals_passed                   = parent->num_signals_passed;
 			this->last_non_reserve_through_signal_tile = parent->last_non_reserve_through_signal_tile;
@@ -178,17 +176,17 @@ struct CYapfRailNode : CYapfNodeT<CYapfNodeKeyTrackDir, CYapfRailNode> {
 	template <class Tbase, class Tpf, class Tfunc>
 	bool IterateTiles(const Train *v, Tpf &yapf, Tfunc func) const
 	{
-		typename Tbase::TrackFollower ft(v, yapf.GetCompatibleRailTypes());
+		typename Tbase::TrackFollower follower{v, yapf.GetCompatibleRailTypes()};
 		TileIndex cur = this->base::GetTile();
 		Trackdir  cur_td = this->base::GetTrackdir();
 
 		while (cur != GetLastTile() || cur_td != GetLastTrackdir()) {
 			if (!(func(cur, cur_td))) return false;
 
-			if (!ft.Follow(cur, cur_td)) break;
-			cur = ft.new_tile;
-			dbg_assert(KillFirstBit(ft.new_td_bits) == TRACKDIR_BIT_NONE);
-			cur_td = FindFirstTrackdir(ft.new_td_bits);
+			if (!follower.Follow(cur, cur_td)) break;
+			cur = follower.new_tile;
+			dbg_assert(KillFirstBit(follower.new_td_bits) == TRACKDIR_BIT_NONE);
+			cur_td = FindFirstTrackdir(follower.new_td_bits);
 		}
 
 		return func(cur, cur_td);
@@ -223,7 +221,7 @@ struct CYapfRailNode : CYapfNodeT<CYapfNodeKeyTrackDir, CYapfRailNode> {
 		EndSegmentReasons esr = this->segment->end_segment_reason;
 		if (!esr.Test(EndSegmentReason::DeadEnd) || esr.Test(EndSegmentReason::DeadEndEol)) {
 			length += IsDiagonalTrackdir(cur_td) ? TILE_SIZE : (TILE_SIZE / 2);
-			if (IsTileType(cur, MP_TUNNELBRIDGE) && IsTunnelBridgeSignalSimulationEntrance(cur) && TrackdirEntersTunnelBridge(cur, cur_td)) {
+			if (IsTileType(cur, TileType::TunnelBridge) && IsTunnelBridgeSignalSimulationEntrance(cur) && TrackdirEntersTunnelBridge(cur, cur_td)) {
 				length += TILE_SIZE * GetTunnelBridgeLength(cur, GetOtherTunnelBridgeEnd(cur));
 			}
 		}

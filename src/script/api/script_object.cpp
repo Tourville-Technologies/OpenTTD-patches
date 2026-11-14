@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_object.cpp Implementation of ScriptObject. */
@@ -143,7 +143,7 @@ ScriptObject::DisableDoCommandScope::DisableDoCommandScope()
 
 /* static */ void ScriptObject::SetDoCommandCosts(Money value)
 {
-	GetStorage().costs = CommandCost(INVALID_EXPENSES, value); // Expense type is never read.
+	GetStorage().costs = CommandCost(ExpensesType::Invalid, value); // Expense type is never read.
 }
 
 /* static */ void ScriptObject::IncreaseDoCommandCosts(Money value)
@@ -296,7 +296,7 @@ ScriptObject::DisableDoCommandScope::DisableDoCommandScope()
 	FunctorScopeStackRecord scope_print([=, &payload](format_target &output) {
 		output.format("ScriptObject::DoCommand: tile: {}, intl_flags: 0x{:X}, company: {}, cmd: 0x{:X} {}, estimate_only: {}, payload: ",
 				tile, intl_flags, CompanyInfoDumper(_current_company), cmd, GetCommandName(cmd), estimate_only);
-		payload.FormatDebugSummary(output);
+		payload.fmt_format_value(output);
 	});
 #endif
 
@@ -401,7 +401,7 @@ ScriptObject::DisableDoCommandScope::DisableDoCommandScope()
 
 /* static */ SQInteger ScriptObject::Constructor(HSQUIRRELVM)
 {
-	throw Script_FatalError("This class is not instantiable");
+	throw Script_FatalError("This class is not instantiatable");
 }
 
 /* static */ SQInteger ScriptObject::_cloned(HSQUIRRELVM vm)

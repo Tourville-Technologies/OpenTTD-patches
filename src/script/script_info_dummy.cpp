@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_info_dummy.cpp Implementation of a dummy Script. */
@@ -25,7 +25,12 @@
  *  to select manual. It is a fail-over in case no Scripts are available.
  */
 
-/** Run the dummy info.nut. */
+/**
+ * Run the dummy info.nut.
+ * @param vm The virtual machine to run in.
+ * @param type The type of script.
+ * @param dir The directory where these scripts would normally be in.
+ */
 void Script_CreateDummyInfo(HSQUIRRELVM vm, std::string_view type, std::string_view dir)
 {
 	std::string dummy_script = fmt::format(
@@ -77,7 +82,12 @@ static std::vector<std::string> EscapeQuotesAndSlashesAndSplitOnNewLines(const s
 	return messages;
 }
 
-/** Run the dummy AI and let it generate an error message. */
+/**
+ * Run the dummy AI and let it generate an error message.
+ * @param vm The virtual machine to run in.
+ * @param string The error message to show to the end user.
+ * @param type The type of script.
+ */
 void Script_CreateDummy(HSQUIRRELVM vm, StringID string, std::string_view type)
 {
 	/* We want to translate the error message.

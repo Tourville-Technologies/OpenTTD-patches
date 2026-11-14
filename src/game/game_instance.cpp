@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_instance.cpp Implementation of GameInstance. */
@@ -49,7 +49,7 @@ void GameInstance::RegisterAPI()
 	/* Register all classes */
 	SQGS_RegisterAll(*this->engine);
 
-	if (!this->LoadCompatibilityScripts(GAME_DIR, GameInfo::ApiVersions)) this->Died();
+	if (!this->LoadCompatibilityScripts(Subdirectory::Gs, GameInfo::ApiVersions)) this->Died();
 
 	if (this->IsAlive()) RegisterGameTranslation(*this->engine);
 }
@@ -69,13 +69,13 @@ void GameInstance::Died()
 	ScriptInstance::Died();
 
 	/* Don't show errors while loading savegame. They will be shown at end of loading anyway. */
-	if (_switch_mode != SM_NONE) return;
+	if (_switch_mode != SwitchMode::None) return;
 
 	ShowScriptDebugWindow(OWNER_DEITY);
 
 	const GameInfo *info = Game::GetInfo();
 	if (info != nullptr) {
-		ShowErrorMessage(GetEncodedString(STR_ERROR_AI_PLEASE_REPORT_CRASH), {}, WL_WARNING);
+		ShowErrorMessage(GetEncodedString(STR_ERROR_AI_PLEASE_REPORT_CRASH), {}, WarningLevel::Warning);
 
 		if (!info->GetURL().empty()) {
 			ScriptLog::Info("Please report the error to the following URL:");

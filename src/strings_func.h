@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file strings_func.h Functions related to OTTD's strings. */
@@ -13,6 +13,7 @@
 #include "strings_type.h"
 #include "string_type.h"
 #include "gfx_type.h"
+#include "newgrf_type.h"
 #include "core/bitmath_func.hpp"
 #include "vehicle_type.h"
 #include <array>
@@ -26,7 +27,7 @@
  */
 inline StringTab GetStringTab(StringID str)
 {
-	StringTab result = (StringTab)(str >> TAB_SIZE_BITS);
+	StringTab result = static_cast<StringTab>(str.base() >> TAB_SIZE_BITS);
 	if (result >= TEXT_TAB_NEWGRF_START) return TEXT_TAB_NEWGRF_START;
 	if (result >= TEXT_TAB_GAMESCRIPT_START) return TEXT_TAB_GAMESCRIPT_START;
 	return result;
@@ -39,7 +40,7 @@ inline StringTab GetStringTab(StringID str)
  */
 inline StringIndexInTab GetStringIndex(StringID str)
 {
-	return StringIndexInTab{str - (GetStringTab(str) << TAB_SIZE_BITS)};
+	return StringIndexInTab{str.base() - (GetStringTab(str) << TAB_SIZE_BITS)};
 }
 
 /**
@@ -58,12 +59,13 @@ inline StringID MakeStringID(StringTab tab, StringIndexInTab index)
 		assert(tab < TEXT_TAB_END);
 		assert(index < TAB_SIZE);
 	}
-	return (tab << TAB_SIZE_BITS) + index.base();
+	return StringID{(tab << TAB_SIZE_BITS) + index.base()};
 }
 
 /**
  * Prepare the string parameters for the next formatting run, resetting the type information.
  * This is only necessary if parameters are reused for multiple format runs.
+ * @param args The parameters to prepare.
  */
 static inline void PrepareArgsForNextRun(std::span<StringParameter> args)
 {
@@ -75,7 +77,7 @@ static inline void PrepareArgsForNextRun(std::span<StringParameter> args)
 [[nodiscard]] std::string_view GetStringPtr(StringID string);
 void AppendStringWithArgsInPlace(struct format_target &result, StringID string, std::span<StringParameter> args);
 void AppendStringWithArgsInPlace(std::string &result, StringID string, std::span<StringParameter> args);
-uint32_t GetStringGRFID(StringID string);
+GrfID GetStringGRFID(StringID string);
 
 uint ConvertKmhishSpeedToDisplaySpeed(uint speed, VehicleType type);
 uint ConvertDisplaySpeedToKmhishSpeed(uint speed, VehicleType type);
@@ -101,11 +103,11 @@ inline char32_t GetDecimalSeparatorChar()
 	return _decimal_separator_char;
 }
 
-uint64_t GetParamMaxValue(uint64_t max_value, uint min_count = 0, FontSize size = FS_NORMAL);
-uint64_t GetParamMaxDigits(uint count, FontSize size = FS_NORMAL);
+uint64_t GetParamMaxValue(uint64_t max_value, uint min_count = 0, FontSize size = FontSize::Normal);
+uint64_t GetParamMaxDigits(uint count, FontSize size = FontSize::Normal);
 
 template <typename T, std::enable_if_t<StringParameterAsBase<T>, int> = 0>
-uint64_t GetParamMaxValue(T max_value, uint min_count = 0, FontSize size = FS_NORMAL)
+uint64_t GetParamMaxValue(T max_value, uint min_count = 0, FontSize size = FontSize::Normal)
 {
 	return GetParamMaxValue(max_value.base(), min_count, size);
 }
@@ -192,6 +194,8 @@ template <typename... Args>
 	return GetEncodedStringWithArgs(string, MakeReferenceParameters(std::forward<Args>(args)...));
 }
 
+[[nodiscard]] EncodedString GetEncodedRawString(std::string_view str);
+
 /**
  * Resolve the given StringID and append in place into an existing format_buffer with most special stringcodes replaced by the string parameters.
  * @param result The format_target to append to.
@@ -262,8 +266,36 @@ struct GetStringFmtParam {
  */
 class MissingGlyphSearcher {
 public:
-	/** Make sure everything gets destructed right. */
+	/**
+	 * Create this glyph searcher.
+	 * @param fontsizes Font sizes to consider.
+	 */
+	MissingGlyphSearcher(FontSizes fontsizes) : fontsizes(fontsizes) {}
+
+	/** Ensure the destructor of the sub classes are called as well. */
 	virtual ~MissingGlyphSearcher() = default;
+
+	const FontSizes fontsizes; ///< Font sizes this searcher will try to find.
+	FontSizes missing_fontsizes{}; ///< Font sizes to actually search for.
+	std::vector<char32_t> missing_glyphs{}; ///< Glyphs to search for.
+
+	/**
+	 * Determine set of glyphs required for the current language.
+	 * @param fontsizes Font sizes to test.
+	 **/
+	virtual void DetermineRequiredGlyphs(FontSizes fontsizes) = 0;
+};
+
+/** Base for missing glyph searchers that look for missing glyphs in strings. */
+class BaseStringMissingGlyphSearcher : public MissingGlyphSearcher {
+public:
+	/**
+	 * Create this string glyph searcher.
+	 * @param fontsizes Font sizes to consider.
+	 */
+	BaseStringMissingGlyphSearcher(FontSizes fontsizes) : MissingGlyphSearcher(fontsizes) {}
+
+	void DetermineRequiredGlyphs(FontSizes fontsizes) override;
 
 	/**
 	 * Get the next string to search through.
@@ -281,24 +313,10 @@ public:
 	 * Reset the search, i.e. begin from the beginning again.
 	 */
 	virtual void Reset() = 0;
-
-	/**
-	 * Whether to search for a monospace font or not.
-	 * @return True if searching for monospace.
-	 */
-	virtual bool Monospace() = 0;
-
-	/**
-	 * Set the right font names.
-	 * @param settings  The settings to modify.
-	 * @param font_name The new font name.
-	 * @param os_data Opaque pointer to OS-specific data.
-	 */
-	virtual void SetFontNames(struct FontCacheSettings *settings, std::string_view font_name, const void *os_data = nullptr) = 0;
-
-	bool FindMissingGlyphs();
 };
 
-void CheckForMissingGlyphs(bool base_font = true, MissingGlyphSearcher *search = nullptr);
+void CheckForMissingGlyphs(MissingGlyphSearcher *searcher = nullptr);
+
+void AppendWidestTinyOrIsoCalendarDate(struct format_target &result, bool iso, FontSize size = FontSize::Normal);
 
 #endif /* STRINGS_FUNC_H */

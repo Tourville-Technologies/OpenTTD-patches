@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file map_type.h Types related to maps. */
@@ -34,8 +34,8 @@ struct TileExtended {
 	uint8_t  m6; ///< General purpose
 	uint8_t  m7; ///< Primarily used for newgrf support
 	uint16_t m8; ///< General purpose
-	uint8_t m9;  ///< Second byte of owner value
-	uint8_t m10; ///< Second byte of owner value for special tiles
+	uint8_t m9; ///< High owner bits: tile (0..2), road (3..5).
+	uint8_t m10; ///< High tram owner bits (0..3).
 };
 
 /**
@@ -73,10 +73,10 @@ static const uint MAX_MAP_SIZE       = 1U << MAX_MAP_SIZE_BITS;  ///< Maximal ma
 static const uint MAX_MAP_TILES      = 1U << MAX_MAP_TILES_BITS; ///< Maximal number of tiles in a map = 256M (16k x 16k)
 
 /** Argument for CmdLevelLand describing what to do. */
-enum LevelMode : uint8_t {
-	LM_LEVEL, ///< Level the land.
-	LM_LOWER, ///< Lower the land.
-	LM_RAISE, ///< Raise the land.
+enum class LevelMode : uint8_t {
+	Level, ///< Level the land.
+	Lower, ///< Lower the land.
+	Raise, ///< Raise the land.
 };
 
 #endif /* MAP_TYPE_H */

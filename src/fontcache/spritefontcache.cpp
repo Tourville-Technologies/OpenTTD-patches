@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spritefontcache.cpp Sprite fontcache implementation. */
@@ -10,6 +10,7 @@
 #include "../stdafx.h"
 #include "../fontcache.h"
 #include "../gfx_layout.h"
+#include "../spritecache.h"
 #include "../string_func.h"
 #include "../zoom_func.h"
 #include "spritefontcache.h"
@@ -33,10 +34,11 @@ static int ScaleFontTrad(int value)
 	return UnScaleByZoom(value * ZOOM_BASE, _font_zoom);
 }
 
-static std::array<robin_hood::unordered_map<char32_t, SpriteID>, FS_END> _char_maps{}; ///< Glyph map for each font size.
+static EnumIndexArray<robin_hood::unordered_map<char32_t, SpriteID>, FontSize, FontSize::End> _char_maps{}; ///< Glyph map for each font size.
 
 /**
  * Get SpriteID associated with a character.
+ * @param fs The font size of the character.
  * @param key Character to find.
  * @return SpriteID for character, or 0 if not present.
  */
@@ -71,10 +73,10 @@ void InitializeUnicodeGlyphMap(FontSize fs)
 	SpriteID base;
 	switch (fs) {
 		default: NOT_REACHED();
-		case FS_MONO:   // Use normal as default for mono spaced font
-		case FS_NORMAL: base = SPR_ASCII_SPACE;       break;
-		case FS_SMALL:  base = SPR_ASCII_SPACE_SMALL; break;
-		case FS_LARGE:  base = SPR_ASCII_SPACE_BIG;   break;
+		case FontSize::Monospace:// Use normal as default for mono spaced font
+		case FontSize::Normal: base = SPR_ASCII_SPACE; break;
+		case FontSize::Small: base = SPR_ASCII_SPACE_SMALL; break;
+		case FontSize::Large: base = SPR_ASCII_SPACE_BIG; break;
 	}
 
 	for (uint i = ASCII_LETTERSTART; i < 256; i++) {
@@ -94,6 +96,7 @@ void InitializeUnicodeGlyphMap(FontSize fs)
 			SetUnicodeGlyph(fs, unicode_map.code, 0);
 		} else {
 			SpriteID sprite = base + key - ASCII_LETTERSTART;
+			if (!SpriteExists(sprite)) continue;
 			SetUnicodeGlyph(fs, unicode_map.code, sprite);
 		}
 	}
@@ -104,7 +107,7 @@ void InitializeUnicodeGlyphMap(FontSize fs)
  */
 void InitializeUnicodeGlyphMap()
 {
-	for (FontSize fs = FS_BEGIN; fs < FS_END; fs++) {
+	for (FontSize fs : EnumRange(FontSize::End)) {
 		InitializeUnicodeGlyphMap(fs);
 	}
 }
@@ -139,7 +142,7 @@ uint SpriteFontCache::GetGlyphWidth(GlyphID key)
 {
 	SpriteID sprite = static_cast<SpriteID>(key & ~SPRITE_GLYPH);
 	if (sprite == 0) sprite = GetUnicodeGlyph(this->fs, '?');
-	return SpriteExists(sprite) ? GetSprite(sprite, SpriteType::Font, {})->width + ScaleFontTrad(this->fs != FS_NORMAL ? 1 : 0) : 0;
+	return SpriteExists(sprite) ? GetSprite(sprite, SpriteType::Font, {})->width + ScaleFontTrad(this->fs != FontSize::Normal ? 1 : 0) : 0;
 }
 
 GlyphID SpriteFontCache::MapCharToGlyph(char32_t key, [[maybe_unused]] bool allow_fallback)
@@ -154,3 +157,25 @@ bool SpriteFontCache::GetDrawGlyphShadow()
 {
 	return false;
 }
+
+class SpriteFontCacheFactory : public FontCacheFactory {
+public:
+	SpriteFontCacheFactory() : FontCacheFactory("sprite", "Sprite font provider") {}
+
+	std::unique_ptr<FontCache> LoadFont(FontSize fs, FontType fonttype, bool, const std::string &, const std::any &) const override
+	{
+		if (fonttype != FontType::Sprite) return nullptr;
+
+		return std::make_unique<SpriteFontCache>(fs);
+	}
+
+	bool FindFallbackFont(const std::string &, class MissingGlyphSearcher *) const override
+	{
+		return false;
+	}
+
+private:
+	static SpriteFontCacheFactory instance;
+};
+
+/* static */ SpriteFontCacheFactory SpriteFontCacheFactory::instance;

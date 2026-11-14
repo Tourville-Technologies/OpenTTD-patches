@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_coordinator.h Part of the network protocol handling Game Coordinator requests. */
@@ -64,16 +64,16 @@ private:
 	GameInfoNewGRFLookupTable newgrf_lookup_table; ///< Table to look up NewGRFs in the GC_LISTING packets.
 
 protected:
-	bool Receive_GC_ERROR(Packet &p) override;
-	bool Receive_GC_REGISTER_ACK(Packet &p) override;
-	bool Receive_GC_LISTING(Packet &p) override;
-	bool Receive_GC_CONNECTING(Packet &p) override;
-	bool Receive_GC_CONNECT_FAILED(Packet &p) override;
-	bool Receive_GC_DIRECT_CONNECT(Packet &p) override;
-	bool Receive_GC_STUN_REQUEST(Packet &p) override;
-	bool Receive_GC_STUN_CONNECT(Packet &p) override;
-	bool Receive_GC_NEWGRF_LOOKUP(Packet &p) override;
-	bool Receive_GC_TURN_CONNECT(Packet &p) override;
+	bool ReceiveGameCoordinatorError(Packet &p) override;
+	bool ReceiveGameCoordinatorRegisterAck(Packet &p) override;
+	bool ReceiveGameCoordinatorListing(Packet &p) override;
+	bool ReceiveGameCoordinatorConnecting(Packet &p) override;
+	bool ReceiveGameCoordinatorConnectFailed(Packet &p) override;
+	bool ReceiveGameCoordinatorDirectConnect(Packet &p) override;
+	bool ReceiveGameCoordinatorStunRequest(Packet &p) override;
+	bool ReceiveGameCoordinatorStunConnect(Packet &p) override;
+	bool ReceiveGameCoordinatorNewGRFLookup(Packet &p) override;
+	bool ReceiveGameCoordinatorTurnConnect(Packet &p) override;
 
 public:
 	/** The idle timeout; when to close the connection because it's idle. */

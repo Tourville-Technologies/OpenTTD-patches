@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file viewport_func.h Functions related to (drawing on) viewports. */
@@ -84,7 +84,7 @@ void DrawGroundSprite(SpriteID image, PaletteID pal, const SubSprite *sub = null
 void DrawGroundSpriteAt(SpriteID image, PaletteID pal, int32_t x, int32_t y, int z, const SubSprite *sub = nullptr, int extra_offs_x = 0, int extra_offs_y = 0);
 void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int z, const SpriteBounds &bounds, bool transparent = false, const SubSprite *sub = nullptr, ViewportSortableSpriteSpecialFlags special_flags = VSSF_NONE);
 void AddChildSpriteScreen(SpriteID image, PaletteID pal, int x, int y, bool transparent = false, const SubSprite *sub = nullptr, bool scale = true, ChildScreenSpritePositionMode position_mode = ChildScreenSpritePositionMode::Relative);
-void ViewportAddString(ViewportDrawerDynamic *vdd, const DrawPixelInfo *dpi, const ViewportSign *sign, ViewportStringFlags flags, StringID string, uint64_t params_1, uint64_t params_2 = 0, Colours colour = INVALID_COLOUR);
+void ViewportAddString(ViewportDrawerDynamic *vdd, const DrawPixelInfo *dpi, const ViewportSign *sign, ViewportStringFlags flags, StringID string, uint64_t params_1, uint64_t params_2 = 0, Colours colour = Colours::Invalid);
 
 inline void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, const Coord3D<int32_t> &world, const SpriteBounds &bounds, bool transparent = false, const SubSprite *sub = nullptr, ViewportSortableSpriteSpecialFlags special_flags = VSSF_NONE)
 {
@@ -157,7 +157,9 @@ struct Waypoint;
 struct Town;
 struct TraceRestrictProgram;
 void SetViewportCatchmentStation(const Station *st, bool sel);
+void SetViewportStationRect(const Station *st, bool sel);
 void SetViewportCatchmentWaypoint(const Waypoint *wp, bool sel);
+void SetViewportWaypointRect(const Waypoint *wp, bool sel);
 void SetViewportCatchmentTown(const Town *t, bool sel);
 void SetViewportCatchmentTraceRestrictProgram(const TraceRestrictProgram *prog, bool sel);
 

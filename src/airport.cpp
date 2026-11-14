@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file airport.cpp Functions related to airports. */
@@ -82,24 +82,24 @@ AirportMovingData RotateAirportMovingData(const AirportMovingData *orig, Directi
 {
 	AirportMovingData amd;
 	amd.flags = orig->flags;
-	amd.direction = ChangeDir(orig->direction, (DirDiff)rotation);
+	amd.direction = ChangeDir(orig->direction, static_cast<DirDiff>(rotation));
 	switch (rotation) {
-		case DIR_N:
+		case Direction::N:
 			amd.x = orig->x;
 			amd.y = orig->y;
 			break;
 
-		case DIR_E:
+		case Direction::E:
 			amd.x = orig->y;
 			amd.y = num_tiles_y * TILE_SIZE - orig->x - 1;
 			break;
 
-		case DIR_S:
+		case Direction::S:
 			amd.x = num_tiles_x * TILE_SIZE - orig->x - 1;
 			amd.y = num_tiles_y * TILE_SIZE - orig->y - 1;
 			break;
 
-		case DIR_W:
+		case Direction::W:
 			amd.x = num_tiles_x * TILE_SIZE - orig->y - 1;
 			amd.y = orig->x;
 			break;
@@ -134,6 +134,8 @@ AirportFTAClass::AirportFTAClass(
  * Get the number of elements of a source Airport state automata
  * Since it is actually just a big array of AirportFTA types, we only
  * know one element from the other by differing 'position' identifiers
+ * @param apFA The state machine builder.
+ * @return The number of elements.
  */
 static uint16_t AirportGetNofElements(const AirportFTAbuildup *apFA)
 {

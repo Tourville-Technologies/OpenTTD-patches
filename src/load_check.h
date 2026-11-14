@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file load_check.h Load check data. */
@@ -14,7 +14,7 @@
 #include "date_type.h"
 #include "gamelog_internal.h"
 #include "newgrf_config.h"
-#include "strings_type.h"
+#include "strings_id_type.h"
 #include "3rdparty/cpp-btree/btree_map.h"
 #include <memory>
 #include <string>
@@ -40,7 +40,7 @@ struct LoadCheckData {
 
 	GRFConfigList grfconfig{};                              ///< NewGrf configuration from save.
 	bool want_grf_compatibility = true;
-	GRFListCompatibility grf_compatibility = GLC_NOT_FOUND; ///< Summary state of NewGrfs, whether missing files or only compatible found.
+	GRFListCompatibility grf_compatibility = GRFListCompatibility::NotFound; ///< Summary state of NewGrfs, whether missing files or only compatible found.
 
 	std::vector<LoggedAction> gamelog_actions;              ///< Gamelog actions
 

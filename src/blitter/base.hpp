@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file base.hpp Base for all blitters. */
@@ -58,6 +58,7 @@ public:
 	/** Parameters related to blitting. */
 	struct BlitterParams {
 		const void *sprite; ///< Pointer to the sprite how ever the encoder stored it
+		const Colour *remap_rgb = nullptr; ///< Optional per-input RGB entries; alpha zero uses remap.
 		const uint8_t *remap;  ///< XXX -- Temporary storage for remap array
 		int brightness_adjust; ///< Brightness adjustment
 
@@ -84,6 +85,7 @@ public:
 	/**
 	 * Get the screen depth this blitter works for.
 	 *  This is either: 8, 16, 24 or 32.
+	 * @return Screen depth in bits per pixel.
 	 */
 	inline uint8_t GetScreenDepth() const
 	{
@@ -92,6 +94,9 @@ public:
 
 	/**
 	 * Draw an image to the screen, given an amount of params defined above.
+	 * @param bp Parameters for the blitting of the image.
+	 * @param mode The blitting mode to perform.
+	 * @param zoom The zoom level to draw at.
 	 */
 	virtual void Draw(Blitter::BlitterParams *bp, BlitterMode mode, ZoomLevel zoom) = 0;
 
@@ -272,6 +277,7 @@ public:
 
 	/**
 	 * Does this blitter require a separate animation buffer from the video backend?
+	 * @return \c true when the backend uses a separate buffer for animation.
 	 */
 	virtual bool NeedsAnimationBuffer()
 	{
@@ -280,15 +286,14 @@ public:
 
 	/**
 	 * Get the name of the blitter, the same as the Factory-instance returns.
+	 * @return The name.
 	 */
-	virtual const char *GetName() = 0;
+	virtual const char *GetName() const = 0;
 
 	/**
 	 * Post resize event
 	 */
 	virtual void PostResize() { };
-
-	virtual ~Blitter() = default;
 
 	template <typename SetPixelT> void DrawLineGeneric(int x, int y, int x2, int y2, int screen_width, int screen_height, int width, int dash, SetPixelT set_pixel);
 };

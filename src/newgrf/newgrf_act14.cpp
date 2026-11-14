@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act14.cpp NewGRF Action 0x14 handler. */
@@ -11,6 +11,7 @@
 #include "../debug.h"
 #include "../newgrf_extension.h"
 #include "../newgrf_text.h"
+#include "../string_func.h"
 #include "../core/container_func.hpp"
 #include "newgrf_bytereader.h"
 #include "newgrf_internal.h"
@@ -19,28 +20,28 @@
 
 #include "../safeguards.h"
 
-/** Callback function for 'INFO'->'NAME' to add a translation to the newgrf name. */
-static bool ChangeGRFName(uint8_t langid, std::string_view str)
+/** Callback function for 'INFO'->'NAME' to add a translation to the newgrf name. @copydoc TextHandler */
+static bool ChangeGRFName(GRFLanguage langid, std::string_view str)
 {
 	AddGRFTextToList(_cur_gps.grfconfig->name, langid, _cur_gps.grfconfig->ident.grfid, false, str);
 	return true;
 }
 
-/** Callback function for 'INFO'->'DESC' to add a translation to the newgrf description. */
-static bool ChangeGRFDescription(uint8_t langid, std::string_view str)
+/** Callback function for 'INFO'->'DESC' to add a translation to the newgrf description. @copydoc TextHandler */
+static bool ChangeGRFDescription(GRFLanguage langid, std::string_view str)
 {
 	AddGRFTextToList(_cur_gps.grfconfig->info, langid, _cur_gps.grfconfig->ident.grfid, true, str);
 	return true;
 }
 
-/** Callback function for 'INFO'->'URL_' to set the newgrf url. */
-static bool ChangeGRFURL(uint8_t langid, std::string_view str)
+/** Callback function for 'INFO'->'URL_' to set the newgrf url. @copydoc TextHandler */
+static bool ChangeGRFURL(GRFLanguage langid, std::string_view str)
 {
 	AddGRFTextToList(_cur_gps.grfconfig->url, langid, _cur_gps.grfconfig->ident.grfid, false, str);
 	return true;
 }
 
-/** Callback function for 'INFO'->'NPAR' to set the number of valid parameters. */
+/** Callback function for 'INFO'->'NPAR' to set the number of valid parameters. @copydoc DataHandler */
 static bool ChangeGRFNumUsedParams(size_t len, ByteReader &buf)
 {
 	if (len != 1) {
@@ -52,7 +53,7 @@ static bool ChangeGRFNumUsedParams(size_t len, ByteReader &buf)
 	return true;
 }
 
-/** Callback function for 'INFO'->'PALS' to set the number of valid parameters. */
+/** Callback function for 'INFO'->'PALS' to set the number of valid parameters. @copydoc DataHandler */
 static bool ChangeGRFPalette(size_t len, ByteReader &buf)
 {
 	if (len != 1) {
@@ -78,7 +79,7 @@ static bool ChangeGRFPalette(size_t len, ByteReader &buf)
 	return true;
 }
 
-/** Callback function for 'INFO'->'BLTR' to set the blitter info. */
+/** Callback function for 'INFO'->'BLTR' to set the blitter info. @copydoc DataHandler */
 static bool ChangeGRFBlitter(size_t len, ByteReader &buf)
 {
 	if (len != 1) {
@@ -100,7 +101,7 @@ static bool ChangeGRFBlitter(size_t len, ByteReader &buf)
 	return true;
 }
 
-/** Callback function for 'INFO'->'VRSN' to the version of the NewGRF. */
+/** Callback function for 'INFO'->'VRSN' to the version of the NewGRF. @copydoc DataHandler */
 static bool ChangeGRFVersion(size_t len, ByteReader &buf)
 {
 	if (len != 4) {
@@ -113,7 +114,7 @@ static bool ChangeGRFVersion(size_t len, ByteReader &buf)
 	return true;
 }
 
-/** Callback function for 'INFO'->'MINV' to the minimum compatible version of the NewGRF. */
+/** Callback function for 'INFO'->'MINV' to the minimum compatible version of the NewGRF. @copydoc DataHandler */
 static bool ChangeGRFMinVersion(size_t len, ByteReader &buf)
 {
 	if (len != 4) {
@@ -135,21 +136,21 @@ static bool ChangeGRFMinVersion(size_t len, ByteReader &buf)
 
 static GRFParameterInfo *_cur_parameter; ///< The parameter which info is currently changed by the newgrf.
 
-/** Callback function for 'INFO'->'PARAM'->param_num->'NAME' to set the name of a parameter. */
-static bool ChangeGRFParamName(uint8_t langid, std::string_view str)
+/** Callback function for 'INFO'->'PARAM'->param_num->'NAME' to set the name of a parameter. @copydoc TextHandler */
+static bool ChangeGRFParamName(GRFLanguage langid, std::string_view str)
 {
 	AddGRFTextToList(_cur_parameter->name, langid, _cur_gps.grfconfig->ident.grfid, false, str);
 	return true;
 }
 
-/** Callback function for 'INFO'->'PARAM'->param_num->'DESC' to set the description of a parameter. */
-static bool ChangeGRFParamDescription(uint8_t langid, std::string_view str)
+/** Callback function for 'INFO'->'PARAM'->param_num->'DESC' to set the description of a parameter. @copydoc TextHandler */
+static bool ChangeGRFParamDescription(GRFLanguage langid, std::string_view str)
 {
 	AddGRFTextToList(_cur_parameter->desc, langid, _cur_gps.grfconfig->ident.grfid, true, str);
 	return true;
 }
 
-/** Callback function for 'INFO'->'PARAM'->param_num->'TYPE' to set the typeof a parameter. */
+/** Callback function for 'INFO'->'PARAM'->param_num->'TYPE' to set the typeof a parameter. @copydoc DataHandler */
 static bool ChangeGRFParamType(size_t len, ByteReader &buf)
 {
 	if (len != 1) {
@@ -157,19 +158,24 @@ static bool ChangeGRFParamType(size_t len, ByteReader &buf)
 		buf.Skip(len);
 	} else {
 		uint8_t type = buf.ReadByte();
-		if (type < PTYPE_END) {
-			_cur_parameter->type = (GRFParameterType)type;
-		} else {
-			GrfMsg(3, "StaticGRFInfo: unknown parameter type {}, ignoring this field", type);
+		switch (type) {
+			case to_underlying(GRFParameterType::UintEnum):
+			case to_underlying(GRFParameterType::Bool):
+				_cur_parameter->type = static_cast<GRFParameterType>(type);
+				break;
+
+			default:
+				GrfMsg(3, "StaticGRFInfo: unknown parameter type {}, ignoring this field", type);
+				break;
 		}
 	}
 	return true;
 }
 
-/** Callback function for 'INFO'->'PARAM'->param_num->'LIMI' to set the min/max value of a parameter. */
+/** Callback function for 'INFO'->'PARAM'->param_num->'LIMI' to set the min/max value of a parameter. @copydoc DataHandler */
 static bool ChangeGRFParamLimits(size_t len, ByteReader &buf)
 {
-	if (_cur_parameter->type != PTYPE_UINT_ENUM) {
+	if (_cur_parameter->type != GRFParameterType::UintEnum) {
 		GrfMsg(2, "StaticGRFInfo: 'INFO'->'PARA'->'LIMI' is only valid for parameters with type uint/enum, ignoring this field");
 		buf.Skip(len);
 	} else if (len != 8) {
@@ -188,7 +194,7 @@ static bool ChangeGRFParamLimits(size_t len, ByteReader &buf)
 	return true;
 }
 
-/** Callback function for 'INFO'->'PARAM'->param_num->'MASK' to set the parameter and bits to use. */
+/** Callback function for 'INFO'->'PARAM'->param_num->'MASK' to set the parameter and bits to use. @copydoc DataHandler */
 static bool ChangeGRFParamMask(size_t len, ByteReader &buf)
 {
 	if (len < 1 || len > 3) {
@@ -209,7 +215,7 @@ static bool ChangeGRFParamMask(size_t len, ByteReader &buf)
 	return true;
 }
 
-/** Callback function for 'INFO'->'PARAM'->param_num->'DFLT' to set the default value. */
+/** Callback function for 'INFO'->'PARAM'->param_num->'DFLT' to set the default value. @copydoc DataHandler */
 static bool ChangeGRFParamDefault(size_t len, ByteReader &buf)
 {
 	if (len != 4) {
@@ -222,9 +228,30 @@ static bool ChangeGRFParamDefault(size_t len, ByteReader &buf)
 	return true;
 }
 
-typedef bool (*DataHandler)(size_t, ByteReader &);          ///< Type of callback function for binary nodes
-typedef bool (*TextHandler)(uint8_t, std::string_view str); ///< Type of callback function for text nodes
-typedef bool (*BranchHandler)(ByteReader &);                ///< Type of callback function for branch nodes
+/**
+ * Callback to read binary data.
+ * @param len The number of bytes to read.
+ * @param buf The buffer to read from.
+ * @return \c true iff the data could be processed.
+ */
+using DataHandler = bool(*)(size_t len, ByteReader &buf);
+
+/**
+ * Callback to read text data.
+ * @param langid The language the text is for.
+ * @param str The actual text.
+ * @return \c true iff the data could be processed.
+ */
+using TextHandler = bool(*)(GRFLanguage langid, std::string_view str);
+
+/**
+ * Callback for parsing branch nodes.
+ * @param buf The buffer to read from.
+ * @return \c true iff the data could be processed.
+ */
+using BranchHandler = bool(*)(ByteReader &buf);
+
+using NodeID = Label<struct NodeIDTag>; ///< Label type of the nodes in the \c AllowedSubtags.
 
 /**
  * Data structure to store the allowed id/type combinations for action 14. The
@@ -237,7 +264,7 @@ struct AllowedSubtags {
 	/** Custom 'span' of subtags. Required because std::span with an incomplete type is UB. */
 	using Span = std::pair<const AllowedSubtags *, const AllowedSubtags *>;
 
-	uint32_t id; ///< The identifier for this node.
+	NodeID id; ///< The identifier for this node.
 	std::variant<DataHandler, TextHandler, BranchHandler, Span> handler; ///< The handler for this node.
 };
 
@@ -266,6 +293,7 @@ static bool SkipInfoChunk(ByteReader &buf)
  * of some parameter values (type uint/enum) or the names of some bits
  * (type bitmask). In both cases the format is the same:
  * Each subnode should be a text node with the value/bit number as id.
+ * @copydoc BranchHandler
  */
 static bool ChangeGRFParamValueNames(ByteReader &buf)
 {
@@ -279,7 +307,7 @@ static bool ChangeGRFParamValueNames(ByteReader &buf)
 			continue;
 		}
 
-		uint8_t langid = buf.ReadByte();
+		GRFLanguage langid = static_cast<GRFLanguage>(buf.ReadByte());
 		std::string_view name_string = buf.ReadString();
 
 		auto it = std::ranges::lower_bound(_cur_parameter->value_names, id, std::less{}, &GRFParameterInfo::ValueName::first);
@@ -295,13 +323,13 @@ static bool ChangeGRFParamValueNames(ByteReader &buf)
 
 /** Action14 parameter tags */
 static constexpr AllowedSubtags _tags_parameters[] = {
-	AllowedSubtags{'NAME', ChangeGRFParamName},
-	AllowedSubtags{'DESC', ChangeGRFParamDescription},
-	AllowedSubtags{'TYPE', ChangeGRFParamType},
-	AllowedSubtags{'LIMI', ChangeGRFParamLimits},
-	AllowedSubtags{'MASK', ChangeGRFParamMask},
-	AllowedSubtags{'VALU', ChangeGRFParamValueNames},
-	AllowedSubtags{'DFLT', ChangeGRFParamDefault},
+	AllowedSubtags{"NAME", ChangeGRFParamName},
+	AllowedSubtags{"DESC", ChangeGRFParamDescription},
+	AllowedSubtags{"TYPE", ChangeGRFParamType},
+	AllowedSubtags{"LIMI", ChangeGRFParamLimits},
+	AllowedSubtags{"MASK", ChangeGRFParamMask},
+	AllowedSubtags{"VALU", ChangeGRFParamValueNames},
+	AllowedSubtags{"DFLT", ChangeGRFParamDefault},
 };
 
 /**
@@ -309,6 +337,7 @@ static constexpr AllowedSubtags _tags_parameters[] = {
  * parameters. Each subnode of 'INFO'->'PARA' should be a branch node with
  * the parameter number as id. The first parameter has id 0. The maximum
  * parameter that can be changed is set by 'INFO'->'NPAR' which defaults to 80.
+ * @copydoc BranchHandler
  */
 static bool HandleParameterInfo(ByteReader &buf)
 {
@@ -338,15 +367,15 @@ static bool HandleParameterInfo(ByteReader &buf)
 
 /** Action14 tags for the INFO node */
 static constexpr AllowedSubtags _tags_info[] = {
-	AllowedSubtags{'NAME', ChangeGRFName},
-	AllowedSubtags{'DESC', ChangeGRFDescription},
-	AllowedSubtags{'URL_', ChangeGRFURL},
-	AllowedSubtags{'NPAR', ChangeGRFNumUsedParams},
-	AllowedSubtags{'PALS', ChangeGRFPalette},
-	AllowedSubtags{'BLTR', ChangeGRFBlitter},
-	AllowedSubtags{'VRSN', ChangeGRFVersion},
-	AllowedSubtags{'MINV', ChangeGRFMinVersion},
-	AllowedSubtags{'PARA', HandleParameterInfo},
+	AllowedSubtags{"NAME", ChangeGRFName},
+	AllowedSubtags{"DESC", ChangeGRFDescription},
+	AllowedSubtags{"URL_", ChangeGRFURL},
+	AllowedSubtags{"NPAR", ChangeGRFNumUsedParams},
+	AllowedSubtags{"PALS", ChangeGRFPalette},
+	AllowedSubtags{"BLTR", ChangeGRFBlitter},
+	AllowedSubtags{"VRSN", ChangeGRFVersion},
+	AllowedSubtags{"MINV", ChangeGRFMinVersion},
+	AllowedSubtags{"PARA", HandleParameterInfo},
 };
 
 
@@ -395,7 +424,7 @@ struct GRFFeatureTest {
 static GRFFeatureTest _current_grf_feature_test;
 
 /** Callback function for 'FTST'->'NAME' to set the name of the feature being tested. */
-static bool ChangeGRFFeatureTestName(uint8_t langid, std::string_view str)
+static bool ChangeGRFFeatureTestName(GRFLanguage langid, std::string_view str)
 {
 	extern const GRFFeatureInfo _grf_feature_list[];
 	for (const GRFFeatureInfo *info = _grf_feature_list; info->name != nullptr; info++) {
@@ -465,11 +494,11 @@ static bool ChangeGRFFeatureTestSuccessResultValue(size_t len, ByteReader &buf)
 
 /** Action14 tags for the FTST node */
 static constexpr AllowedSubtags _tags_ftst[] = {
-	AllowedSubtags{'NAME', ChangeGRFFeatureTestName},
-	AllowedSubtags{'MINV', ChangeGRFFeatureMinVersion},
-	AllowedSubtags{'MAXV', ChangeGRFFeatureMaxVersion},
-	AllowedSubtags{'SETP', ChangeGRFFeatureSetPlatformVarBit},
-	AllowedSubtags{'SVAL', ChangeGRFFeatureTestSuccessResultValue},
+	AllowedSubtags{"NAME", ChangeGRFFeatureTestName},
+	AllowedSubtags{"MINV", ChangeGRFFeatureMinVersion},
+	AllowedSubtags{"MAXV", ChangeGRFFeatureMaxVersion},
+	AllowedSubtags{"SETP", ChangeGRFFeatureSetPlatformVarBit},
+	AllowedSubtags{"SVAL", ChangeGRFFeatureTestSuccessResultValue},
 };
 
 /**
@@ -506,7 +535,7 @@ struct GRFPropertyMapAction {
 		this->tag_name = tag;
 		this->descriptor = desc;
 
-		this->feature = GSF_INVALID;
+		this->feature = GrfSpecFeature::Invalid;
 		this->prop_id = -1;
 		this->ext_prop_id = -1;
 		this->name.clear();
@@ -541,7 +570,7 @@ struct GRFPropertyMapAction {
 				entry.feature = info->feature;
 				entry.raw_id = this->prop_id;
 				success = true;
-				if (entry.feature == GSF_ROADSTOPS && this->prop_id != GSF_ROADSTOPS) {
+				if (entry.feature == GrfSpecFeature::RoadStops && this->prop_id != to_underlying(GrfSpecFeature::RoadStops)) {
 					GrfMsg(3, "Enabling legacy road stops feature workarounds");
 					SetBit(_cur_gps.grffile->ctrl_flags, GFCF_ROADSTOPS_FEATURE_MAP_NON_DEFAULT_ID);
 				}
@@ -559,7 +588,7 @@ struct GRFPropertyMapAction {
 				GrfMsg(0, "Error: Unimplemented mapped {}: {}, mapped to: 0x{:02X}", this->descriptor, str, this->prop_id);
 				GRFError *error = DisableGrf(STR_NEWGRF_ERROR_UNIMPLEMETED_MAPPED_FEATURE_ID);
 				error->data = stredup(str);
-				error->param_value[1] = GSF_INVALID;
+				error->param_value[1] = to_underlying(GrfSpecFeature::Invalid);
 				error->param_value[2] = this->prop_id;
 			} else {
 				const char *str_store = stredup(str);
@@ -568,7 +597,7 @@ struct GRFPropertyMapAction {
 				_cur_gps.grffile->remap_unknown_property_names.emplace_back(str_store);
 				GRFFeatureMapRemapEntry &entry = _cur_gps.grffile->feature_id_remaps.Entry(this->prop_id);
 				entry.name = str_store;
-				entry.feature = (this->fallback_mode == GPMFM_IGNORE) ? GSF_INVALID : GSF_ERROR_ON_USE;
+				entry.feature = (this->fallback_mode == GPMFM_IGNORE) ? GrfSpecFeature::Invalid : GrfSpecFeature::ErrorOnUse;
 				entry.raw_id = this->prop_id;
 			}
 		}
@@ -576,7 +605,7 @@ struct GRFPropertyMapAction {
 
 	void ExecutePropertyRemapping()
 	{
-		if (this->feature == GSF_INVALID) {
+		if (this->feature == GrfSpecFeature::Invalid) {
 			GrfMsg(2, "Action 14 {} remapping: no feature defined, doing nothing", this->descriptor);
 			return;
 		}
@@ -592,7 +621,7 @@ struct GRFPropertyMapAction {
 		const char *str = this->name.c_str();
 		extern const GRFPropertyMapDefinition _grf_action0_remappable_properties[];
 		for (const GRFPropertyMapDefinition *info = _grf_action0_remappable_properties; info->name != nullptr; info++) {
-			if ((info->feature == GSF_INVALID || info->feature == this->feature) && strcmp(info->name, str) == 0) {
+			if ((info->feature == GrfSpecFeature::Invalid || info->feature == this->feature) && strcmp(info->name, str) == 0) {
 				if (this->prop_id > 0) {
 					GRFFilePropertyRemapEntry &entry = _cur_gps.grffile->action0_property_remaps[this->feature].Entry(this->prop_id);
 					entry.name = info->name;
@@ -625,7 +654,7 @@ struct GRFPropertyMapAction {
 				GrfMsg(0, "Error: Unimplemented mapped {}: {}, feature: {}, mapped to: {:X}{}", this->descriptor, str, GetFeatureString(this->feature), mapped_to, extended);
 				GRFError *error = DisableGrf(STR_NEWGRF_ERROR_UNIMPLEMETED_MAPPED_PROPERTY);
 				error->data = stredup(str);
-				error->param_value[1] = this->feature;
+				error->param_value[1] = to_underlying(this->feature);
 				error->param_value[2] = ((this->prop_id > 0) ? 0 : 0xE0000) | mapped_to;
 			} else {
 				const char *str_store = stredup(str);
@@ -653,7 +682,7 @@ struct GRFPropertyMapAction {
 
 	void ExecuteVariableRemapping()
 	{
-		if (this->feature == GSF_INVALID) {
+		if (this->feature == GrfSpecFeature::Invalid) {
 			GrfMsg(2, "Action 14 {} remapping: no feature defined, doing nothing", this->descriptor);
 			return;
 		}
@@ -666,7 +695,7 @@ struct GRFPropertyMapAction {
 		extern const GRFVariableMapDefinition _grf_action2_remappable_variables[];
 		for (const GRFVariableMapDefinition *info = _grf_action2_remappable_variables; info->name != nullptr; info++) {
 			if (info->feature == this->feature && strcmp(info->name, str) == 0) {
-				_cur_gps.grffile->grf_variable_remaps.push_back({ (uint16_t)info->id, (uint8_t)this->feature, this->input_shift, this->output_shift, this->input_mask, this->output_mask, this->output_param });
+				_cur_gps.grffile->grf_variable_remaps.push_back({ (uint16_t)info->id, this->feature, this->input_shift, this->output_shift, this->input_mask, this->output_mask, this->output_param });
 				success = true;
 				break;
 			}
@@ -735,7 +764,7 @@ struct GRFPropertyMapAction {
 static GRFPropertyMapAction _current_grf_property_map_action;
 
 /** Callback function for ->'NAME' to set the name of the item to be mapped. */
-static bool ChangePropertyRemapName(uint8_t langid, std::string_view str)
+static bool ChangePropertyRemapName(GRFLanguage langid, std::string_view str)
 {
 	_current_grf_property_map_action.name = str;
 	return true;
@@ -750,7 +779,7 @@ static bool ChangePropertyRemapFeature(size_t len, ByteReader &buf)
 		buf.Skip(len);
 	} else {
 		GrfSpecFeatureRef feature = ReadFeature(buf.ReadByte());
-		if (feature.id >= GSF_END) {
+		if (feature.id >= GrfSpecFeature::End) {
 			GrfMsg(2, "Action 14 {} mapping: invalid feature ID: {}, in '{}'->'FEAT', ignoring this field", action.descriptor, GetFeatureString(feature), action.tag_name);
 		} else {
 			action.feature = feature.id;
@@ -937,11 +966,11 @@ static bool ChangePropertyRemapSetOutputParam(size_t len, ByteReader &buf)
 
 /** Action14 tags for the FIDM node */
 static constexpr AllowedSubtags _tags_fidm[] = {
-	AllowedSubtags{'NAME', ChangePropertyRemapName},
-	AllowedSubtags{'FTID', ChangePropertyRemapFeatureId},
-	AllowedSubtags{'FLBK', ChangePropertyRemapSetFallbackMode},
-	AllowedSubtags{'SETT', ChangePropertyRemapSetTTDVerVarBit},
-	AllowedSubtags{'SVAL', ChangePropertyRemapSuccessResultValue},
+	AllowedSubtags{"NAME", ChangePropertyRemapName},
+	AllowedSubtags{"FTID", ChangePropertyRemapFeatureId},
+	AllowedSubtags{"FLBK", ChangePropertyRemapSetFallbackMode},
+	AllowedSubtags{"SETT", ChangePropertyRemapSetTTDVerVarBit},
+	AllowedSubtags{"SVAL", ChangePropertyRemapSuccessResultValue},
 };
 
 /**
@@ -957,13 +986,13 @@ static bool HandleFeatureIDMap(ByteReader &buf)
 
 /** Action14 tags for the A0PM node */
 static constexpr AllowedSubtags _tags_a0pm[] = {
-	AllowedSubtags{'NAME', ChangePropertyRemapName},
-	AllowedSubtags{'FEAT', ChangePropertyRemapFeature},
-	AllowedSubtags{'PROP', ChangePropertyRemapPropertyId},
-	AllowedSubtags{'XPRP', ChangePropertyRemapExtendedPropertyId},
-	AllowedSubtags{'FLBK', ChangePropertyRemapSetFallbackMode},
-	AllowedSubtags{'SETT', ChangePropertyRemapSetTTDVerVarBit},
-	AllowedSubtags{'SVAL', ChangePropertyRemapSuccessResultValue},
+	AllowedSubtags{"NAME", ChangePropertyRemapName},
+	AllowedSubtags{"FEAT", ChangePropertyRemapFeature},
+	AllowedSubtags{"PROP", ChangePropertyRemapPropertyId},
+	AllowedSubtags{"XPRP", ChangePropertyRemapExtendedPropertyId},
+	AllowedSubtags{"FLBK", ChangePropertyRemapSetFallbackMode},
+	AllowedSubtags{"SETT", ChangePropertyRemapSetTTDVerVarBit},
+	AllowedSubtags{"SVAL", ChangePropertyRemapSuccessResultValue},
 };
 
 /**
@@ -979,15 +1008,15 @@ static bool HandleAction0PropertyMap(ByteReader &buf)
 
 /** Action14 tags for the A2VM node */
 static constexpr AllowedSubtags _tags_a2vm[] = {
-	AllowedSubtags{'NAME', ChangePropertyRemapName},
-	AllowedSubtags{'FEAT', ChangePropertyRemapFeature},
-	AllowedSubtags{'RSFT', ChangePropertyRemapSetInputShift},
-	AllowedSubtags{'RMSK', ChangePropertyRemapSetInputMask},
-	AllowedSubtags{'VSFT', ChangePropertyRemapSetOutputShift},
-	AllowedSubtags{'VMSK', ChangePropertyRemapSetOutputMask},
-	AllowedSubtags{'VPRM', ChangePropertyRemapSetOutputParam},
-	AllowedSubtags{'SETT', ChangePropertyRemapSetTTDVerVarBit},
-	AllowedSubtags{'SVAL', ChangePropertyRemapSuccessResultValue},
+	AllowedSubtags{"NAME", ChangePropertyRemapName},
+	AllowedSubtags{"FEAT", ChangePropertyRemapFeature},
+	AllowedSubtags{"RSFT", ChangePropertyRemapSetInputShift},
+	AllowedSubtags{"RMSK", ChangePropertyRemapSetInputMask},
+	AllowedSubtags{"VSFT", ChangePropertyRemapSetOutputShift},
+	AllowedSubtags{"VMSK", ChangePropertyRemapSetOutputMask},
+	AllowedSubtags{"VPRM", ChangePropertyRemapSetOutputParam},
+	AllowedSubtags{"SETT", ChangePropertyRemapSetTTDVerVarBit},
+	AllowedSubtags{"SVAL", ChangePropertyRemapSuccessResultValue},
 };
 
 /**
@@ -1003,11 +1032,11 @@ static bool HandleAction2VariableMap(ByteReader &buf)
 
 /** Action14 tags for the A5TM node */
 static constexpr AllowedSubtags _tags_a5tm[] = {
-	AllowedSubtags{'NAME', ChangePropertyRemapName},
-	AllowedSubtags{'TYPE', ChangePropertyRemapTypeId},
-	AllowedSubtags{'FLBK', ChangePropertyRemapSetFallbackMode},
-	AllowedSubtags{'SETT', ChangePropertyRemapSetTTDVerVarBit},
-	AllowedSubtags{'SVAL', ChangePropertyRemapSuccessResultValue},
+	AllowedSubtags{"NAME", ChangePropertyRemapName},
+	AllowedSubtags{"TYPE", ChangePropertyRemapTypeId},
+	AllowedSubtags{"FLBK", ChangePropertyRemapSetFallbackMode},
+	AllowedSubtags{"SETT", ChangePropertyRemapSetTTDVerVarBit},
+	AllowedSubtags{"SVAL", ChangePropertyRemapSuccessResultValue},
 };
 
 /**
@@ -1023,22 +1052,22 @@ static bool HandleAction5TypeMap(ByteReader &buf)
 
 /** Action14 root tags */
 static constexpr AllowedSubtags _tags_root_static[] = {
-	AllowedSubtags{'INFO', std::make_pair(std::begin(_tags_info), std::end(_tags_info))},
-	AllowedSubtags{'FTST', SkipInfoChunk},
-	AllowedSubtags{'FIDM', SkipInfoChunk},
-	AllowedSubtags{'A0PM', SkipInfoChunk},
-	AllowedSubtags{'A2VM', SkipInfoChunk},
-	AllowedSubtags{'A5TM', SkipInfoChunk},
+	AllowedSubtags{"INFO", std::make_pair(std::begin(_tags_info), std::end(_tags_info))},
+	AllowedSubtags{"FTST", SkipInfoChunk},
+	AllowedSubtags{"FIDM", SkipInfoChunk},
+	AllowedSubtags{"A0PM", SkipInfoChunk},
+	AllowedSubtags{"A2VM", SkipInfoChunk},
+	AllowedSubtags{"A5TM", SkipInfoChunk},
 };
 
 /** Action14 root tags */
 static constexpr AllowedSubtags _tags_root_feature_tests[] = {
-	AllowedSubtags{'INFO', SkipInfoChunk},
-	AllowedSubtags{'FTST', HandleFeatureTestInfo},
-	AllowedSubtags{'FIDM', HandleFeatureIDMap},
-	AllowedSubtags{'A0PM', HandleAction0PropertyMap},
-	AllowedSubtags{'A2VM', HandleAction2VariableMap},
-	AllowedSubtags{'A5TM', HandleAction5TypeMap},
+	AllowedSubtags{"INFO", SkipInfoChunk},
+	AllowedSubtags{"FTST", HandleFeatureTestInfo},
+	AllowedSubtags{"FIDM", HandleFeatureIDMap},
+	AllowedSubtags{"A0PM", HandleAction0PropertyMap},
+	AllowedSubtags{"A2VM", HandleAction2VariableMap},
+	AllowedSubtags{"A5TM", HandleAction5TypeMap},
 };
 
 
@@ -1088,7 +1117,7 @@ static bool SkipUnknownInfo(ByteReader &buf, uint8_t type)
  * @param subtags Allowed subtags.
  * @return Whether all tags could be handled.
  */
-static bool HandleNode(uint8_t type, uint32_t id, ByteReader &buf, std::span<const AllowedSubtags> subtags)
+static bool HandleNode(uint8_t type, NodeID id, ByteReader &buf, std::span<const AllowedSubtags> subtags)
 {
 	/* Visitor to get a subtag handler's type. */
 	struct type_visitor {
@@ -1111,7 +1140,7 @@ static bool HandleNode(uint8_t type, uint32_t id, ByteReader &buf, std::span<con
 
 		bool operator()(const TextHandler &handler)
 		{
-			uint8_t langid = buf.ReadByte();
+			GRFLanguage langid = static_cast<GRFLanguage>(buf.ReadByte());
 			return handler(langid, buf.ReadString());
 		}
 
@@ -1127,11 +1156,11 @@ static bool HandleNode(uint8_t type, uint32_t id, ByteReader &buf, std::span<con
 	};
 
 	for (const auto &tag : subtags) {
-		if (tag.id != std::byteswap(id) || std::visit(type_visitor{}, tag.handler) != type) continue;
+		if (tag.id != id || std::visit(type_visitor{}, tag.handler) != type) continue;
 		return std::visit(evaluate_visitor{buf}, tag.handler);
 	}
 
-	GrfMsg(2, "StaticGRFInfo: unknown type/id combination found, type={:c}, id={:x}", type, id);
+	GrfMsg(2, "StaticGRFInfo: unknown type/id combination found, type={:c}, id={}", type, id.AsString());
 	return SkipUnknownInfo(buf, type);
 }
 
@@ -1145,7 +1174,7 @@ static bool HandleNodes(ByteReader &buf, std::span<const AllowedSubtags> subtags
 {
 	uint8_t type = buf.ReadByte();
 	while (type != 0) {
-		uint32_t id = buf.ReadDWord();
+		NodeID id = buf.ReadLabel<NodeID>();
 		if (!HandleNode(type, id, buf, subtags)) return false;
 		type = buf.ReadByte();
 	}
@@ -1172,9 +1201,15 @@ static void Act14FeatureTest(ByteReader &buf)
 	HandleNodes(buf, _tags_root_feature_tests);
 }
 
+/** @copydoc GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x14>::FileScan(ByteReader &buf) { StaticGRFInfo(buf); }
+/** @copybrief GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x14>::SafetyScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x14>::LabelScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::Init */
 template <> void GrfActionHandler<0x14>::Init(ByteReader &buf) { Act14FeatureTest(buf); }
+/** @copybrief GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x14>::Reserve(ByteReader &) { }
+/** @copybrief GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x14>::Activation(ByteReader &) { }

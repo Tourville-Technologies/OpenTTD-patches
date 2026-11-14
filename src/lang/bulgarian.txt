@@ -15,7 +15,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -1180,9 +1180,9 @@ STR_RIVERS_MODERATE                                             :Средно
 STR_RIVERS_LOT                                                  :Много
 
 ###length 3
-STR_DISASTER_NONE                                               :Никакви
-STR_DISASTER_REDUCED                                            :Намалени
-STR_DISASTER_NORMAL                                             :Нормални
+STR_BREAKDOWNS_NONE                                             :Никакви
+STR_BREAKDOWNS_REDUCED                                          :Намалени
+STR_BREAKDOWNS_NORMAL                                           :Нормални
 
 ###length 4
 STR_SUBSIDY_X1_5                                                :x1.5
@@ -1324,8 +1324,8 @@ STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Задава н
 STR_CONFIG_SETTING_RECESSIONS                                   :Рецесии: {STRING}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :Ако е разрешено, рецесии може да се появяват на всеки няколко години. По време на рецесия цялото производство е значително намалено (връща се на предишно ниво след края на рецесията)
 
-STR_CONFIG_SETTING_TRAIN_REVERSING                              :Забрани обръщане на посоката на влакове в гарите: {STRING}
-STR_CONFIG_SETTING_TRAIN_REVERSING_HELPTEXT                     :Ако е избрано, влаковете няма да обръщат на не-терминални гари, ако има по-кратък път до целта им при обръщане
+
+###length 3
 
 STR_CONFIG_SETTING_DISASTERS                                    :Бедствия: {STRING}
 STR_CONFIG_SETTING_DISASTERS_HELPTEXT                           :Включване/Изключване на бедствия, които могат от време на време да блокират или разрушат превозни средства или инфраструктура
@@ -1348,7 +1348,6 @@ STR_CONFIG_SETTING_CATCHMENT_HELPTEXT                           :Позволя�
 
 STR_CONFIG_SETTING_SERVE_NEUTRAL_INDUSTRIES                     :Станциите на компанията могат да обслужват индустрии с прикрепени неутрални станции: {STRING}
 STR_CONFIG_SETTING_SERVE_NEUTRAL_INDUSTRIES_HELPTEXT            :Когато е включено, индустриите с прикрепени станции (като нефтени платформи) могат да бъдат обслужвани и от станции, собственост на компанията, построени наблизо. Когато е изключено, тези индустрии могат да бъдат обслужвани само от техните прикрепени станции. Всякакви близки станции на компанията няма да могат да ги обслужват, нито пък прикрепената станция ще обслужва нещо друго освен самата индустрия
-
 
 STR_CONFIG_SETTING_EXTRADYNAMITE                                :Разрушаване на повече градска собственост: {STRING.n}
 STR_CONFIG_SETTING_EXTRADYNAMITE_HELPTEXT                       :По-лесно премахване на градски структури и сгради
@@ -1531,6 +1530,8 @@ STR_CONFIG_SETTING_INDUSTRY_CARGO_SCALE                         :Скалира�
 STR_CONFIG_SETTING_INDUSTRY_CARGO_SCALE_HELPTEXT                :Скалиране на производството на товари в индустриите с този процент
 STR_CONFIG_SETTING_CARGO_SCALE_VALUE                            :{NUM}%
 
+###setting-zero-is-special
+
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :Автоматично подновяване на превозното средство, когато остарее: {STRING}
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE_HELPTEXT                   :Ако тази настройка бъде активирана, дадено превозно средство ще бъде автоматично заменено, когато е към края на своя живот, стига условията за това да са налице
 
@@ -1599,6 +1600,8 @@ STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_SMOOTH             :Много по
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_SMOOTH                  :Полегат
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_ROUGH                   :Стръмен
 STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_VERY_ROUGH              :Много стръмен
+
+###length 4
 
 STR_CONFIG_SETTING_VARIETY                                      :Разпределение на разнообразието: {STRING}
 STR_CONFIG_SETTING_VARIETY_HELPTEXT                             :Изберете дали картата да съдържа както планини, така и равнинни зони. Колкото по-голямо е разнообразието, толкова по-големи са разликите във височината между планинските и равнинните зони
@@ -1756,12 +1759,7 @@ STR_CONFIG_SETTING_TIMETABLE_SHOW_ARRIVAL_DEPARTURE_HELPTEXT    :Показва�
 STR_CONFIG_SETTING_QUICKGOTO                                    :Бързо създаване на заповедите на превозните средства: {STRING}
 STR_CONFIG_SETTING_QUICKGOTO_HELPTEXT                           :Автоматичен избор на 'Отиди до', когато се отвори списъка със заповеди
 
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE                            :Стандартни релси: {STRING}
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_HELPTEXT                   :Какъв да бъде видът релси, които да бъдат селектирани при стартирането или зареждането на записана игра. "Първите налични" избира най-стария модел релси, "Последните налични" избира най-новия модел релси. "Най-използваните" избира вида релси, които са най-използвани в момента
 ###length 3
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_FIRST                      :Първите налични
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_LAST                       :Последните налични
-STR_CONFIG_SETTING_DEFAULT_RAIL_TYPE_MOST_USED                  :Най-използваните
 
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION                       :Покажи запазените линии/пътища: {STRING}
 STR_CONFIG_SETTING_SHOW_TRACK_RESERVATION_HELPTEXT              :Оцветява запазените релсови участъци в различен цвят, за да спомогне при проблеми с влакове, отказващи да навлязат в определени релсови секции
@@ -1867,6 +1865,7 @@ STR_CONFIG_SETTING_STATION_LENGTH_LOADING_PENALTY_HELPTEXT      :Когато е
 
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS                             :Вагоните имат ограничение на скоростта: {STRING}
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS_HELPTEXT                    :Ако тази настройка бъде активирана, максималната скорост на вагоните ще се взима предвид при изчисляването на максималната скорост на влака
+
 
 STR_CONFIG_SETTING_DISABLE_ELRAILS                              :Без електрифициране на релси: {STRING}
 STR_CONFIG_SETTING_DISABLE_ELRAILS_HELPTEXT                     :Активирането на тази настройка премахва нуждата от електрифициране на двурелсовите линии, за да могат електрическите локомотиви да се движат по тях
@@ -2126,7 +2125,7 @@ STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE_SI                  :SI (kN)
 
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT                    :Мерни единици за височина: {STRING}
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_HELPTEXT           :Показваните височини ще бъдат изписвани в избраните мерни единици
-###length 3
+###length 4
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_IMPERIAL           :Имперски (фут)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_METRIC             :Метрични (м)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_SI                 :SI (м)
@@ -2182,7 +2181,7 @@ STR_CONFIG_ERROR_INVALID_BASE_GRAPHICS_NOT_FOUND                :{WHITE}... пр
 STR_CONFIG_ERROR_INVALID_BASE_SOUNDS_NOT_FOUND                  :{WHITE}... пропуска набора от основни звуци '{STRING}': не е открит
 STR_CONFIG_ERROR_INVALID_BASE_MUSIC_NOT_FOUND                   :{WHITE}... пропруска набора от основни песни '{STRING}': не е открит
 
-# Video initalization errors
+# Video initialization errors
 STR_VIDEO_DRIVER_ERROR                                          :{WHITE}Грешка с видео настройките...
 STR_VIDEO_DRIVER_ERROR_NO_HARDWARE_ACCELERATION                 :{WHITE}... не е открит съвместим GPU. Хардуерното ускорение е деактивирано
 STR_VIDEO_DRIVER_ERROR_HARDWARE_ACCELERATION_CRASH              :{WHITE}... Графичният драйвер блокира играта. Хардуерното ускорение е изключено
@@ -2435,15 +2434,13 @@ STR_NETWORK_CONNECTING_WAITING                                  :{BLACK}{NUM} и
 STR_NETWORK_CONNECTING_DOWNLOADING_1                            :{BLACK}{BYTES} свалени досега
 STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} / {BYTES} изтеглени
 
-###length 8
+###length 6
 STR_NETWORK_CONNECTING_1                                        :{BLACK}(1/6) Свързване..
 STR_NETWORK_CONNECTING_2                                        :{BLACK}(2/6) Оторизиране..
 STR_NETWORK_CONNECTING_3                                        :{BLACK}(3/6) Изчакване..
 STR_NETWORK_CONNECTING_4                                        :{BLACK}(4/6) Сваляне на карта..
 STR_NETWORK_CONNECTING_5                                        :{BLACK}(5/6) Обработка на данни..
 STR_NETWORK_CONNECTING_6                                        :{BLACK}(6/6) Регистриране..
-STR_NETWORK_CONNECTING_SPECIAL_1                                :{BLACK}Сваляне на инфо за играта..
-STR_NETWORK_CONNECTING_SPECIAL_2                                :{BLACK}Сваляне на инфо за компаниите..
 
 STR_NETWORK_CONNECTION_DISCONNECT                               :{BLACK}Изключване
 
@@ -2747,10 +2744,10 @@ STR_STATION_BUILD_INFRASTRUCTURE_COST_PERIOD                    :{BLACK}Разх
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}Присъедини станцията
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW}Направи отделна станция
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW}Направи отделна станция
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}Съедини междинен пункт
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW}Построй отделен междинен пункт
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW}Построй отделен междинен пункт
 
 # Generic toolbar
 STR_TOOLBAR_DISABLED_NO_VEHICLE_AVAILABLE                       :{BLACK}Деактивирано, тъй като в момента няма налични превозни средства за тази инфраструктура
@@ -2803,6 +2800,8 @@ STR_PICKER_MODE_SAVED                                           :Записан�
 STR_PICKER_MODE_SAVED_TOOLTIP                                   :Превключване показването само на записани обекти
 
 
+
+
 STR_PICKER_STATION_CLASS_TOOLTIP                                :Изберане на тип станция за показване
 STR_PICKER_STATION_TYPE_TOOLTIP                                 :Изберете тип станция за изграждане. Ctrl+Click, за да добавите или премахнете от запазените елементи
 STR_PICKER_WAYPOINT_CLASS_TOOLTIP                               :Избиране на клас междинни пунктове за показване
@@ -2834,7 +2833,6 @@ STR_STATION_CLASS_WAYP_WAYPOINT                                 :Влаков м
 
 # Signal window
 STR_BUILD_SIGNAL_CAPTION                                        :{WHITE}Селекция на сигнал
-STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Превключване на показването на разширени типове сигнали
 STR_BUILD_SIGNAL_SEMAPHORE_NORM_TOOLTIP                         :{BLACK}Нормален сигнал (семафор){}Това е най-базовият тип сигнал, позволяващ само един влак да бъде в дадена секция от влаковата линия в даден момент
 STR_BUILD_SIGNAL_SEMAPHORE_ENTRY_TOOLTIP                        :{BLACK}Входен сигнал (семафор){}Свети зелено, докато има поне един зелен изходен сигнал от следващия сегмент от пътя. В противен случай свети червено
 STR_BUILD_SIGNAL_SEMAPHORE_EXIT_TOOLTIP                         :{BLACK}Изходен сигнал (семафор){}Действа като нормален сигнал, но е необходим, за да работят входните и комбинираните пред-сигнали
@@ -3094,7 +3092,7 @@ STR_LAND_AREA_INFORMATION_AIRPORT_CLASS                         :{BLACK}Клас
 STR_LAND_AREA_INFORMATION_AIRPORT_NAME                          :{BLACK}Име на летището: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME                      :{BLACK}Име на поле на летище: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_NEWGRF_NAME                           :{BLACK}NewGRF: {LTBLUE}{STRING}
-STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Приет товар: {LTBLUE}
+STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}Приет товар: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_CARGO_EIGHTS                          :({COMMA}/8 {STRING})
 STR_LANG_AREA_INFORMATION_RAIL_TYPE                             :{BLACK}Тип релси: {LTBLUE}{STRING}
 STR_LANG_AREA_INFORMATION_ROAD_TYPE                             :{BLACK}Тип път: {LTBLUE}{STRING}
@@ -3362,6 +3360,8 @@ STR_MAPGEN_SOUTHWEST                                            :{BLACK}Югоз
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK}Произволни
 STR_MAPGEN_BORDER_WATER                                         :{BLACK}Вода
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK}Случаен
+
+###length 3
 STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK}Случаен
 STR_MAPGEN_BORDER_MANUAL                                        :{BLACK}Ръчно нагалсени
 
@@ -3402,7 +3402,6 @@ STR_GENERATION_LANDSCAPE_GENERATION                             :{BLACK}Гене
 STR_GENERATION_RIVER_GENERATION                                 :{BLACK}Генериране на реки
 STR_GENERATION_CLEARING_TILES                                   :{BLACK}Генериране на твърда и скална повърност
 STR_GENERATION_TOWN_GENERATION                                  :{BLACK}Генерация на град
-STR_GENERATION_INDUSTRY_GENERATION                              :{BLACK}Генерация на индустрията
 STR_GENERATION_OBJECT_GENERATION                                :{BLACK}Генериране на обекти
 STR_GENERATION_TREE_GENERATION                                  :{BLACK}Генериране на дървета
 STR_GENERATION_SETTINGUP_GAME                                   :{BLACK}Настройване на играта
@@ -3702,6 +3701,7 @@ STR_GOALS_PROGRESS_COMPLETE                                     :{GREEN}{STRING}
 STR_GOALS_TOOLTIP_CLICK_ON_SERVICE_TO_CENTER                    :{BLACK}Кликнете на задачата, за да се центрира камерата върху фабрика/град/поле от картата. Ctrl+Click отваря прозорец с нов изглед към фабриката/града/полето от картата
 
 # Goal question window
+###length 4
 STR_GOAL_QUESTION_CAPTION_QUESTION                              :{BLACK}Въпрос
 STR_GOAL_QUESTION_CAPTION_INFORMATION                           :{BLACK}Информация
 STR_GOAL_QUESTION_CAPTION_WARNING                               :{BLACK}Внимание
@@ -3822,14 +3822,12 @@ STR_CARGO_RATING_EXCELLENT                                      :Отлично
 STR_CARGO_RATING_OUTSTANDING                                    :Невероятно
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}Центриране на камерата върху станцията. Ctrl+Click отваря прозорец с нов изглед към станцията
-STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}Промяна името на станцията
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK}Показване на всички влакове които минават през гарата
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK}Показване на всички автомобили които минават през гарата
 STR_STATION_VIEW_SCHEDULED_AIRCRAFT_TOOLTIP                     :{BLACK}Показване на всички летателни средства които кацат на летището
 STR_STATION_VIEW_SCHEDULED_SHIPS_TOOLTIP                        :{BLACK}Показване на всички кораби които спират на пристанището
 
-STR_STATION_VIEW_RENAME_STATION_CAPTION                         :Преименуване на станция
 
 STR_STATION_VIEW_CLOSE_AIRPORT                                  :{BLACK}Затвори летище
 STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Забранява кацането на летателни средства на това летище
@@ -3837,11 +3835,9 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Забр
 # Waypoint/buoy view window
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK}Центриране на камерата върху междинния пункт. Ctrl+Click отваря прозорец с нов изглед към пункта
-STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}Смяна на името на междинния пункт
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK}Центриране на камерата върху шамандура. Ctrl+Click отваря прозорец с нов изглед към шамандурата
 STR_BUOY_VIEW_RENAME_TOOLTIP                                    :{BLACK}Промяна на името на шамандурата
 
-STR_EDIT_WAYPOINT_NAME                                          :{WHITE}Редакция на името на междинния пункт
 
 # Finances window
 STR_FINANCES_CAPTION                                            :{WHITE}Финансов отчет на {COMPANY} {BLACK}{COMPANY_NUM}
@@ -3956,12 +3952,12 @@ STR_COMPANY_INFRASTRUCTURE_VIEW_TOTAL_PERIOD                    :{WHITE}{CURRENC
 # Industry directory
 STR_INDUSTRY_DIRECTORY_CAPTION                                  :{WHITE}Индустрии({COMMA} от {COMMA})
 STR_INDUSTRY_DIRECTORY_NONE                                     :{ORANGE}- Отсъства -
-STR_INDUSTRY_DIRECTORY_ITEM_INFO                                :{BLACK}{CARGO_LONG}{STRING}{YELLOW} ({COMMA}% транспортирани){BLACK}
+STR_INDUSTRY_DIRECTORY_ITEM_INFO                                :{BLACK}{CARGO_LONG}{STRING}{YELLOW} ({COMMA}% транспортирани)
 STR_INDUSTRY_DIRECTORY_ITEM_NOPROD                              :{ORANGE}{INDUSTRY}
-STR_INDUSTRY_DIRECTORY_ITEM_PROD1                               :{ORANGE}{INDUSTRY} {STRING}
-STR_INDUSTRY_DIRECTORY_ITEM_PROD2                               :{ORANGE}{INDUSTRY} {STRING}, {STRING}
-STR_INDUSTRY_DIRECTORY_ITEM_PROD3                               :{ORANGE}{INDUSTRY} {STRING}, {STRING}, {STRING}
-STR_INDUSTRY_DIRECTORY_ITEM_PRODMORE                            :{ORANGE}{INDUSTRY} {STRING}, {STRING}, {STRING} и още {NUM}...
+STR_INDUSTRY_DIRECTORY_ITEM_PROD1                               :{ORANGE}{INDUSTRY} {BLACK}{STRING}
+STR_INDUSTRY_DIRECTORY_ITEM_PROD2                               :{ORANGE}{INDUSTRY} {BLACK}{STRING}, {STRING}
+STR_INDUSTRY_DIRECTORY_ITEM_PROD3                               :{ORANGE}{INDUSTRY} {BLACK}{STRING}, {STRING}, {STRING}
+STR_INDUSTRY_DIRECTORY_ITEM_PRODMORE                            :{ORANGE}{INDUSTRY} {BLACK}{STRING}, {STRING}, {STRING} и още {NUM}...
 STR_INDUSTRY_DIRECTORY_LIST_TOOLTIP                             :{BLACK}Имена на индустриите - натиснете, за да центрирате камерата върху индустрията. Ctrl+Click отваря прозорец с нов изглед към индустрията
 STR_INDUSTRY_DIRECTORY_ACCEPTED_CARGO_FILTER                    :{BLACK}Приеман товар {SILVER}{STRING}
 STR_INDUSTRY_DIRECTORY_PRODUCED_CARGO_FILTER                    :{BLACK}Произведен товар: {SILVER}{STRING}
@@ -3977,9 +3973,9 @@ STR_INDUSTRY_VIEW_LOCATION_TOOLTIP                              :{BLACK}Цент
 STR_INDUSTRY_VIEW_PRODUCTION_LEVEL                              :{BLACK}Ниво на производство: {YELLOW}{COMMA}%
 STR_INDUSTRY_VIEW_INDUSTRY_ANNOUNCED_CLOSURE                    :{YELLOW}Индустрията обяви незабавна ликвидация!
 
-STR_INDUSTRY_VIEW_REQUIRES_N_CARGO                              :{BLACK}Изисква: {YELLOW}{STRING}{STRING}
-STR_INDUSTRY_VIEW_PRODUCES_N_CARGO                              :{BLACK}Произвежда: {YELLOW}{STRING}{STRING}
-STR_INDUSTRY_VIEW_CARGO_LIST_EXTENSION                          :, {STRING}{STRING}
+STR_INDUSTRY_VIEW_REQUIRES_N_CARGO                              :{BLACK}Изисква: {YELLOW}{STRING}
+STR_INDUSTRY_VIEW_PRODUCES_N_CARGO                              :{BLACK}Произвежда: {YELLOW}{STRING}
+STR_INDUSTRY_VIEW_CARGO_LIST_EXTENSION                          :{STRING}{STRING}
 
 STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}Изисква:
 
@@ -4107,6 +4103,8 @@ STR_PURCHASE_INFO_ALL_BUT                                       :Всичко о
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}Макс. теглеща сила: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}Обхват: {GOLD}{COMMA} полета
 STR_PURCHASE_INFO_AIRCRAFT_TYPE                                 :{BLACK}Тип летателно средство: {GOLD}{STRING}
+
+# Vehicle sort details
 
 ###length 3
 STR_CARGO_TYPE_FILTER_ALL                                       :Всички типове товари
@@ -4268,6 +4266,7 @@ STR_DEPOT_SELL_CONFIRMATION_TEXT                                :{YELLOW}Иск�
 # Engine preview window
 STR_ENGINE_PREVIEW_CAPTION                                      :{WHITE}Съобщение от производител
 STR_ENGINE_PREVIEW_MESSAGE                                      :{GOLD}Създадохме нов {STRING} - интересувате ли се от ексклузивното право да използвате това ПС за една година, за да видим как то работи, преди да го пуснем на пазара за масова употреба?
+
 
 STR_ENGINE_PREVIEW_RAILROAD_LOCOMOTIVE                          :локомотив за двурелсов път
 STR_ENGINE_PREVIEW_ELRAIL_LOCOMOTIVE                            :локомотив за електрифициран релсов път
@@ -4444,7 +4443,6 @@ STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR                     :{BLACK}Печа
 STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR_MIN_PERFORMANCE     :{BLACK}Печалба за тази година: {LTBLUE}{CURRENCY_LONG} (за миналата: {CURRENCY_LONG}) {BLACK}Мин. производителност: {LTBLUE}{POWER_TO_WEIGHT}
 STR_VEHICLE_INFO_PROFIT_THIS_PERIOD_LAST_PERIOD                 :{BLACK}Печалба за този период: {LTBLUE}{CURRENCY_LONG} (за миналия: {CURRENCY_LONG})
 STR_VEHICLE_INFO_PROFIT_THIS_PERIOD_LAST_PERIOD_MIN_PERFORMANCE :{BLACK}Печалба за този период: {LTBLUE}{CURRENCY_LONG} (за миналия: {CURRENCY_LONG}) {BLACK}Мин. производителност: {LTBLUE}{POWER_TO_WEIGHT}
-STR_VEHICLE_INFO_RELIABILITY_BREAKDOWNS                         :{BLACK}Надеждност: {LTBLUE}{COMMA}% {BLACK}Разваляния от последното сервизиране: {LTBLUE}{COMMA}
 
 STR_VEHICLE_INFO_BUILT_VALUE                                    :{G=m}{LTBLUE}{ENGINE} {BLACK}Построен: {LTBLUE}{NUM}{BLACK} Стойност: {LTBLUE}{CURRENCY_LONG}
 STR_VEHICLE_INFO_NO_CAPACITY                                    :{BLACK}Капацитет: {LTBLUE}няма{STRING}
@@ -4499,7 +4497,7 @@ STR_VEHICLE_DETAILS_TRAIN_CAPACITIES_TOOLTIP                    :{BLACK}Капа
 STR_VEHICLE_DETAIL_TAB_TOTAL_CARGO                              :{BLACK}Общо товар
 STR_VEHICLE_DETAILS_TRAIN_TOTAL_CARGO_TOOLTIP                   :{BLACK}Общ капацитет на влака, разделен по типове товар
 
-STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Капацитет: {LTBLUE}
+STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY               :{BLACK}Капацитет: {LTBLUE}{STRING}
 
 # Vehicle refit
 STR_REFIT_CAPTION                                               :{WHITE}{VEHICLE} (Преоборудване)
@@ -4584,7 +4582,7 @@ STR_ORDER_HANGAR_ACTION_TOOLTIP                                 :{BLACK}Избе
 STR_ORDER_CONDITIONAL_VARIABLE_TOOLTIP                          :{BLACK}Данни за превозното средство, на които се базира
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
-###length 8
+###length 9
 STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE                           :Процент натовареност
 STR_ORDER_CONDITIONAL_RELIABILITY                               :Надеждност
 STR_ORDER_CONDITIONAL_MAX_SPEED                                 :Максимална скорост
@@ -4972,7 +4970,7 @@ STR_ERROR_CAN_T_CHANGE_PRESIDENT                                :{WHITE}Не м�
 
 STR_ERROR_MAXIMUM_PERMITTED_LOAN                                :{WHITE}... максимално разрешеният размер на заема е {CURRENCY_LONG}
 STR_ERROR_CAN_T_BORROW_ANY_MORE_MONEY                           :{WHITE}Не може да изтеглите повече пари...
-STR_ERROR_LOAN_ALREADY_REPAYED                                  :{WHITE}... няма заем за изплащане
+STR_ERROR_LOAN_ALREADY_REPAID                                   :{WHITE}... няма заем за изплащане
 STR_ERROR_CURRENCY_REQUIRED                                     :{WHITE}... {CURRENCY_LONG} са необходими
 STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}Не може да изплатите заема...
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}Не може да се харчат пари които са заети от банка...
@@ -4985,7 +4983,6 @@ STR_ERROR_CAN_T_GENERATE_TOWN                                   :{WHITE}Не м�
 STR_ERROR_CAN_T_RENAME_TOWN                                     :{WHITE}Градът не може да бъде преименуван
 STR_ERROR_CAN_T_FOUND_TOWN_HERE                                 :{WHITE}Не може да се основе град тук...
 STR_ERROR_CAN_T_EXPAND_TOWN                                     :{WHITE}Градът не може да се разрасне
-STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP_SUB                          :{WHITE}... прекалено близо до края на картата
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_TOWN                             :{WHITE}... прекалено близо до друг град
 STR_ERROR_TOO_MANY_TOWNS                                        :{WHITE}... прекалено много градове
 STR_ERROR_NO_SPACE_FOR_TOWN                                     :{WHITE}... няма повече място на картата
@@ -5066,12 +5063,12 @@ STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST                           :{WHITE}Първ
 STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING               :{WHITE}Допира се до два или повече междинни пункта
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_WAYPOINT                         :{WHITE}Прекалено близо до друг междинен пункт
 
-STR_ERROR_CAN_T_BUILD_TRAIN_WAYPOINT                            :{WHITE}Тук не може да се построи влаков междинен пункт...
+STR_ERROR_CAN_T_BUILD_RAIL_WAYPOINT                             :{WHITE}Тук не може да се построи влаков междинен пункт...
 STR_ERROR_CAN_T_BUILD_ROAD_WAYPOINT                             :{WHITE}Тук не може да се построи междинен пункт...
 STR_ERROR_CAN_T_POSITION_BUOY_HERE                              :{WHITE}Не може да постави шамандура...
 STR_ERROR_CAN_T_CHANGE_WAYPOINT_NAME                            :{WHITE}Не може да се променя името на междинния пункт...
 
-STR_ERROR_CAN_T_REMOVE_TRAIN_WAYPOINT                           :{WHITE}Не може да се премахне влаков междинен пункт...
+STR_ERROR_CAN_T_REMOVE_RAIL_WAYPOINT                            :{WHITE}Не може да се премахне влаков междинен пункт...
 STR_ERROR_CAN_T_REMOVE_ROAD_WAYPOINT                            :{WHITE}Не може да се премахне междинен пътен пункт...
 STR_ERROR_MUST_REMOVE_RAILWAYPOINT_FIRST                        :{WHITE}Първо трябва да бъде разрушен междинният пункт
 STR_ERROR_MUST_REMOVE_ROADWAYPOINT_FIRST                        :{WHITE}Първо трябва да се премахне пътният междинен пункт

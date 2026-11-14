@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_optimized.cpp Implementation of the optimized 32 bpp blitter. */
@@ -124,7 +124,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								*dst = c;
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0));
+								if (r != 0) *dst = AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0));
 							}
 							dst++;
 							src_px++;
@@ -139,7 +139,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								*dst = ComposeColourRGBANoCheck(c.r, c.g, c.b, c.a, *dst);
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0)), src_px->a, *dst);
+								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8) + ((mode == BlitterMode::ColourRemapWithBrightness) ? bp->brightness_adjust : 0)), src_px->a, *dst);
 							}
 							dst++;
 							src_px++;
@@ -157,7 +157,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								*dst = ComposeColourRGBA(g, g, g, src_px->a, *dst);
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8));
+								if (r != 0) *dst = AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8));
 							}
 							dst++;
 							src_px++;
@@ -173,7 +173,7 @@ inline void Blitter_32bppOptimized::Draw(const Blitter::BlitterParams *bp, ZoomL
 								}
 							} else {
 								uint r = remap[GB(m, 0, 8)];
-								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8)), src_px->a, *dst);
+								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8)), src_px->a, *dst);
 							}
 							dst++;
 							src_px++;
@@ -488,7 +488,7 @@ Sprite *Blitter_32bppOptimized::EncodeInternal(SpriteType sprite_type, const Spr
 	dest_sprite->missing_zoom_levels = missing_zoom_levels;
 
 	SpriteData *dst = (SpriteData *)dest_sprite->data;
-	memset(dst, 0, sizeof(*dst));
+	memset(static_cast<void *>(dst), 0, sizeof(*dst));
 	/* Store sprite flags. */
 	dst->flags = flags;
 

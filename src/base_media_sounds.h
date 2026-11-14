@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file base_media_sounds.h Generic functions for replacing base sounds data. */
@@ -12,10 +12,11 @@
 
 #include "base_media_base.h"
 
+/** Instantiation of BaseSetTraits for a SoundsSet. */
 template <> struct BaseSetTraits<struct SoundsSet> {
-	static constexpr size_t num_files = 1;
-	static constexpr bool search_in_tars = true;
-	static constexpr std::string_view set_type = "sounds";
+	static constexpr size_t num_files = 1; ///< Number of files in a sound set.
+	static constexpr bool search_in_tars = true; ///< Sounds can be in a tar file.
+	static constexpr std::string_view set_type = "sounds"; ///< The type of set.
 };
 
 /** All data of a sounds set. */

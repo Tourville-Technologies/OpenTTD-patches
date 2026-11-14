@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file window_gui.h Functions, definitions and such used only by the GUI. */
@@ -20,7 +20,6 @@
 #include "3rdparty/cpp-btree/btree_map.h"
 
 #include <algorithm>
-#include <functional>
 #include <vector>
 
 /**
@@ -32,6 +31,8 @@ enum class FrameFlag : uint8_t {
 	Lowered, ///< If set the frame is lowered and the background colour brighter (ie. buttons when pressed)
 	Darkened, ///< If set the background is darker, allows for lowered frames with normal background colour when used with FrameFlag::Lowered (ie. dropdown boxes)
 };
+
+/** Bitset of \c FrameFlag elements. */
 using FrameFlags = EnumBitSet<FrameFlag, uint8_t>;
 
 class WidgetDimensions {
@@ -129,13 +130,14 @@ inline constexpr WidgetDimensions WidgetDimensions::unscaled = {
 
 /* widget.cpp */
 void DrawFrameRect(int left, int top, int right, int bottom, Colours colour, FrameFlags flags);
+void DrawCompanyFrameRect(const Rect &r, CompanyID company, FrameFlags flags);
 
 inline void DrawFrameRect(const Rect &r, Colours colour, FrameFlags flags)
 {
 	DrawFrameRect(r.left, r.top, r.right, r.bottom, colour, flags);
 }
 
-void DrawCaption(const Rect &r, Colours colour, Owner owner, TextColour text_colour, std::string_view str, StringAlignment align, FontSize fs);
+void DrawCaption(const Rect &r, Colours colour, Owner owner, TextColour text_colour, std::string_view str, Alignment align, FontSize fs);
 
 /* window.cpp */
 extern Window *_z_front_window;
@@ -157,11 +159,11 @@ inline void IncrementWindowUpdateNumber()
 
 
 /** How do we the window to be placed? */
-enum WindowPosition : uint8_t {
-	WDP_MANUAL,        ///< Manually align the window (so no automatic location finding)
-	WDP_AUTO,          ///< Find a place automatically
-	WDP_CENTER,        ///< Center the window
-	WDP_ALIGN_TOOLBAR, ///< Align toward the toolbar
+enum class WindowPosition : uint8_t {
+	Manual, ///< Manually align the window (so no automatic location finding)
+	Automatic, ///< Find a place automatically
+	Center, ///< Center the window
+	AlignToolbar, ///< Align toward the toolbar
 };
 
 /**
@@ -174,9 +176,12 @@ enum class WindowDefaultFlag : uint8_t {
 	NoClose, ///< This window can't be interactively closed
 	Network, ///< This window is used for network client functionality
 };
+
+/** Bitset of \c WindowDefaultFlag elements. */
 using WindowDefaultFlags = EnumBitSet<WindowDefaultFlag, uint8_t>;
 
 Point GetToolbarAlignedWindowPosition(int window_width);
+Point AlignInitialConstructionToolbar(int window_width);
 
 struct HotkeyList;
 
@@ -238,13 +243,6 @@ struct ResizeInfo {
 	uint step_height; ///< Step-size of height resize changes
 };
 
-/** State of a sort direction button. */
-enum SortButtonState : uint8_t {
-	SBS_OFF,  ///< Do not sort (with this button).
-	SBS_DOWN, ///< Sort ascending.
-	SBS_UP,   ///< Sort descending.
-};
-
 /**
  * Window flags.
  */
@@ -267,6 +265,8 @@ enum class WindowFlag : uint8_t {
 
 	NoTabFastForward, ///< Suppress tab to fast-forward if this window is focused
 };
+
+/** Bitset of \c WindowFlag elements. */
 using WindowFlags = EnumBitSet<WindowFlag, uint16_t>;
 
 enum class WindowInvalidationPolicy : uint8_t {
@@ -301,14 +301,13 @@ struct ViewportData : Viewport {
 
 struct QueryString;
 
-/* misc_gui.cpp */
-enum TooltipCloseCondition : uint8_t {
-	TCC_RIGHT_CLICK,
-	TCC_HOVER,
-	TCC_NONE,
-	TCC_HOVER_VIEWPORT,
-	TCC_NEXT_LOOP,
-	TCC_EXIT_VIEWPORT,
+/* Automatic closing conditions for tooltips. */
+enum class TooltipCloseCondition : uint8_t {
+	RightClick,     ///< Close the tooltip when releasing the right mouse button.
+	Hover,          ///< Close the tooltip when stopping to hovering, i.e. moving the mouse.
+	None,           ///< Do not automatically close the tooltip.
+	HoverViewport,  ///< Close the tooltip when no longer hovering, or when no longer in the viewport.
+	ExitViewport,   ///< Close the tooltip when leaving the viewport.
 };
 
 typedef std::vector<const Vehicle *> VehicleList;
@@ -379,7 +378,7 @@ public:
 	NWidgetStacked *shade_select = nullptr; ///< Selection widget (#NWID_SELECTION) to use for shading the window. If \c nullptr, window cannot shade.
 	Dimension unshaded_size{}; ///< Last known unshaded size (only valid while shaded).
 
-	WidgetID mouse_capture_widget = -1; ///< ID of current mouse capture widget (e.g. dragged scrollbar). -1 if no widget has mouse capture.
+	WidgetID mouse_capture_widget = INVALID_WIDGET; ///< ID of current mouse capture widget (e.g. dragged scrollbar). \c INVALID_WIDGET if no widget has mouse capture.
 
 	Window *parent = nullptr; ///< Parent window.
 
@@ -618,12 +617,12 @@ public:
 
 	void DrawWidgets() const;
 	void DrawViewport(NWidgetDisplayFlags display_flags) const;
-	void DrawSortButtonState(WidgetID widget, SortButtonState state) const;
+	void DrawSortButton(WidgetID widget, bool descending) const;
 	static int SortButtonWidth();
 
-	Window *FindChildWindow(WindowClass wc = WC_INVALID) const;
+	Window *FindChildWindow(WindowClass wc = WindowClass::Invalid) const;
 	Window *FindChildWindowById(WindowClass wc, WindowNumber number) const;
-	void CloseChildWindows(WindowClass wc = WC_INVALID) const;
+	void CloseChildWindows(WindowClass wc = WindowClass::Invalid) const;
 	void CloseChildWindowById(WindowClass wc, WindowNumber number) const;
 
 	/**
@@ -638,7 +637,10 @@ public:
 	void SetDirtyAsBlocks();
 	void ReInit(int rx = 0, int ry = 0, bool reposition = false);
 
-	/** Is window shaded currently? */
+	/**
+	 * Is window shaded currently?
+	 * @return \c true iff the window supports shading and is shaded.
+	 */
 	inline bool IsShaded() const
 	{
 		return this->shade_select != nullptr && this->shade_select->shown_plane == SZSP_HORIZONTAL;
@@ -726,22 +728,22 @@ public:
 	 * A key has been pressed.
 	 * @param key     the Unicode value of the key.
 	 * @param keycode the untranslated key code including shift state.
-	 * @return #ES_HANDLED if the key press has been handled and no other
+	 * @return #EventState::Handled if the key press has been handled and no other
 	 *         window should receive the event.
 	 */
-	virtual EventState OnKeyPress(char32_t key, uint16_t keycode) { return ES_NOT_HANDLED; }
+	virtual EventState OnKeyPress(char32_t key, uint16_t keycode) { return EventState::NotHandled; }
 
 	virtual EventState OnHotkey(int hotkey);
 
 	/**
 	 * The state of the control key has changed
-	 * @return #ES_HANDLED if the change has been handled and no other
+	 * @return #EventState::Handled if the change has been handled and no other
 	 *         window should receive the event.
 	 */
-	virtual EventState OnCTRLStateChange() { return ES_NOT_HANDLED; }
+	virtual EventState OnCTRLStateChange() { return EventState::NotHandled; }
 
 	/**
-	 * The state of the control key has changed, this is sent even if an OnCTRLStateChange handler has return ES_HANDLED
+	 * The state of the control key has changed, this is sent even if an OnCTRLStateChange handler has return EventState::Handled
 	 */
 	virtual void OnCTRLStateChangeAlways() {}
 
@@ -778,6 +780,7 @@ public:
 	 * Event to display a custom tooltip.
 	 * @param pt     The point where the mouse is located.
 	 * @param widget The widget where the mouse is located.
+	 * @param close_cond The conditions when to close the tooltip.
 	 * @return True if the event is handled, false if it is ignored.
 	 */
 	virtual bool OnTooltip([[maybe_unused]] Point pt, [[maybe_unused]] WidgetID widget, [[maybe_unused]] TooltipCloseCondition close_cond) { return false; }
@@ -844,6 +847,7 @@ public:
 
 	/**
 	 * Called periodically.
+	 * @param delta_ms The number of milliseconds since the last call.
 	 */
 	virtual void OnRealtimeTick([[maybe_unused]] uint delta_ms) {}
 
@@ -863,6 +867,7 @@ public:
 	 * A dropdown option associated to this window has been selected.
 	 * @param widget the widget (button) that the dropdown is associated with.
 	 * @param index  the element in the dropdown that is selected.
+	 * @param click_result dropdown element specific result data.
 	 */
 	virtual void OnDropdownSelect([[maybe_unused]] WidgetID widget, [[maybe_unused]] int index, [[maybe_unused]] int click_result) {}
 
@@ -910,7 +915,8 @@ public:
 
 	/**
 	 * The user clicked on a vehicle while HT_VEHICLE has been set.
-	 * @param v clicked vehicle
+	 * @param begin Begin iterator of the vehicle list.
+	 * @param end End iterator of the vehicle list.
 	 * @return True if the click is handled, false if it is ignored
 	 * @pre v->IsPrimaryVehicle() == true
 	 */
@@ -1007,7 +1013,7 @@ public:
 
 	private:
 		window_type<T> *w;
-		void Validate() { while (this->w != nullptr && this->w->window_class == WC_INVALID) this->Next(); }
+		void Validate() { while (this->w != nullptr && this->w->window_class == WindowClass::Invalid) this->Next(); }
 
 		void Next()
 		{
@@ -1099,7 +1105,7 @@ inline NWID *Window::GetWidget(WidgetID widnum)
 	return nwid;
 }
 
-/** Specialized case of #Window::GetWidget for the nested widget base class. */
+/** Specialized case of #Window::GetWidget for the nested widget base class. @copydoc Window::GetWidget */
 template <>
 inline const NWidgetBase *Window::GetWidget<NWidgetBase>(WidgetID widnum) const
 {
@@ -1132,7 +1138,7 @@ public:
 		this->parent = parent;
 	}
 
-	void Close([[maybe_unused]] int data = 0) override;
+	void Close(int data = 0) override;
 };
 
 void BringWindowToFront(Window *w);
@@ -1174,12 +1180,12 @@ extern Rect _scrolling_viewport_bound;
 extern bool _mouse_hovering;
 
 /** Mouse modes. */
-enum SpecialMouseMode : uint8_t {
-	WSM_NONE,     ///< No special mouse mode.
-	WSM_DRAGDROP, ///< Drag&drop an object.
-	WSM_SIZING,   ///< Sizing mode.
-	WSM_PRESIZE,  ///< Presizing mode (docks, tunnels).
-	WSM_DRAGGING, ///< Dragging mode (trees).
+enum class SpecialMouseMode : uint8_t {
+	None, ///< No special mouse mode.
+	DragDrop, ///< Drag&drop an object.
+	Sizing, ///< Sizing mode.
+	Presize, ///< Presizing mode (docks, tunnels).
+	Dragging, ///< Dragging mode (trees).
 };
 extern SpecialMouseMode _special_mouse_mode;
 
@@ -1200,9 +1206,9 @@ inline bool MayBeShown(const Window *w)
 	if (likely(!_in_modal_progress)) return true;
 
 	switch (w->window_class) {
-		case WC_MAIN_WINDOW:    ///< The background, i.e. the game.
-		case WC_MODAL_PROGRESS: ///< The actual progress window.
-		case WC_CONFIRM_POPUP_QUERY: ///< The abort window.
+		case WindowClass::MainWindow:    ///< The background, i.e. the game.
+		case WindowClass::ModalProgress: ///< The actual progress window.
+		case WindowClass::ConfirmPopupQuery: ///< The abort window.
 			return true;
 
 		default:

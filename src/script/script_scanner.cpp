@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_scanner.cpp Allows scanning for scripts. */
@@ -153,6 +153,7 @@ struct ScriptFileChecksumCreator : FileScanner {
 	/**
 	 * Initialise the md5sum to be all zeroes,
 	 * so we can easily xor the data.
+	 * @param dir The directory to look in.
 	 */
 	ScriptFileChecksumCreator(Subdirectory dir) : dir(dir) {}
 
@@ -189,6 +190,7 @@ struct ScriptFileChecksumCreator : FileScanner {
  * @param ci The information to compare to.
  * @param md5sum Whether to check the MD5 checksum.
  * @param info The script to get the shortname and md5 sum from.
+ * @param dir The directory to look in for scripts.
  * @return True iff they're the same.
  */
 static bool IsSameScript(const ContentInfo &ci, bool md5sum, const ScriptInfo &info, Subdirectory dir)

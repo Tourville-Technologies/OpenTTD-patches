@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_animation_base.h Function implementations related to NewGRF animation. */
@@ -51,7 +51,7 @@ struct AnimationBase {
 	 * @param random_animation Whether to pass random bits to the "next frame" callback.
 	 * @param extra_data  Custom extra callback data.
 	 */
-	static void AnimateTile(const Tspec *spec, Tobj *obj, TileIndex tile, bool random_animation, Textra extra_data = 0)
+	static void AnimateTile(const Tspec *spec, Tobj *obj, TileIndex tile, bool random_animation, Textra extra_data = {})
 	{
 		assert(spec != nullptr);
 
@@ -131,7 +131,7 @@ struct AnimationBase {
 	 * @param trigger     What triggered this update? To be passed as parameter to the NewGRF.
 	 * @param extra_data  Custom extra data for callback processing.
 	 */
-	static void ChangeAnimationFrame(CallbackID cb, const Tspec *spec, Tobj *obj, TileIndex tile, uint32_t random_bits, uint32_t trigger, Textra extra_data = 0)
+	static void ChangeAnimationFrame(CallbackID cb, const Tspec *spec, Tobj *obj, TileIndex tile, uint32_t random_bits, uint32_t trigger, Textra extra_data = {})
 	{
 		uint16_t callback = GetCallback(cb, random_bits, trigger, spec, obj, tile, extra_data);
 		if (callback == CALLBACK_FAILED) return;

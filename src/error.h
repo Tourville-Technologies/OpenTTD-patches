@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file error.h Functions related to errors. */
@@ -20,11 +20,11 @@
 struct GRFFile;
 
 /** Message severity/type */
-enum WarningLevel : uint8_t {
-	WL_INFO,     ///< Used for DoCommand-like (and some non-fatal AI GUI) errors/information
-	WL_WARNING,  ///< Other information
-	WL_ERROR,    ///< Errors (eg. saving/loading failed)
-	WL_CRITICAL, ///< Critical errors, the MessageBox is shown in all cases
+enum class WarningLevel : uint8_t {
+	Info, ///< Used for DoCommand-like (and some non-fatal AI GUI) errors/information
+	Warning, ///< Other information
+	Error, ///< Errors (eg. saving/loading failed)
+	Critical, ///< Critical errors, the MessageBox is shown in all cases
 };
 
 /** The data of the error message. */
@@ -40,7 +40,10 @@ protected:
 public:
 	ErrorMessageData(EncodedString &&summary_msg, EncodedString &&detailed_msg, uint duration = 0, int x = 0, int y = 0, EncodedString &&extra_msg = {}, CompanyID company = CompanyID::Invalid());
 
-	/** Check whether error window shall display a company manager face */
+	/**
+	 * Check whether error window shall display a company manager face.
+	 * @return \c true if the company of this error message is valid.
+	 */
 	bool HasFace() const { return company != CompanyID::Invalid(); }
 };
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file test_map.cpp Map-related tests. */
@@ -48,19 +48,19 @@ TEST_CASE("MayHaveRoad - Tunnel/bridge")
 
 	ResetRoadTypes();
 
-	MakeRoadTunnel(TileIndex{0}, OWNER_NONE, TunnelID{0}, DIAGDIR_NE, ROADTYPE_ROAD, INVALID_ROADTYPE);
+	MakeRoadTunnel(TileIndex{0}, OWNER_NONE, TunnelID{0}, DiagDirection::NE, ROADTYPE_ROAD, INVALID_ROADTYPE);
 	CHECK(MayHaveRoad(TileIndex{0}) == true);
 
-	MakeRailTunnel(TileIndex{1}, OWNER_NONE, TunnelID{0}, DIAGDIR_NE, RailType{0});
+	MakeRailTunnel(TileIndex{1}, OWNER_NONE, TunnelID{0}, DiagDirection::NE, RailType{0});
 	CHECK(MayHaveRoad(TileIndex{1}) == false);
 
-	MakeRoadBridgeRamp(TileIndex{2}, OWNER_NONE, OWNER_NONE, OWNER_NONE, BridgeType{0}, DIAGDIR_NE, ROADTYPE_ROAD, INVALID_ROADTYPE);
+	MakeRoadBridgeRamp(TileIndex{2}, OWNER_NONE, OWNER_NONE, OWNER_NONE, BridgeType{0}, DiagDirection::NE, ROADTYPE_ROAD, INVALID_ROADTYPE);
 	CHECK(MayHaveRoad(TileIndex{2}) == true);
 
-	MakeRailBridgeRamp(TileIndex{3}, OWNER_NONE, BridgeType{0}, DIAGDIR_NE, RailType{0}, false);
+	MakeRailBridgeRamp(TileIndex{3}, OWNER_NONE, BridgeType{0}, DiagDirection::NE, RailType{0}, false);
 	CHECK(MayHaveRoad(TileIndex{3}) == false);
 
-	MakeAqueductBridgeRamp(TileIndex{4}, OWNER_NONE, DIAGDIR_NE);
+	MakeAqueductBridgeRamp(TileIndex{4}, OWNER_NONE, DiagDirection::NE);
 	CHECK(MayHaveRoad(TileIndex{4}) == false);
 
 	DeallocateMap();

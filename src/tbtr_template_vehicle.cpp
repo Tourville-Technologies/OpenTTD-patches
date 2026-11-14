@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tbtr_template_vehicle.cpp Template-based train replacement: template vehicle. */
@@ -36,8 +36,6 @@
 #include "3rdparty/robin_hood/robin_hood.h"
 #include "3rdparty/svector/svector.h"
 
-#include <functional>
-
 #include "safeguards.h"
 
 TemplatePool _template_pool("TemplatePool");
@@ -69,7 +67,8 @@ void TemplateVehicleImageDimensions::SetFromTrain(const Train *t)
 	}
 }
 
-TemplateVehicle::TemplateVehicle(VehicleType type, EngineID eid, Owner current_owner) : BaseVehicle(type), first(this), owner(current_owner), engine_type(eid)
+TemplateVehicle::TemplateVehicle(TemplateID index, VehicleType type, EngineID eid, Owner current_owner) :
+	PoolItemBase(index), BaseVehicle(type), first(this), owner(current_owner), engine_type(eid)
 {
 	this->sprite_seq.Set(SPR_IMG_QUERY);
 }
@@ -97,16 +96,6 @@ TemplateVehicle *TemplateVehicle::GetNextUnit() const
 			tv = tv->Next();
 		}
 		return tv;
-}
-
-TemplateVehicle *TemplateVehicle::GetPrevUnit()
-{
-	TemplateVehicle *tv = this->Prev();
-	while (tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART|GVSF_ENGINE)) {
-		tv = tv->Prev();
-	}
-	if (tv && HasBit(tv->subtype, GVSF_MULTIHEADED|GVSF_ENGINE)) tv = tv->Prev();
-	return tv;
 }
 
 void ClearTemplateReplacements()
@@ -146,7 +135,7 @@ static void MarkTrainsInGroupAsPendingTemplateReplacement(GroupID gid, const Tem
 	Owner owner = Group::Get(gid)->owner;
 
 	for (const Group *group : Group::Iterate()) {
-		if (group->vehicle_type != VEH_TRAIN || group->owner != owner || group->index == gid) continue;
+		if (group->vehicle_type != VehicleType::Train || group->owner != owner || group->index == gid) continue;
 
 		auto is_descendant = [gid](const Group *g) -> bool {
 			while (true) {
@@ -250,7 +239,7 @@ uint TemplateVehicle::NumGroupsUsingTemplate() const
  */
 void RemoveTemplateReplacementsFromGroupToBeDeleted(const Group *g)
 {
-	if (g->vehicle_type != VEH_TRAIN) return;
+	if (g->vehicle_type != VehicleType::Train) return;
 
 	_template_replacements.erase(g->index);
 	_template_replacement_index_recursive.erase(g->index);
@@ -272,7 +261,7 @@ void ReindexTemplateReplacements()
 
 	_template_replacement_index_recursive.clear();
 	for (const Group *group : Group::Iterate()) {
-		if (group->vehicle_type != VEH_TRAIN) continue;
+		if (group->vehicle_type != VehicleType::Train) continue;
 
 		const Group *g = group;
 		while (true) {

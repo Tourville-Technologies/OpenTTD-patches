@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file xaudio2_s.cpp XAudio2 sound driver. */
@@ -38,7 +38,7 @@ using Microsoft::WRL::ComPtr;
 #include "../os/windows/win32.h"
 #include "../safeguards.h"
 
-/* Definition of the "XAudio2Create" call used to initialise XAudio2 */
+/** Definition of the "XAudio2Create" call used to initialise XAudio2. */
 typedef HRESULT(__stdcall *API_XAudio2Create)(_Outptr_ IXAudio2 **ppXAudio2, UINT32 Flags, XAUDIO2_PROCESSOR XAudio2Processor);
 
 static FSoundDriver_XAudio2 iFSoundDriver_XAudio2;
@@ -60,6 +60,8 @@ public:
 		this->buffer.resize(buffer_length);
 	}
 
+	/* This needs to be virtual because the XAudio2 API declares the interface without
+	 * a virtual destructor, even though it has functions that need to be overridden. */
 	virtual ~StreamingVoiceContext() = default;
 
 	HRESULT SubmitBuffer()
@@ -114,7 +116,11 @@ static IXAudio2MasteringVoice *_mastering_voice = nullptr;
 static ComPtr<IXAudio2> _xaudio2;
 static std::unique_ptr<StreamingVoiceContext> _voice_context;
 
-/** Create XAudio2 context with SEH exception checking. */
+/**
+ * Create XAudio2 context with SEH exception checking.
+ * @param xAudio2Create Function pointer to the xAudio2Create API call in the loaded DLL.
+ * @return \c S_OK iff successful, otherwise an error code.
+ */
 static HRESULT CreateXAudio(API_XAudio2Create xAudio2Create)
 {
 	HRESULT hr;
@@ -175,7 +181,7 @@ const char *SoundDriver_XAudio2::Start(const StringList &parm)
 		CoUninitialize();
 
 		Debug(driver, 0, "xaudio2_s: XAudio2Create failed ({:08x})", (uint)hr);
-		return "Failed to inititialise the XAudio2 engine";
+		return "Failed to initialise the XAudio2 engine";
 	}
 
 	/* Create a mastering voice */

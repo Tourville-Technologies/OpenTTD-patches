@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file stringfilter_type.h Searching and filtering using a stringterm. */
@@ -11,7 +11,7 @@
 #define STRINGFILTER_TYPE_H
 
 #include "string_type.h"
-#include "strings_type.h"
+#include "strings_id_type.h"
 #include <vector>
 
 /**
@@ -54,6 +54,7 @@ public:
 	/**
 	 * Constructor for filter.
 	 * @param case_sensitive Pointer to a (usually static) variable controlling the case-sensitivity. nullptr means always case-insensitive.
+	 * @param locale_aware Whether to match using the locale.
 	 */
 	StringFilter(const bool *case_sensitive = nullptr, bool locale_aware = true) : case_sensitive(case_sensitive), locale_aware(locale_aware) {}
 

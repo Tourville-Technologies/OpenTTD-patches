@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file order_sl.cpp Code handling saving and loading of orders */
@@ -50,7 +50,7 @@ void Order::ConvertFromOldSavegame()
 	this->flags = 0;
 
 	/* First handle non-stop - use value from savegame if possible, else use value from config file */
-	if (_settings_client.gui.sg_new_nonstop || (IsSavegameVersionBefore(SLV_22) && _savegame_type != SGT_TTO && _savegame_type != SGT_TTD && (_settings_client.gui.new_nonstop || _settings_game.order.nonstop_only))) {
+	if (_settings_client.gui.sg_new_nonstop || (IsSavegameVersionBefore(SLV_22) && _savegame_type != SavegameType::TTO && _savegame_type != SavegameType::TTD && (_settings_client.gui.new_nonstop || _settings_game.order.nonstop_only))) {
 		/* OFB_NON_STOP */
 		this->SetNonStopType((old_flags & 8) ? ONSF_NO_STOP_AT_ANY_STATION : ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS);
 	} else {
@@ -66,32 +66,33 @@ void Order::ConvertFromOldSavegame()
 	if (this->GetType() != OT_GOTO_DEPOT) {
 		/* Then the load flags */
 		if ((old_flags & 2) != 0) { // OFB_UNLOAD
-			this->SetLoadType(OLFB_NO_LOAD);
+			this->SetLoadType(OrderLoadType::NoLoad);
 		} else if ((old_flags & 4) == 0) { // !OFB_FULL_LOAD
-			this->SetLoadType(OLF_LOAD_IF_POSSIBLE);
+			this->SetLoadType(OrderLoadType::LoadIfPossible);
 		} else {
 			/* old OTTD versions stored full_load_any in config file - assume it was enabled when loading */
-			this->SetLoadType(_settings_client.gui.sg_full_load_any || IsSavegameVersionBefore(SLV_22) ? OLF_FULL_LOAD_ANY : OLFB_FULL_LOAD);
+			this->SetLoadType(_settings_client.gui.sg_full_load_any || IsSavegameVersionBefore(SLV_22) ? OrderLoadType::FullLoadAny : OrderLoadType::FullLoad);
 		}
 
-		if (this->IsType(OT_GOTO_STATION)) this->SetStopLocation(OSL_PLATFORM_FAR_END);
+		if (this->IsType(OT_GOTO_STATION)) this->SetStopLocation(OrderStopLocation::FarEnd);
 
 		/* Finally fix the unload flags */
 		if ((old_flags & 1) != 0) { // OFB_TRANSFER
-			this->SetUnloadType(OUFB_TRANSFER);
+			this->SetUnloadType(OrderUnloadType::Transfer);
 		} else if ((old_flags & 2) != 0) { // OFB_UNLOAD
-			this->SetUnloadType(OUFB_UNLOAD);
+			this->SetUnloadType(OrderUnloadType::Unload);
 		} else {
-			this->SetUnloadType(OUF_UNLOAD_IF_POSSIBLE);
+			this->SetUnloadType(OrderUnloadType::UnloadIfPossible);
 		}
 	} else {
 		/* Then the depot action flags */
 		this->SetDepotActionType(((old_flags & 6) == 4) ? ODATFB_HALT : ODATF_SERVICE_ONLY);
 
 		/* Finally fix the depot type flags */
-		uint t = ((old_flags & 6) == 6) ? ODTFB_SERVICE : ODTF_MANUAL;
-		if ((old_flags & 2) != 0) t |= ODTFB_PART_OF_ORDERS;
-		this->SetDepotOrderType((OrderDepotTypeFlags)t);
+		OrderDepotTypeFlags type_flags{};
+		if ((old_flags & 6) == 6) type_flags.Set(OrderDepotTypeFlag::Service);
+		if ((old_flags & 2) != 0) type_flags.Set(OrderDepotTypeFlag::PartOfOrders);
+		this->SetDepotOrderType(type_flags);
 	}
 }
 
@@ -214,7 +215,7 @@ static void Load_ORDR()
 			SlArray(orders, len, SLE_UINT16);
 
 			for (uint32_t i = 0; i < (uint32_t)len; ++i) {
-				OrderPoolItem *o = new (OrderID(i)) OrderPoolItem();
+				OrderPoolItem *o = OrderPoolItem::CreateAtIndex(OrderID(i));
 				o->order.AssignOrder(UnpackVersion4Order(orders[i]));
 			}
 
@@ -226,7 +227,7 @@ static void Load_ORDR()
 			SlArray(orders, len, SLE_UINT32);
 
 			for (uint32_t i = 0; i < (uint32_t)len; ++i) {
-				OrderPoolItem *o = new (OrderID(i)) OrderPoolItem();
+				OrderPoolItem *o = OrderPoolItem::CreateAtIndex(OrderID(i));
 				o->order.AssignOrder(UnpackVersion5Order(orders[i]));
 			}
 
@@ -251,7 +252,7 @@ static void Load_ORDR()
 
 		int index;
 		while ((index = SlIterateArray()) != -1) {
-			OrderPoolItem *item = new (OrderID(index)) OrderPoolItem();
+			OrderPoolItem *item = OrderPoolItem::CreateAtIndex(OrderID(index));
 			SlObjectLoadFiltered(&item->order, slt);
 			item->next_ref = _order_item_ref;
 		}
@@ -589,7 +590,7 @@ static void Load_ORDL()
 	int index;
 	while ((index = SlIterateArray()) != -1) {
 		/* set num_orders to 0 so it's a valid OrderList */
-		OrderList *list = new (OrderListID(index)) OrderList();
+		OrderList *list = OrderList::CreateAtIndex(OrderListID(index));
 		SlObjectLoadFiltered(list, slt);
 		if (SlXvIsFeaturePresent(XSLFI_JOKERPP)) {
 			if (_jokerpp_separation_mode == 0) {
@@ -648,7 +649,7 @@ void Load_BKOR()
 		int index;
 		while ((index = SlIterateArray()) != -1) {
 			/* set num_orders to 0 so it's a valid OrderList */
-			OrderBackup *ob = new (OrderBackupID(index)) OrderBackup();
+			OrderBackup *ob = OrderBackup::CreateAtIndex(OrderBackupID(index));
 			SlObjectLoadFiltered(ob, slt);
 		}
 		return;
@@ -660,7 +661,7 @@ void Load_BKOR()
 	int index;
 	while ((index = SlIterateArray()) != -1) {
 		/* set num_orders to 0 so it's a valid OrderList */
-		OrderBackup *ob = new (OrderBackupID(index)) OrderBackup();
+		OrderBackup *ob = OrderBackup::CreateAtIndex(OrderBackupID(index));
 		SlObjectLoadFiltered(ob, slt);
 		if (SlXvIsFeaturePresent(XSLFI_SCHEDULED_DISPATCH, 3)) {
 			uint count = SlReadUint32();
@@ -691,10 +692,10 @@ static void Ptrs_BKOR()
 }
 
 static const ChunkHandler order_chunk_handlers[] = {
-	{ 'BKOR', Save_BKOR, Load_BKOR, Ptrs_BKOR, nullptr, CH_TABLE },
-	{ 'ORDR', nullptr,   Load_ORDR, nullptr,   nullptr, CH_READONLY },
-	{ 'ORDL', Save_ORDL, Load_ORDL, Ptrs_ORDL, nullptr, CH_TABLE },
-	{ 'ORDX', nullptr,   Load_ORDX, nullptr,   nullptr, CH_READONLY },
+	{ 'BKOR', Save_BKOR, Load_BKOR, Ptrs_BKOR, nullptr, ChunkType::Table },
+	{ 'ORDR', nullptr,   Load_ORDR, nullptr,   nullptr, ChunkType::ReadOnly },
+	{ 'ORDL', Save_ORDL, Load_ORDL, Ptrs_ORDL, nullptr, ChunkType::Table },
+	{ 'ORDX', nullptr,   Load_ORDX, nullptr,   nullptr, ChunkType::ReadOnly },
 };
 
 extern const ChunkHandlerTable _order_chunk_handlers(order_chunk_handlers);

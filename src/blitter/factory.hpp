@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file factory.hpp Factory to 'query' all available blitters. */
@@ -93,6 +93,7 @@ public:
 	 * Find the requested blitter and return its class.
 	 * @param name the blitter to select.
 	 * @post Sets the blitter so GetCurrentBlitter() returns it too.
+	 * @return The selected blitter or \c nullptr when no blitter could be found.
 	 */
 	static Blitter *SelectBlitter(std::string_view name)
 	{
@@ -133,6 +134,7 @@ public:
 
 	/**
 	 * Get the current active blitter (always set by calling SelectBlitter).
+	 * @return The active blitter.
 	 */
 	static Blitter *GetCurrentBlitter()
 	{
@@ -155,6 +157,7 @@ public:
 
 	/**
 	 * Get the long, human readable, name for the Blitter-class.
+	 * @return Name of this instance.
 	 */
 	const std::string &GetName() const
 	{
@@ -163,6 +166,7 @@ public:
 
 	/**
 	 * Get a nice description of the blitter-class.
+	 * @return Description of this instance.
 	 */
 	const std::string &GetDescription() const
 	{
@@ -171,6 +175,7 @@ public:
 
 	/**
 	 * Create an instance of this Blitter-class.
+	 * @return The created instance.
 	 */
 	virtual std::unique_ptr<Blitter> CreateInstance() = 0;
 };

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_acta.cpp NewGRF Action 0x0A handler. */
@@ -81,7 +81,7 @@ static void SpriteReplace(ByteReader &buf)
 			/* Shore sprites now located at different addresses.
 			 * So detect when the old ones get replaced. */
 			if (IsInsideMM(load_index, SPR_ORIGINALSHORE_START, SPR_ORIGINALSHORE_END + 1)) {
-				if (_loaded_newgrf_features.shore != SHORE_REPLACE_ACTION_5) _loaded_newgrf_features.shore = SHORE_REPLACE_ACTION_A;
+				if (_loaded_newgrf_features.shore != ShoreReplacement::Action5) _loaded_newgrf_features.shore = ShoreReplacement::ActionA;
 			}
 		}
 	}
@@ -102,9 +102,15 @@ static void SkipActA(ByteReader &buf)
 	GrfMsg(3, "SkipActA: Skipping {} sprites", _cur_gps.skip_sprites);
 }
 
+/** @copydoc GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x0A>::FileScan(ByteReader &buf) { SkipActA(buf); }
+/** @copydoc GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x0A>::SafetyScan(ByteReader &buf) { SkipActA(buf); }
+/** @copydoc GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x0A>::LabelScan(ByteReader &buf) { SkipActA(buf); }
+/** @copydoc GrfActionHandler::Init */
 template <> void GrfActionHandler<0x0A>::Init(ByteReader &buf) { SkipActA(buf); }
+/** @copydoc GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x0A>::Reserve(ByteReader &buf) { SkipActA(buf); }
+/** @copydoc GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x0A>::Activation(ByteReader &buf) { SpriteReplace(buf); }

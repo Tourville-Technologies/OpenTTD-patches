@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_gamesettings.cpp Implementation of ScriptGameSettings. */
@@ -42,7 +42,7 @@ struct CargoScalingProxy {
 		if (mode == CSM_DAYLENGTH) {
 			/* Asynchronous free command, don't bother halting the script or saving the result */
 			auto payload = ChangeSettingCmdData::Make(this->is_industry ? "economy.industry_cargo_scale_mode" : "economy.town_cargo_scale_mode", (uint32_t)CSM_NORMAL);
-			::DoCommandPScript(CMD_CHANGE_SETTING, TileIndex{}, std::move(payload), CommandCallback::None, 0, DCIF_NONE, false, true);
+			::DoCommandPScript(Commands::ChangeSetting, TileIndex{}, std::move(payload), CommandCallback::None, 0, DCIF_NONE, false, true);
 		}
 
 		return ScriptGameSettings::SetValue(this->is_industry ? "economy.industry_cargo_scale" : "economy.town_cargo_scale", ScaleQuantity(100, (int)value));
@@ -96,7 +96,7 @@ struct CargoScalingProxy {
 
 	value = Clamp<SQInteger>(value, INT32_MIN, INT32_MAX);
 
-	return ScriptObject::Command<CMD_CHANGE_SETTING>::Do(sd->name, value);
+	return ScriptObject::Command<Commands::ChangeSetting>::Do(sd->name, value);
 }
 
 /* static */ bool ScriptGameSettings::IsDisabledVehicleType(ScriptVehicle::VehicleType vehicle_type)

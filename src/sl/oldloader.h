@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file oldloader.h Declarations of structures and functions used in loader of old savegames */
+/** @file oldloader.h Declarations of structures and functions used in loader of old savegames. */
 
 #ifndef SL_OLDLOADER_H
 #define SL_OLDLOADER_H
@@ -34,7 +34,7 @@ struct LoadgameState {
 	std::vector<StringID> vehicle_names;
 };
 
-/* OldChunk-Type */
+/** OldChunk-Type. */
 enum OldChunkType : uint32_t {
 	OC_SIMPLE    = 0,
 	OC_NULL      = 1,
@@ -127,6 +127,7 @@ inline uint32_t ReadUint32(LoadgameState &ls)
 #define OCL_CCHUNK(type, amount, proc)       { OC_CHUNK | type, amount, nullptr,    0,                             proc }
 #define OCL_ASSERT(type, size)               { OC_ASSERT | type,     1, nullptr, size,                             nullptr }
 #define OCL_NULL(amount)        OCL_CNULL((OldChunkType)0, amount)
+/** Load another proc to load a part of the savegame, 'amount' times. */
 #define OCL_CHUNK(amount, proc) OCL_CCHUNK((OldChunkType)0, amount, proc)
 
 #endif /* SL_OLDLOADER_H */

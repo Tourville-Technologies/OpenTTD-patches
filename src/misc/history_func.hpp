@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file history_func.hpp Functions for storing historical data. */
@@ -78,7 +78,6 @@ T GetAndResetAccumulatedAverage(Taccrued &total, uint8_t days)
  * @param valid_history Mask of valid history records.
  * @param hr History range to get.
  * @param age Age of data to get.
- * @param cur_month Current economy month.
  * @param[out] result Extracted historical data.
  * @return True iff the data for this history range and age is valid.
  */
@@ -119,7 +118,7 @@ bool GetHistory(const HistoryData<T> &history, ValidHistoryMask valid_history, c
  * @param fillers Fillers to fill with history data.
  */
 template <uint N, typename T, typename... Tfillers>
-void FillFromHistory(const HistoryData<T> &history, ValidHistoryMask valid_history, const HistoryRange &hr, Tfillers... fillers)
+void FillFromHistory(const HistoryData<T> &history, ValidHistoryMask valid_history, const HistoryRange &hr, Tfillers &&... fillers)
 {
 	T result{};
 	for (uint i = 0; i != N; ++i) {
@@ -132,14 +131,21 @@ void FillFromHistory(const HistoryData<T> &history, ValidHistoryMask valid_histo
 }
 
 /**
- * Fill some data with empty records.
+ * Fill some data with optional historical data.
+ * @param history Historical data to fill from, or nullptr if not present.
  * @param valid_history Mask of valid history records.
  * @param hr History range to fill with.
  * @param fillers Fillers to fill with history data.
  */
-template <uint N, typename... Tfillers>
-void FillFromEmpty(ValidHistoryMask valid_history, const HistoryRange &hr, Tfillers... fillers)
+template <uint N, typename T, typename... Tfillers>
+void FillFromHistory(const HistoryData<T> *history, ValidHistoryMask valid_history, const HistoryRange &hr, Tfillers &&... fillers)
 {
+	if (history != nullptr) {
+		FillFromHistory<N>(*history, valid_history, hr, std::forward<Tfillers &&>(fillers)...);
+		return;
+	}
+
+	/* History isn't present, fill zero or invalid instead. */
 	for (uint i = 0; i != N; ++i) {
 		if (IsValidHistory(valid_history, hr, N - i - 1)) {
 			(fillers.MakeZero(i), ...);

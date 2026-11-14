@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file squirrel.cpp the implementation of the Squirrel class. It handles all Squirrel-stuff and gives a nice API back to work with. */
@@ -350,6 +350,21 @@ void Squirrel::AddClassEnd()
 	sq_pop(vm, 1);
 }
 
+void Squirrel::AddScopedEnumBegin(std::string_view enum_name)
+{
+	ScriptAllocatorScope alloc_scope(this);
+
+	sq_pushstring(this->vm, enum_name);
+	sq_newclass(this->vm, SQFalse);
+}
+
+void Squirrel::AddScopedEnumEnd()
+{
+	ScriptAllocatorScope alloc_scope(this);
+
+	sq_newslot(vm, -3, SQFalse);
+}
+
 bool Squirrel::MethodExists(HSQOBJECT instance, std::string_view method_name)
 {
 	assert(!this->crashed);
@@ -656,11 +671,11 @@ SQRESULT Squirrel::LoadFile(HSQUIRRELVM vm, const std::string &filename, SQBool 
 	std::optional<FileHandle> file = std::nullopt;
 	size_t size;
 	if (this->GetAPIName().starts_with("AI")) {
-		file = FioFOpenFile(filename, "rb", AI_DIR, &size);
-		if (!file.has_value()) file = FioFOpenFile(filename, "rb", AI_LIBRARY_DIR, &size);
+		file = FioFOpenFile(filename, "rb", Subdirectory::Ai, &size);
+		if (!file.has_value()) file = FioFOpenFile(filename, "rb", Subdirectory::AiLibrary, &size);
 	} else if (this->GetAPIName().starts_with("GS")) {
-		file = FioFOpenFile(filename, "rb", GAME_DIR, &size);
-		if (!file.has_value()) file = FioFOpenFile(filename, "rb", GAME_LIBRARY_DIR, &size);
+		file = FioFOpenFile(filename, "rb", Subdirectory::Gs, &size);
+		if (!file.has_value()) file = FioFOpenFile(filename, "rb", Subdirectory::GsLibrary, &size);
 	} else {
 		NOT_REACHED();
 	}

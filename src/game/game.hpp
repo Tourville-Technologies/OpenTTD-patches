@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game.hpp Base functions for all Games. */
@@ -10,9 +10,8 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
+#include "../script/api/script_event.hpp"
 #include "game_scanner.hpp"
-
-#include "../script/api/script_event_types.hpp"
 
 /**
  * Main Game class. Contains all functions needed to start, stop, save and load Game Scripts.
@@ -36,6 +35,7 @@ public:
 
 	/**
 	 * Uninitialize the Game system.
+	 * @param keepConfig Should we keep GameConfigs, or can we free that memory?
 	 */
 	static void Uninitialize(bool keepConfig);
 
@@ -60,16 +60,27 @@ public:
 	static bool IsPaused();
 
 	/**
-	 * Queue a new event for a Game Script.
+	 * Queue a new event for the game script.
+	 * @param event The event.
 	 */
 	static void NewEvent(class ScriptEvent *event);
 
 	/**
 	 * Get the current GameInfo.
+	 * @return The info, or nullptr when there is no Game script.
 	 */
 	static class GameInfo *GetInfo() { return Game::info; }
 
+	/**
+	 * Rescans all searchpaths for available Game scripts. If a used Game script is no longer
+	 * found it is removed from the config.
+	 */
 	static void Rescan();
+
+	/**
+	 * Reset all GameConfigs, and make them reload their GameInfo.
+	 * If the GameInfo could no longer be found, an error is reported to the user.
+	 */
 	static void ResetConfig();
 
 	/**
@@ -77,21 +88,22 @@ public:
 	 */
 	static void Save();
 
-	/** Wrapper function for GameScanner::GetConsoleList */
-	static std::string GetConsoleList(bool newest_only = false);
-	/** Wrapper function for GameScanner::GetConsoleLibraryList */
-	static std::string GetConsoleLibraryList();
-	/** Wrapper function for GameScanner::GetInfoList */
+	/** @copydoc ScriptScanner::GetConsoleList */
+	static std::string GetConsoleList(bool newest_only);
+	/** @copydoc ScriptScanner::GetConsoleLibraryList */
+	static std::string GetConsoleLibraryList(bool newest_only);
+	/** @copydoc ScriptScanner::GetInfoList */
 	static const ScriptInfoList *GetInfoList();
-	/** Wrapper function for GameScanner::GetUniqueInfoList */
+	/** @copydoc ScriptScanner::GetUniqueInfoList */
 	static const ScriptInfoList *GetUniqueInfoList();
-	/** Wrapper function for GameScannerInfo::FindInfo */
+	/** @copydoc ScriptConfig::FindInfo */
 	static class GameInfo *FindInfo(const std::string &name, int version, bool force_exact_match);
-	/** Wrapper function for GameScanner::FindLibrary */
+	/** @copydoc ScriptInstance::FindLibrary */
 	static class GameLibrary *FindLibrary(const std::string &library, int version);
 
 	/**
 	 * Get the current active instance.
+	 * @return The current Game script instance.
 	 */
 	static class GameInstance *GetInstance() { return Game::instance.get(); }
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ini_type.h Types related to reading/writing '*.ini' files. */
@@ -16,10 +16,10 @@
 #include <optional>
 
 /** Types of groups */
-enum IniGroupType : uint8_t {
-	IGT_VARIABLES = 0, ///< Values of the form "landscape = hilly".
-	IGT_LIST      = 1, ///< A list of values, separated by \n and terminated by the next group block.
-	IGT_SEQUENCE  = 2, ///< A list of uninterpreted lines, terminated by the next group block.
+enum class IniGroupType : uint8_t {
+	Variables, ///< Values of the form "landscape = hilly".
+	List, ///< A list of values, separated by \n and terminated by the next group block.
+	Sequence, ///< A list of uninterpreted lines, terminated by the next group block.
 };
 
 /** A single "line" in an ini file. */

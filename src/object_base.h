@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file object_base.h Base for all objects. */
@@ -26,13 +26,13 @@ struct Object : ObjectPool::PoolItem<&_object_pool> {
 	Town *town = nullptr;                  ///< Town the object is built in
 	TileArea location{INVALID_TILE, 0, 0}; ///< Location of the object
 	CalTime::Date build_date{};            ///< Date of construction
-	uint8_t colour = 0;                    ///< Colour of the object, for display purpose
+	uint8_t recolour_offset = 0;           ///< Recolour offset of the object (basically the 2CC colour offset), for display purpose.
 	uint8_t view = 0;                      ///< The view setting for this object
 
 	/** Make sure the object isn't zeroed. */
-	Object() {}
-	Object(ObjectType type, Town *town, TileArea location, CalTime::Date build_date, uint8_t view) :
-		type(type), town(town), location(location), build_date(build_date), view(view) {}
+	Object(ObjectID index) : PoolItemBase(index) {}
+	Object(ObjectID index, ObjectType type, Town *town, TileArea location, CalTime::Date build_date, uint8_t view) :
+		PoolItemBase(index), type(type), town(town), location(location), build_date(build_date), view(view) {}
 	/** Make sure the right destructor is called as well! */
 	~Object() {}
 
@@ -66,6 +66,7 @@ struct Object : ObjectPool::PoolItem<&_object_pool> {
 	 * Get the count of objects for this type.
 	 * @param type ObjectType to query
 	 * @pre type < NUM_OBJECTS
+	 * @return The number of objects of the given type.
 	 */
 	static inline uint16_t GetTypeCount(ObjectType type)
 	{

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_vehicle.hpp Everything to query and build vehicles. */
@@ -43,7 +43,7 @@ public:
 		ERR_VEHICLE_WRONG_DEPOT,                // [STR_ERROR_DEPOT_WRONG_DEPOT_TYPE]
 
 		/** Vehicle can't return to the depot */
-		ERR_VEHICLE_CANNOT_SEND_TO_DEPOT,       // [STR_ERROR_CAN_T_SEND_TRAIN_TO_DEPOT, STR_ERROR_CAN_T_SEND_ROAD_VEHICLE_TO_DEPOT, STR_ERROR_CAN_T_SEND_SHIP_TO_DEPOT, STR_ERROR_CAN_T_SEND_AIRCRAFT_TO_HANGAR]
+		ERR_VEHICLE_CANNOT_SEND_TO_DEPOT,       // [STR_ERROR_CAN_T_SEND_TRAIN_TO_DEPOT, STR_ERROR_CAN_T_SEND_ROAD_VEHICLE_TO_DEPOT, STR_ERROR_CAN_T_SEND_SHIP_TO_DEPOT, STR_ERROR_CAN_T_SEND_AIRCRAFT_TO_HANGAR, STR_ERROR_UNABLE_TO_FIND_LOCAL_DEPOT, STR_ERROR_UNABLE_TO_FIND_LOCAL_HANGAR]
 
 		/** Vehicle can't start / stop */
 		ERR_VEHICLE_CANNOT_START_STOP,          // [STR_ERROR_CAN_T_STOP_START_TRAIN, STR_ERROR_CAN_T_STOP_START_ROAD_VEHICLE, STR_ERROR_CAN_T_STOP_START_SHIP, STR_ERROR_CAN_T_STOP_START_AIRCRAFT]
@@ -371,7 +371,7 @@ public:
 	 *   is owned by you.
 	 * @pre ScriptEngine::IsBuildable(engine_id).
 	 * @pre ScriptCargo::IsValidCargo(cargo).
-	 * @return The capacity the vehicle will have when refited.
+	 * @return The capacity the vehicle will have when refitted.
 	 */
 	static SQInteger GetBuildWithRefitCapacity(TileIndex depot, EngineID engine_id, CargoType cargo);
 
@@ -432,7 +432,7 @@ public:
 	 * @pre ScriptCargo::IsValidCargo(cargo).
 	 * @pre You must own the vehicle.
 	 * @pre The vehicle must be stopped in the depot.
-	 * @return The capacity the vehicle will have when refited.
+	 * @return The capacity the vehicle will have when refitted.
 	 */
 	static SQInteger GetRefitCapacity(VehicleID vehicle_id, CargoType cargo);
 

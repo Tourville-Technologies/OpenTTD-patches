@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file group_cmd.h Command definitions related to engine groups. */
@@ -15,7 +15,7 @@
 #include "vehicle_type.h"
 #include "vehiclelist.h"
 
-enum Colours : uint8_t;
+enum class Colours : uint8_t;
 enum class GroupFlag : uint8_t;
 
 /** Action for \c CmdAlterGroup. */
@@ -24,14 +24,14 @@ enum class AlterGroupMode : uint8_t {
 	SetParent, ///< Change group parent.
 };
 
-DEF_CMD_TUPLE_NT(CMD_CREATE_GROUP,              CmdCreateGroup,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleType, GroupID>)
-DEF_CMD_TUPLE_NT(CMD_DELETE_GROUP,              CmdDeleteGroup,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<GroupID>)
-DEF_CMD_TUPLE_NT(CMD_ALTER_GROUP,               CmdAlterGroup,              {}, CMDT_OTHER_MANAGEMENT, CmdDataT<AlterGroupMode, GroupID, GroupID, std::string>)
-DEF_CMD_TUPLE_NT(CMD_ADD_VEHICLE_GROUP,         CmdAddVehicleGroup,         {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<GroupID, VehicleID, bool>)
-DEF_CMD_TUPLE_NT(CMD_ADD_SHARED_VEHICLE_GROUP,  CmdAddSharedVehicleGroup,   {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<GroupID, VehicleType>)
-DEF_CMD_TUPLE_NT(CMD_REMOVE_ALL_VEHICLES_GROUP, CmdRemoveAllVehiclesGroup,  {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<GroupID>)
-DEF_CMD_TUPLE_NT(CMD_SET_GROUP_FLAG,            CmdSetGroupFlag,            {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<GroupID, GroupFlag, bool, bool>)
-DEF_CMD_TUPLE_NT(CMD_SET_GROUP_LIVERY,          CmdSetGroupLivery,          {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<GroupID, bool, Colours>)
-DEF_CMD_TUPLE_NT(CMD_CREATE_GROUP_FROM_LIST,    CmdCreateGroupFromList,     {}, CMDT_OTHER_MANAGEMENT, CmdDataT<VehicleListIdentifier, CargoType, std::string>)
+DEF_CMD_TUPLE_NT(Commands::CreateGroup,              CmdCreateGroup,             {}, CommandType::RouteManagement, CmdDataT<VehicleType, GroupID>)
+DEF_CMD_TUPLE_NT(Commands::DeleteGroup,              CmdDeleteGroup,             {}, CommandType::RouteManagement, CmdDataT<GroupID>)
+DEF_CMD_TUPLE_NT(Commands::AlterGroup,               CmdAlterGroup,              {}, CommandType::OtherManagement, CmdDataT<AlterGroupMode, GroupID, GroupID, std::string>)
+DEF_CMD_TUPLE_NT(Commands::AddVehicleToGroup,        CmdAddVehicleGroup,         {}, CommandType::RouteManagement, CmdDataT<GroupID, VehicleID, bool>)
+DEF_CMD_TUPLE_NT(Commands::AddSharedVehiclesToGroup, CmdAddSharedVehicleGroup,   {}, CommandType::RouteManagement, CmdDataT<GroupID, VehicleType>)
+DEF_CMD_TUPLE_NT(Commands::RemoveAllVehiclesGroup,   CmdRemoveAllVehiclesGroup,  {}, CommandType::RouteManagement, CmdDataT<GroupID>)
+DEF_CMD_TUPLE_NT(Commands::SetGroupFlag,             CmdSetGroupFlag,            {}, CommandType::RouteManagement, CmdDataT<GroupID, GroupFlag, bool, bool>)
+DEF_CMD_TUPLE_NT(Commands::SetGroupLivery,           CmdSetGroupLivery,          {}, CommandType::RouteManagement, CmdDataT<GroupID, bool, Colours>)
+DEF_CMD_TUPLE_NT(Commands::CreateGroupFromList,      CmdCreateGroupFromList,     {}, CommandType::OtherManagement, CmdDataT<VehicleListIdentifier, CargoType, std::string>)
 
 #endif /* GROUP_CMD_H */

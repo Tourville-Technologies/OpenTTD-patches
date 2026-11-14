@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
- /** @file newgrf_profiling.cpp Profiling of NewGRF action 2 handling. */
+/** @file newgrf_profiling.cpp Profiling of NewGRF action 2 handling. */
 
 #include "stdafx.h"
 
@@ -16,11 +16,10 @@
 #include "console_func.h"
 #include "spritecache.h"
 #include "walltime_func.h"
+#include "time_type.h"
 #include "timer/timer.h"
 #include "timer/timer_game_tick.h"
-#include "3rdparty/fmt/chrono.h"
-
-#include <chrono>
+#include "walltime_func.h"
 
 #include "safeguards.h"
 
@@ -30,7 +29,6 @@ std::vector<NewGRFProfiler> _newgrf_profilers;
 /**
  * Create profiler object and begin profiling session.
  * @param grffile   The GRF file to collect profiling data on
- * @param end_date  Game date to end profiling on
  */
 NewGRFProfiler::NewGRFProfiler(const GRFFile *grffile) : grffile(grffile)
 {
@@ -49,10 +47,9 @@ NewGRFProfiler::~NewGRFProfiler()
  */
 void NewGRFProfiler::BeginResolve(const ResolverObject &resolver)
 {
-	using namespace std::chrono;
 	this->cur_call.root_sprite = resolver.root_spritegroup->nfo_line;
 	this->cur_call.subs = 0;
-	this->cur_call.time = (uint32_t)time_point_cast<microseconds>(high_resolution_clock::now()).time_since_epoch().count();
+	this->cur_call.time = (uint32_t)MicrosecondsRealtimeTicks();
 	this->cur_call.tick = _tick_counter;
 	this->cur_call.cb = resolver.callback;
 	this->cur_call.feat = resolver.GetFeature();
@@ -61,11 +58,11 @@ void NewGRFProfiler::BeginResolve(const ResolverObject &resolver)
 
 /**
  * Capture the completion of a sprite group resolution.
+ * @param result The result to process.
  */
 void NewGRFProfiler::EndResolve(const SpriteGroup *result)
 {
-	using namespace std::chrono;
-	this->cur_call.time = (uint32_t)time_point_cast<microseconds>(high_resolution_clock::now()).time_since_epoch().count() - this->cur_call.time;
+	this->cur_call.time = (uint32_t)MicrosecondsRealtimeTicks() - this->cur_call.time;
 
 	if (result == nullptr) {
 		this->cur_call.result = 0;
@@ -100,18 +97,18 @@ uint32_t NewGRFProfiler::Finish()
 	if (!this->active) return 0;
 
 	if (this->calls.empty()) {
-		IConsolePrint(CC_DEBUG, "Finished profile of NewGRF [{:08X}], no events collected, not writing a file.", std::byteswap(this->grffile->grfid));
+		IConsolePrint(CC_DEBUG, "Finished profile of NewGRF [{}], no events collected, not writing a file.", FormatArrayAsHex(this->grffile->grfid));
 
 		this->Abort();
 		return 0;
 	}
 
 	std::string filename = this->GetOutputFilename();
-	IConsolePrint(CC_DEBUG, "Finished profile of NewGRF [{:08X}], writing {} events to '{}'.", std::byteswap(this->grffile->grfid), this->calls.size(), filename);
+	IConsolePrint(CC_DEBUG, "Finished profile of NewGRF [{}], writing {} events to '{}'.", FormatArrayAsHex(this->grffile->grfid), this->calls.size(), filename);
 
 	uint32_t total_microseconds = 0;
 
-	auto f = FioFOpenFile(filename, "wt", Subdirectory::NO_DIRECTORY);
+	auto f = FioFOpenFile(filename, "wt", Subdirectory::None);
 
 	if (!f.has_value()) {
 		IConsolePrint(CC_ERROR, "Failed to open '{}' for writing.", filename);
@@ -139,7 +136,7 @@ void NewGRFProfiler::Abort()
  */
 std::string NewGRFProfiler::GetOutputFilename() const
 {
-	return fmt::format("{}grfprofile-{:%Y%m%d-%H%M}-{:08X}.csv", FiosGetScreenshotDir(), fmt::localtime(time(nullptr)), std::byteswap(this->grffile->grfid));
+	return fmt::format("{}grfprofile-{}-{}.csv", FiosGetScreenshotDir(),  LocalTime::FormatArg("%Y%m%d-%H%M"), this->grffile->grfid);
 }
 
 /* static */ uint32_t NewGRFProfiler::FinishAll()
@@ -165,17 +162,18 @@ std::string NewGRFProfiler::GetOutputFilename() const
 /**
  * Check whether profiling is active and should be finished.
  */
-static TimeoutTimer<TimerGameTick> _profiling_finish_timeout({ TimerGameTick::Priority::NONE, 0 }, []()
+static TimeoutTimer<TimerGameTick> _profiling_finish_timeout({ TimerGameTick::Priority::None, 0 }, []()
 {
 	NewGRFProfiler::FinishAll();
 });
 
 /**
  * Start the timeout timer that will finish all profiling sessions.
+ * @param ticks The timeout in game ticks.
  */
 /* static */ void NewGRFProfiler::StartTimer(uint64_t ticks)
 {
-	_profiling_finish_timeout.Reset({ TimerGameTick::Priority::NONE, static_cast<uint>(ticks) });
+	_profiling_finish_timeout.Reset({ TimerGameTick::Priority::None, static_cast<uint>(ticks) });
 }
 
 /**

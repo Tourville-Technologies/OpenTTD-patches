@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file source_type.h Type for the source of cargo. */
@@ -12,8 +12,7 @@
 
 #include "company_type.h"
 #include "industry_type.h"
-#include "news_type.h"
-#include "strings_type.h"
+#include "strings_id_type.h"
 #include "town_type.h"
 
 /** Types of cargo source and destination */
@@ -67,7 +66,6 @@ public:
 	constexpr bool IsValid() const noexcept { return this->id != Source::Invalid; }
 	auto operator<=>(const Source &source) const = default;
 
-	NewsReference GetNewsReference() const;
 	StringID GetFormat() const;
 
 	template <typename T>

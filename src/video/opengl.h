@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file opengl.h OpenGL video driver support. */
@@ -70,7 +70,7 @@ private:
 	std::vector<CursorSprite> cursor_sprites{}; ///< Sprites comprising cursor
 
 	OpenGLBackend();
-	~OpenGLBackend();
+	~OpenGLBackend() override;
 
 	const char *Init(const Dimension &screen_res);
 	bool InitShaders();
@@ -80,7 +80,10 @@ private:
 	void RenderOglSprite(const OpenGLSprite *gl_sprite, PaletteID pal, int x, int y, ZoomLevel zoom);
 
 public:
-	/** Get singleton instance of this class. */
+	/**
+	 * Get singleton instance of this class.
+	 * @return Our instance.
+	 */
 	static inline OpenGLBackend *Get()
 	{
 		return OpenGLBackend::instance;
@@ -116,18 +119,18 @@ public:
 class OpenGLSprite {
 private:
 	/** Enum of all used OpenGL texture objects. */
-	enum Texture : uint8_t {
-		TEX_RGBA,    ///< RGBA texture part.
-		TEX_REMAP,   ///< Remap texture part.
-		NUM_TEX
+	enum class Texture : uint8_t {
+		RGBA, ///< RGBA texture part.
+		Remap, ///< Remap texture part.
+		End, ///< End marker.
 	};
 
 	Dimension dim{};
-	std::array<GLuint, NUM_TEX> tex{}; ///< The texture objects.
+	EnumIndexArray<GLuint, Texture, Texture::End> tex{}; ///< The texture objects.
 	int16_t x_offs = 0;  ///< Number of pixels to shift the sprite to the right.
 	int16_t y_offs = 0;  ///< Number of pixels to shift the sprite downwards.
 
-	static std::array<GLuint, NUM_TEX> dummy_tex; ///< 1x1 dummy textures to substitute for unused sprite components.
+	static EnumIndexArray<GLuint, Texture, Texture::End> dummy_tex; ///< 1x1 dummy textures to substitute for unused sprite components.
 
 	static GLuint pal_identity; ///< Identity texture mapping.
 	static GLuint pal_tex;      ///< Texture for palette remap.

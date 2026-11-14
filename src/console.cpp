@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file console.cpp Handling of the in-game console. */
@@ -40,7 +40,7 @@ std::optional<FileHandle> _iconsole_output_file;
 void IConsoleInit()
 {
 	_iconsole_output_file = std::nullopt;
-	_redirect_console_to_client = INVALID_CLIENT_ID;
+	_redirect_console_to_client = ClientID::Invalid;
 	_redirect_console_to_admin  = AdminID::Invalid();
 
 	IConsoleGUIInit();
@@ -87,11 +87,11 @@ void IConsoleFree()
  * @param colour_code The colour of the command.
  * @param string The message to output on the console (notice, error, etc.)
  */
-void IConsolePrint(TextColour colour_code, std::string string)
+void IConsolePrint(ExtendedTextColour colour_code, std::string string)
 {
 	assert(IsValidConsoleColour(colour_code));
 
-	if (_redirect_console_to_client != INVALID_CLIENT_ID) {
+	if (_redirect_console_to_client != ClientID::Invalid) {
 		/* Redirect the string to the client */
 		NetworkServerSendRcon(_redirect_console_to_client, colour_code, string);
 		return;
@@ -135,6 +135,7 @@ std::string RemoveUnderscores(std::string_view name)
  * Register a new command to be used in the console
  * @param name name of the command that will be used
  * @param proc function that will be called upon execution of command
+ * @param hook Callback to check whether the command is allowed to run in the current context.
  */
 /* static */ void IConsole::CmdRegister(std::string_view name, IConsoleCmdProc *proc, IConsoleHook *hook, bool unlisted)
 {
@@ -267,6 +268,7 @@ static void IConsoleAliasExec(const IConsoleAlias *alias, std::span<std::string_
  * Execute a given command passed to us. First chop it up into
  * individual tokens (separated by spaces), then execute it if possible
  * @param command_string string to be parsed and executed
+ * @param recurse_count The number of re-entrant calls to this function.
  */
 void IConsoleCmdExec(std::string_view command_string, const uint recurse_count)
 {
@@ -360,17 +362,17 @@ void IConsoleCmdExecTokens(std::span<std::string_view> tokens, const uint recurs
 	 */
 	IConsoleCmd *cmd = IConsole::CmdGet(tokens[0]);
 	if (cmd != nullptr) {
-		ConsoleHookResult chr = (cmd->hook == nullptr ? CHR_ALLOW : cmd->hook(true));
+		ConsoleHookResult chr = (cmd->hook == nullptr ? ConsoleHookResult::Allow : cmd->hook(true));
 		switch (chr) {
-			case CHR_ALLOW: {
+			case ConsoleHookResult::Allow: {
 				if (!cmd->proc(tokens)) { // index started with 0
 					cmd->proc({}); // if command failed, give help
 				}
 				return;
 			}
 
-			case CHR_DISALLOW: return;
-			case CHR_HIDE: break;
+			case ConsoleHookResult::Disallow: return;
+			case ConsoleHookResult::Hide: break;
 		}
 	}
 

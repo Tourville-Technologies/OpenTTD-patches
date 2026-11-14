@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file gfx_layout.cpp Handling of laying out text. */
@@ -39,7 +39,7 @@ Layouter::LineCache *Layouter::linecache;
 uint64_t Layouter::linecache_lru_counter = 0;
 
 /** Cache of Font instances. */
-Layouter::FontColourMap Layouter::fonts[FS_END];
+EnumIndexArray<Layouter::FontColourMap, FontSize, FontSize::End> Layouter::fonts;
 
 
 /**
@@ -47,10 +47,10 @@ Layouter::FontColourMap Layouter::fonts[FS_END];
  * @param size   The font size to use for this font.
  * @param colour The colour to draw this font in.
  */
-Font::Font(FontSize size, TextColour colour) :
+Font::Font(FontSize size, ExtendedTextColour colour) :
 		fc(FontCache::Get(size)), colour(colour)
 {
-	assert(size < FS_END);
+	assert(size < FontSize::End);
 }
 
 /**
@@ -59,7 +59,7 @@ Font::Font(FontSize size, TextColour colour) :
  * @note In case no ParagraphLayouter could be constructed, line.layout will be nullptr.
  * @param line The cache item to store our layouter in.
  * @param str The string to create a layouter for.
- * @param state The state of the font and color.
+ * @param state The state of the font and colour.
  * @tparam T The type of layouter we want.
  */
 template <typename T>
@@ -129,7 +129,7 @@ static inline void GetLayouter(Layouter::LineCacheItem &line, std::string_view s
  */
 Layouter::Layouter(std::string_view str, int maxw, FontSize fontsize) : string(str)
 {
-	FontState state(TC_INVALID, fontsize);
+	FontState state(TextColour::Invalid, fontsize);
 
 	while (true) {
 		auto line_length = str.find_first_of('\n');
@@ -218,6 +218,8 @@ Dimension Layouter::GetBounds()
 
 /**
  * Test whether a character is a non-printable formatting code
+ * @param ch The character to test.
+ * @return \c true iff it is a non-printable formatting code.
  */
 static bool IsConsumedFormattingCode(char32_t ch)
 {
@@ -273,7 +275,7 @@ ParagraphLayouter::Position Layouter::GetCharPosition(std::string_view::const_it
 
 	/* Scan all runs until we've found our code point index. */
 	size_t best_index = SIZE_MAX;
-	for (int run_index = 0; run_index < line->CountRuns(); run_index++) {
+	for (size_t run_index = 0; run_index < line->CountRuns(); run_index++) {
 		const ParagraphLayouter::VisualRun &run = line->GetVisualRun(run_index);
 		const auto &positions = run.GetPositions();
 		const auto &charmap = run.GetGlyphToCharMap();
@@ -311,13 +313,13 @@ ptrdiff_t Layouter::GetCharAtPosition(int x, size_t line_index) const
 
 	const auto &line = this->at(line_index);
 
-	for (int run_index = 0; run_index < line->CountRuns(); run_index++) {
+	for (size_t run_index = 0; run_index < line->CountRuns(); run_index++) {
 		const ParagraphLayouter::VisualRun &run = line->GetVisualRun(run_index);
 		const auto &glyphs = run.GetGlyphs();
 		const auto &positions = run.GetPositions();
 		const auto &charmap = run.GetGlyphToCharMap();
 
-		for (int i = 0; i < run.GetGlyphCount(); i++) {
+		for (size_t i = 0; i < run.GetGlyphCount(); i++) {
 			/* Not a valid glyph (empty). */
 			if (glyphs[i] == 0xFFFF) continue;
 
@@ -345,8 +347,11 @@ ptrdiff_t Layouter::GetCharAtPosition(int x, size_t line_index) const
 
 /**
  * Get a static font instance.
+ * @param size The size of font.
+ * @param colour The font's colour.
+ * @return The cached font.
  */
-Font *Layouter::GetFont(FontSize size, TextColour colour)
+Font *Layouter::GetFont(FontSize size, ExtendedTextColour colour)
 {
 	FontColourMap::iterator it = fonts[size].find(colour);
 	if (it != fonts[size].end()) return it->second.get();

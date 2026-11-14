@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_v.cpp Implementation of the Windows (GDI) video driver. */
@@ -28,11 +28,19 @@
 #include "win32_v.h"
 #include <windows.h>
 #include <imm.h>
+#include <objbase.h>
 #include <versionhelpers.h>
 #if defined(_MSC_VER) && defined(NTDDI_WIN10_RS4)
 #include <winrt/Windows.UI.ViewManagement.h>
 #endif
 #include <algorithm>
+
+#ifdef WITH_OPENGL
+#include <GL/gl.h>
+#include "../3rdparty/opengl/glext.h"
+#include "../3rdparty/opengl/wglext.h"
+#include "opengl.h"
+#endif /* WITH_OPENGL */
 
 #include "../safeguards.h"
 
@@ -56,10 +64,9 @@ DWORD _imm_props;
 /** Local copy of the palette for use in the drawing thread. */
 static Palette _local_palette;
 
-bool VideoDriver_Win32Base::ClaimMousePointer()
+void VideoDriver_Win32Base::ClaimMousePointer()
 {
 	MyShowCursor(false, true);
-	return true;
 }
 
 struct Win32VkMapping {
@@ -129,11 +136,14 @@ static uint MapWindowsKey(uint sym)
 	return key;
 }
 
-/** Colour depth to use for fullscreen display modes. */
+/**
+ * Colour depth to use for fullscreen display modes.
+ * @return The colour depth in bits per pixel.
+ */
 uint8_t VideoDriver_Win32Base::GetFullscreenBpp()
 {
 	/* Check modes for the relevant fullscreen bpp */
-	return _support8bpp != S8BPP_HARDWARE ? 32 : BlitterFactory::GetCurrentBlitter()->GetScreenDepth();
+	return _support8bpp != Support8bpp::Hardware ? 32 : BlitterFactory::GetCurrentBlitter()->GetScreenDepth();
 }
 
 /**
@@ -244,7 +254,12 @@ bool VideoDriver_Win32Base::MakeWindow(bool full_screen, bool resize)
 	return true;
 }
 
-/** Forward key presses to the window system. */
+/**
+ * Forward key presses to the window system.
+ * @param keycode The pressed key code.
+ * @param charcode The pressed char code.
+ * @return Always \c \0 to denote it was handled.
+ */
 static LRESULT HandleCharMsg(uint keycode, char32_t charcode)
 {
 	static char32_t prev_char = 0;
@@ -271,13 +286,19 @@ static LRESULT HandleCharMsg(uint keycode, char32_t charcode)
 	return 0;
 }
 
-/** Should we draw the composition string ourself, i.e is this a normal IME? */
+/**
+ * Should we draw the composition string ourself, i.e is this a normal IME?
+ * @return \c true when the window is at the caret and does not a non-standard UI.
+ */
 static bool DrawIMECompositionString()
 {
 	return (_imm_props & IME_PROP_AT_CARET) && !(_imm_props & IME_PROP_SPECIAL_UI);
 }
 
-/** Set position of the composition window to the caret position. */
+/**
+ * Set position of the composition window to the caret position.
+ * @param hwnd Handle to the window.
+ */
 static void SetCompositionPos(HWND hwnd)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -299,7 +320,10 @@ static void SetCompositionPos(HWND hwnd)
 	ImmReleaseContext(hwnd, hIMC);
 }
 
-/** Set the position of the candidate window. */
+/**
+ * Set the position of the candidate window.
+ * @param hwnd Handle to the window.
+ */
 static void SetCandidatePos(HWND hwnd)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -312,7 +336,7 @@ static void SetCandidatePos(HWND hwnd)
 			Point pt = _focused_window->GetCaretPosition();
 			cf.ptCurrentPos.x = _focused_window->left + pt.x;
 			cf.ptCurrentPos.y = _focused_window->top  + pt.y;
-			if (_focused_window->window_class == WC_CONSOLE) {
+			if (_focused_window->window_class == WindowClass::Console) {
 				cf.rcArea.left   = _focused_window->left;
 				cf.rcArea.top    = _focused_window->top;
 				cf.rcArea.right  = _focused_window->left + _focused_window->width;
@@ -333,7 +357,13 @@ static void SetCandidatePos(HWND hwnd)
 	ImmReleaseContext(hwnd, hIMC);
 }
 
-/** Handle WM_IME_COMPOSITION messages. */
+/**
+ * Handle WM_IME_COMPOSITION messages.
+ * @param hwnd The handle to the window.
+ * @param wParam The latest change in the composition.
+ * @param lParam How the composition was changed.
+ * @return Always \0 to denote it was handled.
+ */
 static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -395,7 +425,10 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 	return lParam != 0 ? DefWindowProc(hwnd, WM_IME_COMPOSITION, wParam, lParam) : 0;
 }
 
-/** Clear the current composition string. */
+/**
+ * Clear the current composition string.
+ * @param hwnd Handle to the window to cancel the composition for.
+ */
 static void CancelIMEComposition(HWND hwnd)
 {
 	HIMC hIMC = ImmGetContext(hwnd);
@@ -932,8 +965,11 @@ static void FindResolutions(uint8_t bpp)
 	SortResolutions();
 }
 
-void VideoDriver_Win32Base::Initialize()
+const char *VideoDriver_Win32Base::Initialize()
 {
+	/* Initialize COM */
+	if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) return "COM initialization failed";
+
 	this->UpdateAutoResolution();
 
 	RegisterWndClass();
@@ -944,6 +980,7 @@ void VideoDriver_Win32Base::Initialize()
 	this->height = this->height_org = _cur_resolution.height;
 
 	Debug(driver, 2, "Resolution for display: {}x{}", _cur_resolution.width, _cur_resolution.height);
+	return nullptr;
 }
 
 void VideoDriver_Win32Base::Stop()
@@ -982,13 +1019,12 @@ void VideoDriver_Win32Base::InputLoop()
 
 	/* Determine which directional keys are down. */
 	if (this->has_focus) {
-		_dirkeys =
-			(GetAsyncKeyState(VK_LEFT) < 0 ? 1 : 0) +
-			(GetAsyncKeyState(VK_UP) < 0 ? 2 : 0) +
-			(GetAsyncKeyState(VK_RIGHT) < 0 ? 4 : 0) +
-			(GetAsyncKeyState(VK_DOWN) < 0 ? 8 : 0);
+		_dirkeys.Set(DirectionKey::Left, GetAsyncKeyState(VK_LEFT));
+		_dirkeys.Set(DirectionKey::Up, GetAsyncKeyState(VK_UP));
+		_dirkeys.Set(DirectionKey::Right, GetAsyncKeyState(VK_RIGHT));
+		_dirkeys.Set(DirectionKey::Down, GetAsyncKeyState(VK_DOWN));
 	} else {
-		_dirkeys = 0;
+		_dirkeys.Reset();
 	}
 
 	if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
@@ -1022,6 +1058,12 @@ void VideoDriver_Win32Base::MainLoop()
 	this->StopGameThread();
 }
 
+/**
+ * Indicate to the driver the client-size might have changed.
+ * @param w The new width of the window.
+ * @param h The new height of the window.
+ * @param force Whether to force full reallocation, instead of not reallocating when size did not change.
+ */
 void VideoDriver_Win32Base::ClientSizeChanged(int w, int h, bool force)
 {
 	/* Allocate backing store of the new size. */
@@ -1092,47 +1134,6 @@ Dimension VideoDriver_Win32Base::GetScreenSize() const
 	return { static_cast<uint>(GetSystemMetrics(SM_CXSCREEN)), static_cast<uint>(GetSystemMetrics(SM_CYSCREEN)) };
 }
 
-float VideoDriver_Win32Base::GetDPIScale()
-{
-	typedef UINT (WINAPI *PFNGETDPIFORWINDOW)(HWND hwnd);
-	typedef UINT (WINAPI *PFNGETDPIFORSYSTEM)(VOID);
-	typedef HRESULT (WINAPI *PFNGETDPIFORMONITOR)(HMONITOR hMonitor, int dpiType, UINT *dpiX, UINT *dpiY);
-
-	static PFNGETDPIFORWINDOW _GetDpiForWindow = nullptr;
-	static PFNGETDPIFORSYSTEM _GetDpiForSystem = nullptr;
-	static PFNGETDPIFORMONITOR _GetDpiForMonitor = nullptr;
-
-	static bool init_done = false;
-	if (!init_done) {
-		init_done = true;
-		static LibraryLoader _user32("user32.dll");
-		static LibraryLoader _shcore("shcore.dll");
-		_GetDpiForWindow = _user32.GetFunction("GetDpiForWindow");
-		_GetDpiForSystem = _user32.GetFunction("GetDpiForSystem");
-		_GetDpiForMonitor = _shcore.GetFunction("GetDpiForMonitor");
-	}
-
-	UINT cur_dpi = 0;
-
-	if (cur_dpi == 0 && _GetDpiForWindow != nullptr && this->main_wnd != nullptr) {
-		/* Per window DPI is supported since Windows 10 Ver 1607. */
-		cur_dpi = _GetDpiForWindow(this->main_wnd);
-	}
-	if (cur_dpi == 0 && _GetDpiForMonitor != nullptr && this->main_wnd != nullptr) {
-		/* Per monitor is supported since Windows 8.1. */
-		UINT dpiX, dpiY;
-		if (SUCCEEDED(_GetDpiForMonitor(MonitorFromWindow(this->main_wnd, MONITOR_DEFAULTTOPRIMARY), 0 /* MDT_EFFECTIVE_DPI */, &dpiX, &dpiY))) {
-			cur_dpi = dpiX; // X and Y are always identical.
-		}
-	}
-	if (cur_dpi == 0 && _GetDpiForSystem != nullptr) {
-		/* Fall back to system DPI. */
-		cur_dpi = _GetDpiForSystem();
-	}
-
-	return cur_dpi > 0 ? cur_dpi / 96.0f : 1.0f; // Default Windows DPI value is 96.
-}
-
 bool VideoDriver_Win32Base::LockVideoBuffer()
 {
 	if (this->buffer_locked) return false;
@@ -1163,7 +1164,8 @@ const char *VideoDriver_Win32GDI::Start(const StringList &param)
 {
 	if (BlitterFactory::GetCurrentBlitter()->GetScreenDepth() == 0) return "Only real blitters supported";
 
-	this->Initialize();
+	const char *err = this->Initialize();
+	if (err != nullptr) return err;
 
 	this->MakePalette();
 	this->AllocateBackingStore(_cur_resolution.width, _cur_resolution.height);
@@ -1286,7 +1288,7 @@ void VideoDriver_Win32GDI::PaletteChanged(HWND hWnd)
 
 void VideoDriver_Win32GDI::Paint()
 {
-	PerformanceMeasurer framerate(PFE_VIDEO);
+	PerformanceMeasurer framerate(PerformanceElement::Video);
 
 	if (IsEmptyRect(this->dirty_rect)) return;
 
@@ -1349,11 +1351,6 @@ void VideoDriver_Win32GDI::Paint()
 
 #ifdef WITH_OPENGL
 
-#include <GL/gl.h>
-#include "../3rdparty/opengl/glext.h"
-#include "../3rdparty/opengl/wglext.h"
-#include "opengl.h"
-
 #ifndef PFD_SUPPORT_COMPOSITION
 #	define PFD_SUPPORT_COMPOSITION 0x00008000
 #endif
@@ -1362,7 +1359,11 @@ static PFNWGLCREATECONTEXTATTRIBSARBPROC _wglCreateContextAttribsARB = nullptr;
 static PFNWGLSWAPINTERVALEXTPROC _wglSwapIntervalEXT = nullptr;
 static bool _hasWGLARBCreateContextProfile = false; ///< Is WGL_ARB_create_context_profile supported?
 
-/** Platform-specific callback to get an OpenGL function pointer. */
+/**
+ * Platform-specific callback to get an OpenGL function pointer.
+ * @param proc The name of the function.
+ * @return The function pointer, or \c nullptr when it could not be found.
+ */
 static OGLProc GetOGLProcAddressCallback(const char *proc)
 {
 	OGLProc ret = reinterpret_cast<OGLProc>(wglGetProcAddress(proc));
@@ -1467,11 +1468,16 @@ const char *VideoDriver_Win32OpenGL::Start(const StringList &param)
 
 	LoadWGLExtensions();
 
-	this->Initialize();
+	const char *err = this->Initialize();
+	if (err != nullptr) {
+		this->Stop();
+		_cur_resolution = old_res;
+		return err;
+	}
 	this->MakeWindow(_fullscreen);
 
 	/* Create and initialize OpenGL context. */
-	const char *err = this->AllocateContext();
+	err = this->AllocateContext();
 	if (err != nullptr) {
 		this->Stop();
 		_cur_resolution = old_res;
@@ -1637,7 +1643,7 @@ void VideoDriver_Win32OpenGL::ReleaseVideoPointer()
 
 void VideoDriver_Win32OpenGL::Paint()
 {
-	PerformanceMeasurer framerate(PFE_VIDEO);
+	PerformanceMeasurer framerate(PerformanceElement::Video);
 
 	if (_local_palette.count_dirty != 0) {
 		Blitter *blitter = BlitterFactory::GetCurrentBlitter();

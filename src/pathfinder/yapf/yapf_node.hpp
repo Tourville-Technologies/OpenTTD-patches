@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_node.hpp Node in the pathfinder's graph. */
@@ -24,12 +24,12 @@ struct CYapfNodeKeyExitDir {
 	{
 		this->tile = tile;
 		this->td = td;
-		this->exitdir = (this->td == INVALID_TRACKDIR) ? INVALID_DIAGDIR : TrackdirToExitdir(this->td);
+		this->exitdir = (this->td == INVALID_TRACKDIR) ? DiagDirection::Invalid : TrackdirToExitdir(this->td);
 	}
 
 	inline HashKey GetHashKey() const
 	{
-		return this->exitdir | (this->tile.base() << 2);
+		return to_underlying(this->exitdir) | (this->tile.base() << 2);
 	}
 
 	inline bool operator==(const CYapfNodeKeyExitDir &other) const
@@ -45,8 +45,7 @@ struct CYapfNodeKeyExitDir {
 	}
 };
 
-struct CYapfNodeKeyTrackDir : public CYapfNodeKeyExitDir
-{
+struct CYapfNodeKeyTrackDir : public CYapfNodeKeyExitDir {
 	using HashKey = uint32_t;
 
 	inline HashKey GetHashKey() const

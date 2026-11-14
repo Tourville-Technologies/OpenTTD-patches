@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_scanner.hpp Declarations of the class for the script scanner. */
@@ -20,37 +20,46 @@ using ScriptInfoList = std::map<std::string, class ScriptInfo *, CaseInsensitive
 class ScriptScanner : public FileScanner {
 public:
 	ScriptScanner();
-	virtual ~ScriptScanner();
+	~ScriptScanner() override;
 
+	/**
+	 * Initialize the scanner by scanning for scripts and creating dummies if needed.
+	 */
 	virtual void Initialize() = 0;
 
 	/**
 	 * Get the engine of the main squirrel handler (it indexes all available scripts).
+	 * @return The engine.
 	 */
 	class Squirrel *GetEngine() { return this->engine.get(); }
 
 	/**
 	 * Get the current main script the ScanDir is currently tracking.
+	 * @return The path to the main script.
 	 */
 	std::string GetMainScript() { return this->main_script; }
 
 	/**
 	 * Get the current tar file the ScanDir is currently tracking.
+	 * @return The tar file the script is in, or an empty string.
 	 */
 	std::string GetTarFile() { return this->tar_file; }
 
 	/**
 	 * Get the list of all registered scripts.
+	 * @return The list of ScriptInfo elements.
 	 */
 	const ScriptInfoList *GetInfoList() { return &this->info_list; }
 
 	/**
 	 * Get the list of the latest version of all registered scripts.
+	 * @return The list of ScriptInfo elements.
 	 */
 	const ScriptInfoList *GetUniqueInfoList() { return &this->info_single_list; }
 
 	/**
 	 * Register a ScriptInfo to the scanner.
+	 * @param info The script to register.
 	 */
 	void RegisterScript(std::unique_ptr<class ScriptInfo> &&info);
 
@@ -87,7 +96,7 @@ protected:
 	std::string main_script; ///< The full path of the script.
 	std::string tar_file;    ///< If, which tar file the script was in.
 
-	std::vector<std::unique_ptr<ScriptInfo>> info_vector;
+	std::vector<std::unique_ptr<ScriptInfo>> info_vector; ///< The known ScriptInfo objects.
 
 	ScriptInfoList info_list; ///< The list of all script.
 	ScriptInfoList info_single_list; ///< The list of all unique script. The best script (highest version) is shown.
@@ -100,26 +109,32 @@ protected:
 
 	/**
 	 * Get the script name how to store the script in memory.
+	 * @param info The information to get name for.
+	 * @return The script's name.
 	 */
 	virtual std::string GetScriptName(ScriptInfo &info) = 0;
 
 	/**
 	 * Get the filename to scan for this type of script.
+	 * @return The file name of the main file of the script/library.
 	 */
 	virtual std::string_view GetFileName() const = 0;
 
 	/**
 	 * Get the directory to scan in.
+	 * @return The sub directory to search in.
 	 */
 	virtual Subdirectory GetDirectory() const = 0;
 
 	/**
 	 * Register the API for this ScriptInfo.
+	 * @param engine The engine to register to.
 	 */
 	virtual void RegisterAPI(class Squirrel &engine) = 0;
 
 	/**
 	 * Get the type of the script, in plural.
+	 * @return Type of script to show on the console.
 	 */
 	virtual std::string_view GetScannerName() const = 0;
 

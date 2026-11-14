@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file screenshot_png.cpp PNG screenshot provider. */
@@ -30,7 +30,7 @@ class ScreenshotProvider_Png : public ScreenshotProvider {
 public:
 	ScreenshotProvider_Png() : ScreenshotProvider("png", "PNG", 0) {}
 
-	bool MakeImage(const char *name, ScreenshotCallback *callb, void *userdata, uint w, uint h, int pixelformat, const Colour *palette) override
+	bool MakeImage(const char *name, ScreenshotCallback *callb, void *userdata, uint w, uint h, int pixelformat, const Colour *palette) const override
 	{
 		png_color rq[256];
 		uint i, y, n;
@@ -84,9 +84,9 @@ public:
 
 		text_buf.format("Graphics set: {} ({})\n", BaseGraphics::GetUsedSet()->name, BaseGraphics::GetUsedSet()->FormatVersion());
 		text_buf.append("NewGRFs:\n");
-		if (_game_mode != GM_MENU) {
+		if (_game_mode != GameMode::Menu) {
 			for (const auto &c : _grfconfig) {
-				text_buf.format("{:08X} {} {}\n", std::byteswap(c->ident.grfid), c->ident.md5sum, c->filename);
+				text_buf.format("{} {} {}\n", c->ident.grfid, c->ident.md5sum, c->filename);
 			}
 		}
 		text_buf.append("\nCompanies:\n");
@@ -182,6 +182,9 @@ private:
 	{
 		Debug(misc, 1, "[libpng] warning: {} - {}", message, (const char *)png_get_error_ptr(png_ptr));
 	}
+
+private:
+	static ScreenshotProvider_Png instance;
 };
 
-static ScreenshotProvider_Png s_screenshot_provider_png;
+/* static */ ScreenshotProvider_Png ScreenshotProvider_Png::instance{};

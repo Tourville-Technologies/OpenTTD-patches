@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraph.cpp Definition of link graph classes used for cargo distribution. */
@@ -163,7 +163,8 @@ NodeID LinkGraph::AddNode(const Station *st)
  * @param edge Edge to fill.
  * @param capacity Capacity of the link.
  * @param usage Usage to be added.
- * @param mode Update mode to be used.
+ * @param travel_time Travel time to be added, in ticks.
+ * @param modes Update modes to be used.
  */
 static void AddEdge(LinkGraph::BaseEdge &edge, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
 {
@@ -181,7 +182,8 @@ static void AddEdge(LinkGraph::BaseEdge &edge, uint capacity, uint usage, uint32
  * @param to Target node.
  * @param capacity Capacity of the link.
  * @param usage Usage to be added.
- * @param mode Update mode to be used.
+ * @param travel_time Travel time to be added, in ticks.
+ * @param modes Update modes to be used.
  */
 void LinkGraph::UpdateEdge(NodeID from, NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
 {
@@ -215,7 +217,7 @@ void LinkGraph::RemoveEdge(NodeID from, NodeID to)
  * @param capacity Capacity to be added/updated.
  * @param usage Usage to be added.
  * @param travel_time Travel time to be added, in ticks.
- * @param mode Update mode to be applied.
+ * @param modes Update modes to be applied.
  */
 void LinkGraph::Edge::Update(uint capacity, uint usage, uint32_t travel_time, EdgeUpdateModes modes)
 {

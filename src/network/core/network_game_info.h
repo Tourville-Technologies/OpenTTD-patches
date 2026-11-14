@@ -2,24 +2,12 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
- * @file game_info.h Convert NetworkGameInfo to Packet and back.
- */
-
-#ifndef NETWORK_CORE_GAME_INFO_H
-#define NETWORK_CORE_GAME_INFO_H
-
-#include "config.h"
-#include "core.h"
-#include "../../newgrf_config.h"
-#include "../../date_type.h"
-#include "../../landscape_type.h"
-#include "../../3rdparty/robin_hood/robin_hood.h"
-
-/*
+ * @file network_game_info.h Convert NetworkGameInfo to Packet and back.
+ *
  * NetworkGameInfo has several revisions which we still need to support on the
  * wire. The table below shows the version and size for each field of the
  * serialized NetworkGameInfo.
@@ -81,12 +69,22 @@
  *   1+       1       whether the server is dedicated (0 = no, 1 = yes)
  */
 
+#ifndef NETWORK_CORE_GAME_INFO_H
+#define NETWORK_CORE_GAME_INFO_H
+
+#include "config.h"
+#include "core.h"
+#include "../../newgrf_config.h"
+#include "../../date_type.h"
+#include "../../landscape_type.h"
+#include "../../3rdparty/robin_hood/robin_hood.h"
+
 /** The different types/ways a NewGRF can be serialized in the GameInfo since version 6. */
-enum NewGRFSerializationType {
-	NST_GRFID_MD5      = 0, ///< Unique GRF ID and MD5 checksum.
-	NST_GRFID_MD5_NAME = 1, ///< Unique GRF ID, MD5 checksum and name.
-	NST_LOOKUP_ID      = 2, ///< Unique ID into a lookup table that is sent before.
-	NST_END                 ///< The end of the list (period).
+enum class NewGRFSerializationType {
+	GrfIdMd5 = 0, ///< Unique GRF ID and MD5 checksum.
+	GrfIdMd5Name = 1, ///< Unique GRF ID, MD5 checksum and name.
+	LookupId = 2, ///< Unique ID into a lookup table that is sent before.
+	End ///< The end of the list (period).
 };
 
 /**
@@ -130,7 +128,7 @@ struct NamedGRFIdentifier {
 	GRFIdentifier ident; ///< The unique identifier of the NewGRF.
 	std::string name;    ///< The name of the NewGRF.
 };
-/** Lookup table for the GameInfo in case of #NST_LOOKUP_ID. */
+/** Lookup table for the GameInfo in case of #NewGRFSerializationType::LookupId. */
 typedef robin_hood::unordered_map<uint32_t, NamedGRFIdentifier> GameInfoNewGRFLookupTable;
 
 extern NetworkServerGameInfo _network_game_info;

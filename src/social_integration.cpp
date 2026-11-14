@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file social_integration.cpp Base implementation of social integration support. */
@@ -64,7 +64,7 @@ public:
 		const char *extension = "-social.so";
 #endif
 
-		this->FileScanner::Scan(extension, SOCIAL_INTEGRATION_DIR, false);
+		this->FileScanner::Scan(extension, Subdirectory::SocialIntegration, false);
 	}
 
 	bool AddFile(const std::string &filename, size_t basepath_length, const std::string &) override
@@ -188,6 +188,7 @@ void SocialIntegration::Initialize()
  *
  * @param plugin Plugin to call the function pointer on.
  * @param func   Function pointer to call.
+ * @param args The arguments to pass to the given function pointer.
  */
 template <typename T, typename... Ts>
 static void PluginCall(std::unique_ptr<InternalSocialIntegrationPlugin> &plugin, T func, Ts... args)

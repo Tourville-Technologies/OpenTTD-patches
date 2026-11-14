@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spritecache_internal.h Internal functions to cache sprites in memory. */
@@ -13,8 +13,8 @@
 #include "core/alloc_func.hpp"
 #include "core/arena_alloc.hpp"
 #include "core/math_func.hpp"
-#include "gfx_type.h"
-#include "spriteloader/spriteloader.hpp"
+#include "sprite_id_type.h"
+#include "spriteloader/sprite_file_type.hpp"
 #include "3rdparty/robin_hood/robin_hood.h"
 
 #include "table/sprites.h"
@@ -84,6 +84,7 @@ private:
 		if (!this->ptr) return;
 
 		if (this->GetType() == SpriteType::Recolour) {
+			this->ptr.reset();
 			return;
 		}
 
@@ -141,9 +142,7 @@ public:
 
 	void AssignRecolourSpriteData(void *data)
 	{
-		this->Clear();
-
-		assert(this->GetType() == SpriteType::Recolour);
+		assert(this->GetType() == SpriteType::Recolour && !this->ptr);
 
 		this->ptr.reset(data);
 	}
@@ -219,9 +218,10 @@ struct RecolourSpriteCacheItem {
 		return memcmp(this->data->data(), other.data->data(), RECOLOUR_SPRITE_SIZE) == 0;
 	}
 
-	size_t hash(robin_hood::hash_method_tag) const noexcept
+	template <typename H>
+	size_t hash(H hasher) const noexcept
 	{
-		return robin_hood::hash_bytes(this->data->data(), RECOLOUR_SPRITE_SIZE);
+		return hasher.hash_bytes(this->data->data(), RECOLOUR_SPRITE_SIZE);
 	}
 };
 

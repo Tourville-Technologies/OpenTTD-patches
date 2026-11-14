@@ -1,6 +1,8 @@
 add_test_files(
     alternating_iterator.cpp
     bitmath_func.cpp
+    command.cpp
+    company_240.cpp
     enum_over_optimisation.cpp
     flatset_type.cpp
     format_target.cpp

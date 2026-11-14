@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_signals.cpp NewGRF Action 0x00 handler for signals. */
@@ -29,7 +29,7 @@
 static ChangeInfoResult SignalsChangeInfo(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf)
 {
 	/* Properties which are handled per item */
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 	for (uint id = first; id < last; ++id) {
 		switch (prop) {
 			case A0RPI_SIGNALS_ENABLE_PROGRAMMABLE_SIGNALS:
@@ -129,7 +129,7 @@ static ChangeInfoResult SignalsChangeInfo(uint first, uint last, int prop, const
 				if (MappedPropertyLengthMismatch(buf, 4, mapping_entry)) break;
 				uint32_t mask = buf.ReadDWord();
 				if (_cur_gps.grffile->current_new_signal_style != nullptr) {
-					_cur_gps.grffile->current_new_signal_style->semaphore_mask = (uint8_t)mask;
+					_cur_gps.grffile->current_new_signal_style->semaphore_mask = static_cast<SignalTypeMask>(mask);
 				}
 				break;
 			}
@@ -138,7 +138,7 @@ static ChangeInfoResult SignalsChangeInfo(uint first, uint last, int prop, const
 				if (MappedPropertyLengthMismatch(buf, 4, mapping_entry)) break;
 				uint32_t mask = buf.ReadDWord();
 				if (_cur_gps.grffile->current_new_signal_style != nullptr) {
-					_cur_gps.grffile->current_new_signal_style->electric_mask = (uint8_t)mask;
+					_cur_gps.grffile->current_new_signal_style->electric_mask = static_cast<SignalTypeMask>(mask);
 				}
 				break;
 			}
@@ -188,5 +188,5 @@ static ChangeInfoResult SignalsChangeInfo(uint first, uint last, int prop, const
 	return ret;
 }
 
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_SIGNALS>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return CIR_UNHANDLED; }
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_SIGNALS>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return SignalsChangeInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::Signals>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return ChangeInfoResult::Unhandled; }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::Signals>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return SignalsChangeInfo(first, last, prop, mapping_entry, buf); }

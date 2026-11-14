@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_sign.cpp Implementation of ScriptSign. */
@@ -45,7 +45,7 @@
 	EnforcePreconditionEncodedText(false, text);
 	EnforcePreconditionCustomError(false, ::Utf8StringLength(text) < MAX_LENGTH_SIGN_NAME_CHARS, ScriptError::ERR_PRECONDITION_STRING_TOO_LONG);
 
-	return ScriptObject::Command<CMD_RENAME_SIGN>::Do(sign_id, text, INVALID_COLOUR);
+	return ScriptObject::Command<Commands::RenameSign>::Do(sign_id, text, Colours::Invalid);
 }
 
 /* static */ std::optional<std::string> ScriptSign::GetName(SignID sign_id)
@@ -67,7 +67,7 @@
 {
 	EnforceDeityOrCompanyModeValid(false);
 	EnforcePrecondition(false, IsValidSign(sign_id));
-	return ScriptObject::Command<CMD_RENAME_SIGN>::Do(sign_id, "", INVALID_COLOUR);
+	return ScriptObject::Command<Commands::RenameSign>::Do(sign_id, "", Colours::Invalid);
 }
 
 /* static */ SignID ScriptSign::BuildSign(TileIndex location, Text *name)
@@ -81,7 +81,7 @@
 	EnforcePreconditionEncodedText(SignID::Invalid(), text);
 	EnforcePreconditionCustomError(SignID::Invalid(), ::Utf8StringLength(text) < MAX_LENGTH_SIGN_NAME_CHARS, ScriptError::ERR_PRECONDITION_STRING_TOO_LONG);
 
-	if (!ScriptObject::Command<CMD_PLACE_SIGN>::Do(&ScriptInstance::DoCommandReturnSignID, location, text)) return SignID::Invalid();
+	if (!ScriptObject::Command<Commands::PlaceSign>::Do(&ScriptInstance::DoCommandReturnSignID, location, text)) return SignID::Invalid();
 
 	/* In case of test-mode, we return SignID 0 */
 	return SignID::Begin();

@@ -1,3 +1,10 @@
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
+ */
+
 /** @file mcf.cpp Definition of Multi-Commodity-Flow solver. */
 
 #include "../stdafx.h"
@@ -37,7 +44,7 @@ public:
 	 */
 	DistanceAnnotation(NodeID n, bool source = false) : Path(n, source) {}
 
-	bool IsBetter(const DistanceAnnotation *base, uint cap, int free_cap, uint dist) const;
+	bool IsBetter(const DistanceAnnotation *base, uint, int free_cap, uint dist) const;
 
 	/**
 	 * Return the actual value of the annotation, in this case the distance.
@@ -292,6 +299,7 @@ bool DistanceAnnotation::IsBetter(const DistanceAnnotation *base, uint,
  * Determines if an extension to the given Path with the given parameters is
  * better than this path.
  * @param base Other path.
+ * @param cap Capacity of the edge.
  * @param free_cap Capacity of the new edge to be added to base.
  * @param dist Distance of the new edge.
  * @return True if base + the new edge would be better than the path associated
@@ -471,6 +479,7 @@ void MultiCommodityFlow::CleanupPaths(NodeID source_id, PathVector &paths)
  * @param accuracy Accuracy of the calculation.
  * @param max_saturation If < UINT_MAX only push flow up to the given
  *                       saturation, otherwise the path can be "overloaded".
+ * @return The new flow.
  */
 uint MultiCommodityFlow::PushFlow(DemandAnnotation &anno, Path *path, uint min_step_size, uint accuracy,
 		uint max_saturation)

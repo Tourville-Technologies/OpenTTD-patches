@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai_instance.cpp Implementation of AIInstance. */
@@ -54,7 +54,7 @@ void AIInstance::RegisterAPI()
 	/* Register all classes */
 	SQAI_RegisterAll(*this->engine);
 
-	if (!this->LoadCompatibilityScripts(AI_DIR, AIInfo::ApiVersions)) this->Died();
+	if (!this->LoadCompatibilityScripts(Subdirectory::Ai, AIInfo::ApiVersions)) this->Died();
 }
 
 void AIInstance::Died()
@@ -62,16 +62,16 @@ void AIInstance::Died()
 	ScriptInstance::Died();
 
 	/* Intro is not supposed to use AI, but it may have 'dummy' AI which instant dies. */
-	if (_game_mode == GM_MENU) return;
+	if (_game_mode == GameMode::Menu) return;
 
 	/* Don't show errors while loading savegame. They will be shown at end of loading anyway. */
-	if (_switch_mode != SM_NONE) return;
+	if (_switch_mode != SwitchMode::None) return;
 
 	ShowScriptDebugWindow(_current_company);
 
 	const AIInfo *info = AIConfig::GetConfig(_current_company)->GetInfo();
 	if (info != nullptr) {
-		ShowErrorMessage(GetEncodedString(STR_ERROR_AI_PLEASE_REPORT_CRASH), {}, WL_WARNING);
+		ShowErrorMessage(GetEncodedString(STR_ERROR_AI_PLEASE_REPORT_CRASH), {}, WarningLevel::Warning);
 
 		if (!info->GetURL().empty()) {
 			ScriptLog::Info("Please report the error to the following URL:");

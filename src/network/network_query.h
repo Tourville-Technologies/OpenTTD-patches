@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_query.h Query part of the network protocol. */
@@ -20,11 +20,11 @@ private:
 	std::string connection_string; ///< Address we are connected to.
 
 protected:
-	NetworkRecvStatus Receive_SERVER_FULL(Packet &p) override;
-	NetworkRecvStatus Receive_SERVER_BANNED(Packet &p) override;
-	NetworkRecvStatus Receive_SERVER_ERROR(Packet &p) override;
-	NetworkRecvStatus Receive_SERVER_GAME_INFO(Packet &p) override;
-	NetworkRecvStatus Receive_SERVER_GAME_INFO_EXTENDED(Packet &p) override;
+	NetworkRecvStatus ReceiveServerFull(Packet &p) override;
+	NetworkRecvStatus ReceiveServerBanned(Packet &p) override;
+	NetworkRecvStatus ReceiveServerError(Packet &p) override;
+	NetworkRecvStatus ReceiveServerGameInfo(Packet &p) override;
+	NetworkRecvStatus ReceiveServerGameInfoExtended(Packet &p) override;
 
 	NetworkRecvStatus SendGameInfo();
 

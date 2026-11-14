@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_roadstops.cpp NewGRF Action 0x00 handler for roadstops. */
@@ -26,7 +26,7 @@
  */
 static ChangeInfoResult IgnoreRoadStopProperty(uint prop, ByteReader &buf)
 {
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 
 	switch (prop) {
 		case 0x09:
@@ -78,11 +78,11 @@ static uint ReadPropertyLengthWithLegacyFallback(int prop, ByteReader &buf, uint
 
 static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf)
 {
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 
 	if (last > NUM_ROADSTOPS_PER_GRF) {
 		GrfMsg(1, "RoadStopChangeInfo: RoadStop {} is invalid, max {}, ignoring", last, NUM_ROADSTOPS_PER_GRF);
-		return CIR_INVALID_ID;
+		return ChangeInfoResult::InvalidId;
 	}
 
 	if (_cur_gps.grffile->roadstops.size() < last) _cur_gps.grffile->roadstops.resize(last);
@@ -101,16 +101,14 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, cons
 			case A0RPI_ROADSTOP_CLASS_ID:
 				if (MappedPropertyLengthMismatch(buf, 4, mapping_entry)) break;
 				[[fallthrough]];
-			case 0x08: { // Road Stop Class ID
+			case 0x08: // Road Stop Class ID
 				if (rs == nullptr) {
 					_cur_gps.grffile->roadstops[id] = std::make_unique<RoadStopSpec>();
 					rs = _cur_gps.grffile->roadstops[id].get();
 				}
 
-				uint32_t classid = buf.ReadDWord();
-				rs->class_index = RoadStopClass::Allocate(std::byteswap(classid));
+				rs->class_index = RoadStopClass::Allocate(buf.ReadLabel<RoadStopClass::GlobalID>());
 				break;
-			}
 
 			case A0RPI_ROADSTOP_STOP_TYPE:
 				if (MappedPropertyLengthMismatch(buf, 1, mapping_entry)) break;
@@ -214,7 +212,7 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, cons
 				break;
 
 			case 0x16: // Badge list
-				rs->badges = ReadBadgeList(buf, GSF_ROADSTOPS);
+				rs->badges = ReadBadgeList(buf, GrfSpecFeature::RoadStops);
 				break;
 
 			case A0RPI_ROADSTOP_HEIGHT:
@@ -233,5 +231,5 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, cons
 	return ret;
 }
 
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_ROADSTOPS>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return CIR_UNHANDLED; }
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_ROADSTOPS>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return RoadStopChangeInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::RoadStops>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return ChangeInfoResult::Unhandled; }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::RoadStops>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return RoadStopChangeInfo(first, last, prop, mapping_entry, buf); }

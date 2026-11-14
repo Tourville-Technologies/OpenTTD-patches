@@ -2,8 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
+
+/** @file game_changelog.hpp Lists all changes / additions to the game script API. */
 
 /**
  * @page game_changelog Lists all changes / additions to the API.
@@ -16,6 +18,12 @@
  * \b 16.0
  *
  * This version is not yet released. The following changes are not set in stone yet.
+ *
+ * API additions:
+ * \li GSRail.RemoveRailDepot
+ *
+ * Other changes:
+ * \li GSTown::ExpandTown Change to town expansion to match expected behaviour with the 'allow_town_roads' setting
  *
  * \b 15.0
  *
@@ -31,7 +39,7 @@
  * \li GSCargo::CC_NON_POTABLE
  * \li GSVehicleList_Waypoint
  * \li GSBaseStation::GetOwner
- * \li GSError:ERR_BRIDGE_TOO_LOW
+ * \li GSError::ERR_BRIDGE_TOO_LOW
  * \li GSEngine::GetAllRailTypes
  * \li GSTile::IsHouseTile
  *

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file screenshot_type.h Types related to screenshot providers. */
@@ -31,12 +31,22 @@ public:
 		ProviderManager<ScreenshotProvider>::Register(*this);
 	}
 
-	virtual ~ScreenshotProvider()
+	~ScreenshotProvider() override
 	{
 		ProviderManager<ScreenshotProvider>::Unregister(*this);
 	}
 
-	virtual bool MakeImage(const char *name, ScreenshotCallback *callb, void *userdata, uint w, uint h, int pixelformat, const Colour *palette) = 0;
+	/**
+	 * Create and write an image to a file.
+	 * @param name The file name to write to.
+	 * @param callb The callback that fills a buffer with pixel data.
+	 * @param w The width of the image.
+	 * @param h The height of the image.
+	 * @param pixelformat The number of bits per pixel for the image.
+	 * @param palette The palette that is currently being used.
+	 * @return Whether writing the image was successful of not.
+	 */
+	virtual bool MakeImage(const char *name, ScreenshotCallback *callb, void *userdata, uint w, uint h, int pixelformat, const Colour *palette) const = 0;
 };
 
 struct ScreenshotAuxiliaryText {

@@ -1,18 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "b2cb0da531c2f1f740045bfe7c4dac59f0b2b69c",
   "dependencies": [
     {
       "name": "curl",
+      "platform": "linux",
       "features": [
         "http2"
-      ],
-      "platform": "linux"
+      ]
     },
     {
       "name": "dbus",
-      "default-features": false,
-      "platform": "linux"
+      "platform": "linux",
+      "default-features": false
     },
     {
       "name": "fontconfig",
@@ -30,15 +29,28 @@
       "name": "icu",
       "platform": "linux"
     },
-    "liblzma",
-    "libpng",
-    "lzo",
-    "opusfile",
+    {
+      "name": "liblzma"
+    },
+    {
+      "name": "libpng"
+    },
+    {
+      "name": "lzo"
+    },
+    {
+      "name": "opusfile"
+    },
     {
       "name": "sdl2",
       "platform": "linux"
     },
-    "zlib",
-    "zstd"
-  ]
+    {
+      "name": "zlib"
+    },
+    {
+      "name": "zstd"
+    }
+  ],
+  "builtin-baseline": "f3e10653cc27d62a37a3763cd84b38bca07c6075"
 }

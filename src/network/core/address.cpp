@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file core/address.cpp Implementation of the address. */
+/** @file address.cpp Implementation of the address. */
 
 #include "../../stdafx.h"
 
@@ -278,7 +278,7 @@ SOCKET NetworkAddress::Resolve(int family, int socktype, int flags, SocketList *
 			std::copy_n(reinterpret_cast<const std::byte *>(runp->ai_addr), runp->ai_addrlen, reinterpret_cast<std::byte *>(&this->address));
 #ifdef __EMSCRIPTEN__
 			/* Emscripten doesn't zero sin_zero, but as we compare addresses
-			 * to see if they are the same address, we need them to be zero'd.
+			 * to see if they are the same address, we need them to be zeroed.
 			 * Emscripten is, as far as we know, the only OS not doing this.
 			 *
 			 * https://github.com/emscripten-core/emscripten/issues/12998
@@ -454,17 +454,17 @@ void NetworkAddress::Listen(int socktype, SocketList *sockets)
  *
  * @param connection_string The string to parse.
  * @param default_port The default port to set port to if not in connection_string.
- * @param company Pointer to the company variable to set iff indicated.
+ * @param company_id Pointer to the company variable to set iff indicated.
  * @return A valid ServerAddress of the parsed information.
  */
 /* static */ ServerAddress ServerAddress::Parse(std::string_view connection_string, uint16_t default_port, CompanyID *company_id)
 {
 	if (connection_string.starts_with("+")) {
 		std::string_view invite_code = ParseCompanyFromConnectionString(connection_string, company_id);
-		return ServerAddress(SERVER_ADDRESS_INVITE_CODE, std::string(invite_code));
+		return ServerAddress(ServerAddressType::InviteCode, std::string(invite_code));
 	}
 
 	uint16_t port = default_port;
 	std::string_view ip = ParseFullConnectionString(connection_string, port, company_id);
-	return ServerAddress(SERVER_ADDRESS_DIRECT, fmt::format("{}:{}", ip, port));
+	return ServerAddress(ServerAddressType::Direct, fmt::format("{}:{}", ip, port));
 }

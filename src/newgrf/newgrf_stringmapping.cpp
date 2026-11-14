@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_stringmapping.cpp NewGRF string mapping implementation. */
@@ -12,7 +12,7 @@
 #include "../newgrf.h"
 #include "../newgrf_text.h"
 #include "../newgrf_text_type.h"
-#include "../strings_type.h"
+#include "../strings_id_type.h"
 #include "newgrf_internal.h"
 #include "newgrf_stringmapping.h"
 
@@ -77,8 +77,8 @@ static StringID TTDPStringIDToOTTDStringIDMapping(GRFStringID str)
 	assert(!IsInsideMM(str.base(), 0xD000, 0xD7FF));
 
 #define TEXTID_TO_STRINGID(begin, end, stringid, stringend) \
-	static_assert(stringend - stringid == end - begin); \
-	if (str.base() >= begin && str.base() <= end) return StringID{str.base() + (stringid - begin)}
+	static_assert(stringend.base() - stringid.base() == end - begin); \
+	if (str.base() >= begin && str.base() <= end) return StringID{str.base() + (stringid.base() - begin)}
 
 	/* We have some changes in our cargo strings, resulting in some missing. */
 	TEXTID_TO_STRINGID(0x000E, 0x002D, STR_CARGO_PLURAL_NOTHING,                      STR_CARGO_PLURAL_FIZZY_DRINKS);
@@ -151,7 +151,7 @@ StringID MapGRFStringIDCommon(T grfid, GRFStringID str)
 	}
 }
 
-StringID MapGRFStringID(uint32_t grfid, GRFStringID str)
+StringID MapGRFStringID(GrfID grfid, GRFStringID str)
 {
 	return MapGRFStringIDCommon(grfid, str);
 }

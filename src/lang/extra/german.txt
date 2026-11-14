@@ -11,22 +11,9 @@ STR_CONFIG_SETTING_ZOOM_LVL_OUT_32X                             :32x
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_64X                             :64x
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_128X                            :128x
 
-STR_CONFIG_SETTING_DEFAULT_ROAD_TYPE_DEFAULT                    :Standard
-
-STR_ORDER_CONDITIONAL_CARGO_WAITING                             :Wartende Fracht
-STR_ORDER_CONDITIONAL_ACCEPTANCE_DROPDOWN                       :Akzeptierte Fracht
-STR_ORDER_CONDITIONAL_FREE_PLATFORMS                            :Freie Bahnsteige
-STR_ORDER_CONDITIONAL_PERCENT                                   :Prozent der Fälle
-STR_ORDER_CONDITIONAL_SLOT_OCCUPANCY                            :Slotauslastung
-STR_ORDER_CONDITIONAL_TRAIN_IN_SLOT                             :Zug im Slot
-STR_ORDER_CONDITIONAL_CARGO_LOAD_PERCENTAGE                     :Frachtladezustand (Prozent)
-STR_ORDER_CONDITIONAL_CARGO_WAITING_AMOUNT                      :Wartende Frachtmenge
-STR_ORDER_CONDITIONAL_COUNTER_VALUE                             :Zählerwert
-STR_ORDER_CONDITIONAL_TIME_DATE_VALUE                           :Aktuelle(s) Zeit/Datum
-STR_ORDER_CONDITIONAL_TIMETABLE_STATE                           :Fahrplanstatus
-STR_ORDER_CONDITIONAL_DISPATCH_SLOT                             :Abfahrztszeitfenster
-
 STR_ORDER_STOP_LOCATION_THROUGH                                 :{SPACE}[durchgehendes Laden]
+
+STR_CONFIG_SETTING_STOP_LOCATION_THROUGH                        :durchgehendes Laden
 
 STR_CONFIG_SETTING_TOWN_GROWTH_EXTREME_SLOW                     :Extrem langsam
 STR_CONFIG_SETTING_TOWN_GROWTH_VERY_SLOW                        :Sehr langsam
@@ -251,9 +238,6 @@ STR_CONFIG_SETTING_RIVER_MIN_LENGTH_HELPTEXT                    :Minimale Länge
 STR_CONFIG_SETTING_RIVER_ROUTE_RANDOM                           :Zufälligkeit von Flussläufen: {STRING}
 STR_CONFIG_SETTING_RIVER_ROUTE_RANDOM_HELPTEXT                  :Wähle, wie zufällig die Flussläufe aussehen sollen.
 
-STR_CONFIG_SETTING_RIVERS_TOP_OF_HILL                           :Flussläufe sollen von höhreren zu niedrigeren Höhenstufen verlaufen: {STRING}
-STR_CONFIG_SETTING_RIVERS_TOP_OF_HILL_HELPTEXT                  :Legt fest, ob die Quellen von Flüssen in den Bergen liegen sollen.
-
 STR_CONFIG_SETTING_RIVER_TROPICS_WIDTH                          :Breite des tropischen Geländes um Flussläufe herum: {STRING}
 STR_CONFIG_SETTING_RIVER_TROPICS_WIDTH_HELPTEXT                 :Legt die Breite des tropischen Geländes fest, das Flüsse umgibt.{}This is the total width of the zone on both sides of the river.
 
@@ -372,9 +356,6 @@ STR_CONFIG_SETTING_TIMETABLE_AUTOFILL_ROUNDING_TICKS_HELPTEXT   :Fahrplanzeiten,
 STR_CONFIG_SETTING_TIMETABLE_AUTOFILL_ROUNDING_TICKS_VALUE      :{COMMA}{NBSP}Tick{P 0 "" s}
 STR_CONFIG_SETTING_TIMETABLE_AUTOFILL_ROUNDING_TICKS_DEFAULT    :Standard
 
-STR_CONFIG_SETTING_DEFAULT_ROAD_TYPE                            :Straßen(bahn)typ bei Spielbeginn/geladenem Spiel: {STRING}
-STR_CONFIG_SETTING_DEFAULT_ROAD_TYPE_HELPTEXT                   :Vorausgewählter Straßen(bahn)typ nach Spielstart. 'Erster verfügbarer' wählt den ältesten Straßen(bahn)typ, 'Letzter verfügbarer' den neuesten Straßen(bahn)typ, 'Meistbenutzter' denjenigen, der am meisten verbaut ist und 'Standard' den Standardtyp.
-
 STR_CONFIG_SETTING_ENABLE_BUILD_RIVER                           :Aktiviere das Bauen von Flüssen: {STRING}
 STR_CONFIG_SETTING_ENABLE_BUILD_RIVER_HELPTEXT                  :Aktiviere das Bauen von Flüssen außerhalb des Szenarioeditors
 
@@ -392,11 +373,6 @@ STR_CONFIG_SETTING_SHARING_FEE_AIR                              :Terminalnutzung
 STR_CONFIG_SETTING_SHARING_PAYMENT_IN_DEBT                      :Erlaube verschuldeten Firmen das Zahlen von Gebühren: {STRING}
 STR_CONFIG_SETTING_SHARING_USED_BY_VEHICLES                     :Einstellung kann nicht geändert werden, da Fahrzeuge die geteilte Infrastruktur benutzen.
 STR_CONFIG_SETTING_SHARING_ORDERS_TO_OTHERS                     :Einstellung kann nicht geändert werden, da Fahrzeuge Aufträge haben die auf fremdes Eigentum zeigen.
-
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_RAIL               :Erlaube Mitbewerbern in fremden Depots Züge zu kaufen und zu erneuern: {STRING}
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_ROAD               :Erlaube Mitbewerbern in fremden Depots Straßenfahrzeuge zu kaufen und zu erneuern: {STRING}
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_WATER              :Erlaube Mitbewerbern in fremden Werften Schiffe zu kaufen und zu erneuern: {STRING}
-STR_CONFIG_SETTING_INFRA_OTHERS_BUY_IN_DEPOT_AIR                :Erlaube Mitbewerbern in fremden Hangars Flugzeuge zu kaufen und zu erneuern: {STRING}
 
 STR_CONFIG_SETTING_TRAIN_SPEED_ADAPTATION                       :Zuggeschwindigkeitsanpassung aktivieren: {STRING}
 STR_CONFIG_SETTING_TRAIN_SPEED_ADAPTATION_HELPTEXT              :Wenn aktiviert, passen schnellere Züge ihre Geschwindigkeit an vor ihnen fahrende langsamere Züge an.
@@ -473,9 +449,6 @@ STR_CONFIG_SETTING_TOWN_GROWTH_CARGO_TRANSPORTED_HELPTEXT       :Prozentsatz der
 
 STR_CONFIG_SETTING_RANDOM_ROAD_RECONSTRUCTION                   :Wahrscheinlichkeit zufälliger Straßenreparaturen: {STRING}
 STR_CONFIG_SETTING_RANDOM_ROAD_RECONSTRUCTION_HELPTEXT          :Setze den Wert für die Wahrscheinlichkeit, dass städtische Straßen zufällig repariert werden (0 = aus, 1000 = max)
-
-STR_CONFIG_SETTING_TOWN_MIN_DISTANCE                            :Minimaler Abstand zwischen Städten: {STRING}
-STR_CONFIG_SETTING_TOWN_MIN_DISTANCE_HELPTEXT                   :Stelle den Mindestabstand zwischen Städten in Kacheln für die Kartenerzeugung und zufällige Stadtgründungen ein.
 
 STR_CONFIG_SETTING_DISTRIBUTION_PER_CARGO                       :Zu überschreibendes Verteilungsschema für folgede Frachtart: {STRING}
 STR_CONFIG_SETTING_DISTRIBUTION_PER_CARGO_PARAM                 :Zu überschreibendes Verteilungsschema für {STRING}: {STRING}
@@ -577,6 +550,7 @@ STR_LINKGRAPH_STATS_TOOLTIP_CAPACITY                            :{}Kapazität: {
 
 STR_RAIL_TOOLBAR_TOOLTIP_BUILD_POLYRAIL                         :{BLACK}Gleise legen mit automatischem Legen mehrerer Gleise. Strg halten, um zwischen Bauen und Entfernen umzuschalten. Shift schaltet zwischen Bauen und Kostenvoranschlag um
 
+STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Das Zeigen erweiterter Signaltypen umschalten
 STR_BUILD_SIGNAL_SEMAPHORE_PROG_TOOLTIP                         :{BLACK}Programmierbares Signal (Formsignal){}Das programmierbare Signal ist ein Kombinationssignal, welches programmiert werden kann sich komplex zu verhalten.
 STR_BUILD_SIGNAL_SEMAPHORE_NO_ENTRY_TOOLTIP                     :{BLACK}Sperrsignal (Formsignal){}Erlaubt mehreren Zügen, einen Signalabschnitt zu befahren, sofern sie separate Gleisabschnitte belegen können. Sperrsignale können nicht von vorne durchfahren werden.
 STR_BUILD_SIGNAL_ELECTRIC_PROG_TOOLTIP                          :{BLACK}Programmierbares Signal (Lichtsignal){}Das programmierbare Signal ist ein Kombinationssignal, welches programmiert werden kann sich komplex zu verhalten.
@@ -718,8 +692,7 @@ STR_TRACE_RESTRICT_SLOT_PBS_RES_END_TRY_ACQUIRE_ITEM            :Pfadreservierun
 STR_TRACE_RESTRICT_SLOT_PBS_RES_END_RELEASE_ITEM                :Pfadreservierung endet hier: Löse Slot: {PUSH_COLOUR}{STRING}{POP_COLOUR}
 STR_TRACE_RESTRICT_SLOT_NAME                                    :{TRSLOT}
 STR_TRACE_RESTRICT_SLOT_NAME_PREFIXED                           :[{STRING}] {TRSLOT}
-STR_TRACE_RESTRICT_SLOT_LIST_HEADER                             :{BLACK}Slot{CONSUME_ARG}{P "" s}: {LTBLUE}
-STR_TRACE_RESTRICT_SLOT_LIST_SEPARATOR                          :{BLACK}, {LTBLUE}
+STR_TRACE_RESTRICT_SLOT_LIST_HEADER                             :{BLACK}Slot{CONSUME_ARG}{P "" s}:{SPACE}
 STR_TRACE_RESTRICT_COUNTER_NAME                                 :{TRCOUNTER}
 STR_TRACE_RESTRICT_COUNTER_INCREASE                             :Inkrementiere
 STR_TRACE_RESTRICT_COUNTER_DECREASE                             :Dekrementiere
@@ -1186,7 +1159,7 @@ STR_QUERY_RENAME_TRAIN_TYPE_WAGON_CAPTION                       :{WHITE}Waggon u
 STR_VEHICLE_VIEW_SEND_TO_DEPOT_TOOLTIP_SHIFT                    :{STRING}. Shift+Klick, um auszuwählen welches
 STR_VEHICLE_VIEW_SEND_TO_DEPOT_MENU                             :{BLACK}Fahrzeug ins Depot/Werft/Hangar schicken abbrechen. Strg+Klick für das Menü. Shift+Klick, um Depot/Werft/Hangar auszuwählen
 
-STR_VEHICLE_STATUS_LOADING_UNLOADING_ADVANCE                    :{STRING}, {VELOCITY}
+STR_VEHICLE_STATUS_LOADING_UNLOADING_ADVANCE                    :{LTBLUE}{STRING}, {VELOCITY}
 STR_VEHICLE_STATUS_BROKEN_DOWN_VEL                              :{RED}Panne - {STRING}, {LTBLUE} {VELOCITY}
 STR_VEHICLE_STATUS_BROKEN_DOWN_VEL_SHORT                        :{RED}Panne - {STRING}
 STR_VEHICLE_STATUS_TRAIN_STUCK_WAIT_RESTRICTION                 :{ORANGE}Warte aufgrund von Routing-Beschränkung
@@ -1235,7 +1208,7 @@ STR_VEHICLE_INFO_TE_WEIGHT_RATIO                                :{BLACK}Max. Zug
 STR_VEHICLE_INFO_FULL_WEIGHT_WITH_RATIOS                        :{BLACK}Volles Gewicht: {LTBLUE}{WEIGHT_SHORT} {STRING}
 STR_VEHICLE_INFO_MAX_SPEED_LOADED                               :{BLACK}Maximalgeschwindigkeit (beladen): {LTBLUE}{VELOCITY}
 
-STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR_LIFETIME            :{STRING} (seit Inbetriebnahme: {CURRENCY_LONG})
+STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR_LIFETIME            :{STRING} {LTBLUE}(seit Inbetriebnahme: {CURRENCY_LONG})
 
 STR_VEHICLE_INFO_GROUP                                          :{BLACK}Gruppe: {LTBLUE}{GROUP}
 
@@ -1258,6 +1231,19 @@ STR_ORDER_REVERSE                                               :{BLACK}Wende
 STR_ORDER_REVERSE_TOOLTIP                                       :{BLACK}Ändere das Wendeverhalten des ausgewählten Auftrags
 
 STR_ORDER_DROP_SELL_DEPOT                                       :Fahrzeug verkaufen
+
+STR_ORDER_CONDITIONAL_CARGO_WAITING                             :Wartende Fracht
+STR_ORDER_CONDITIONAL_ACCEPTANCE_DROPDOWN                       :Akzeptierte Fracht
+STR_ORDER_CONDITIONAL_FREE_PLATFORMS                            :Freie Bahnsteige
+STR_ORDER_CONDITIONAL_PERCENT                                   :Prozent der Fälle
+STR_ORDER_CONDITIONAL_SLOT_OCCUPANCY                            :Slotauslastung
+STR_ORDER_CONDITIONAL_TRAIN_IN_SLOT                             :Zug im Slot
+STR_ORDER_CONDITIONAL_CARGO_LOAD_PERCENTAGE                     :Frachtladezustand (Prozent)
+STR_ORDER_CONDITIONAL_CARGO_WAITING_AMOUNT                      :Wartende Frachtmenge
+STR_ORDER_CONDITIONAL_COUNTER_VALUE                             :Zählerwert
+STR_ORDER_CONDITIONAL_TIME_DATE_VALUE                           :Aktuelle(s) Zeit/Datum
+STR_ORDER_CONDITIONAL_TIMETABLE_STATE                           :Fahrplanstatus
+STR_ORDER_CONDITIONAL_DISPATCH_SLOT                             :Abfahrztszeitfenster
 
 STR_ORDER_CONDITIONAL_VEHICLE_IN_SLOT                           :Fahrzeug im Slot
 
@@ -1601,7 +1587,7 @@ STR_SCHDISPATCH_ENABLED_TOOLTIP                                 :{BLACK}Aktivier
 STR_SCHDISPATCH_ADD                                             :{BLACK}Füge Abfahrtslot hinzu
 STR_SCHDISPATCH_ADD_TOOLTIP                                     :{BLACK}Füge für diesen Fahrplan einen neuen Abfahrtslot hinzu.
 STR_SCHDISPATCH_ADD_TOOLTIP_EXTRA                               :{BLACK}{STRING} Strg+Klick zum hinzufügen mehrerer Abfahrtslots auf einmal.
-STR_SCHDISPATCH_ADD_CAPTION                                     :{BLACK}Abfahrtslot
+STR_SCHDISPATCH_ADD_CAPTION                                     :Abfahrtslot
 STR_SCHDISPATCH_DURATION                                        :{BLACK}Dauer
 STR_SCHDISPATCH_DURATION_TOOLTIP                                :{BLACK}Setze die Dauer für diesen Fahrplan.
 STR_SCHDISPATCH_DURATION_CAPTION_MINUTE                         :{BLACK}Dauer (Minuten)

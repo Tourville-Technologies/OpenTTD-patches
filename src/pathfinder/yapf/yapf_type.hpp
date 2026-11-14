@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_type.hpp Types used by YAPF. */
@@ -12,7 +12,7 @@
 
 #include "../../core/enum_type.hpp"
 
-/* Enum used in PfCalcCost() to see why was the segment closed. */
+/** Enum used in PfCalcCost() to see why was the segment closed. */
 enum class EndSegmentReason : uint8_t {
 	/* The following reasons can be saved into cached segment */
 	DeadEnd, ///< track ends here
@@ -34,9 +34,11 @@ enum class EndSegmentReason : uint8_t {
 	TargetReached, ///< we have just reached the destination
 	Reverse, ///< we should reverse after this point
 };
+
+/** Bitset of \c EndSegmentReason elements. */
 using EndSegmentReasons = EnumBitSet<EndSegmentReason, uint16_t>;
 
-/* What reasons mean that the target can be found and needs to be detected. */
+/** What reasons mean that the target can be found and needs to be detected. */
 static constexpr EndSegmentReasons ESRF_POSSIBLE_TARGET = {
 	EndSegmentReason::Depot,
 	EndSegmentReason::Waypoint,
@@ -44,7 +46,7 @@ static constexpr EndSegmentReasons ESRF_POSSIBLE_TARGET = {
 	EndSegmentReason::SafeTile,
 };
 
-/* What reasons can be stored back into cached segment. */
+/** What reasons can be stored back into cached segment. */
 static constexpr EndSegmentReasons ESRF_CACHED_MASK = {
 	EndSegmentReason::DeadEnd,
 	EndSegmentReason::DeadEndEol,
@@ -59,7 +61,7 @@ static constexpr EndSegmentReasons ESRF_CACHED_MASK = {
 	EndSegmentReason::Reverse,
 };
 
-/* Reasons to abort pathfinding in this direction. */
+/** Reasons to abort pathfinding in this direction. */
 static constexpr EndSegmentReasons ESRF_ABORT_PF_MASK = {
 	EndSegmentReason::DeadEnd,
 	EndSegmentReason::PathTooLong,

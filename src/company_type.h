@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file company_type.h Types related to companies. */
@@ -10,10 +10,11 @@
 #ifndef COMPANY_TYPE_H
 #define COMPANY_TYPE_H
 
-#include "core/enum_type.hpp"
+#include "core/base_bitset_type.hpp"
 #include "core/pool_type.hpp"
+#include <array>
 
-struct CompanyIDTag : public PoolIDTraits<uint8_t, 0xF0, 0xFF> {};
+struct CompanyIDTag : public PoolIDTraits<uint8_t, 240, 0xFF> {};
 using CompanyID = PoolID<CompanyIDTag>;
 
 /* 'Fake' companies used for networks */
@@ -23,16 +24,24 @@ static constexpr CompanyID COMPANY_SPECTATOR{255}; ///< The client is spectating
 
 using Owner = CompanyID;
 static constexpr Owner OWNER_BEGIN = Owner::Begin(); ///< First owner
-static constexpr Owner OWNER_TOWN{0xF0}; ///< A town owns the tile, or a town is expanding
-static constexpr Owner OLD_OWNER_TOWN{ 0x0F }; ///< Used in old savegames to indicate town ownership
-static constexpr Owner OWNER_NONE{0xF1}; ///< The tile has no ownership
-static constexpr Owner OWNER_WATER{0xF2}; ///< The tile/execution is done by "water"
-static constexpr Owner OWNER_DEITY{0xF3}; ///< The object is owned by a superuser / goal script
-static constexpr Owner OWNER_END{0xF4}; ///< Last + 1 owner
+static constexpr Owner OWNER_TOWN{240}; ///< A town owns the tile, or a town is expanding
+static constexpr Owner OWNER_NONE{241}; ///< The tile has no ownership
+static constexpr Owner OWNER_WATER{242}; ///< The tile/execution is done by "water"
+static constexpr Owner OWNER_DEITY{243}; ///< The object is owned by a superuser / goal script
+static constexpr Owner OWNER_END{244}; ///< Last + 1 owner
 static constexpr Owner INVALID_OWNER = Owner::Invalid(); ///< An invalid owner
 
 static const uint8_t MAX_COMPANIES = CompanyID::End().base();
-static const uint8_t OLD_MAX_COMPANIES = 0x0F;
+extern bool _legacy_company_owners; ///< Enabled only during conversion of old maps.
+inline constexpr Owner ConvertLegacyOwner(Owner owner)
+{
+	return owner >= Owner(15) && owner <= Owner(18) ? Owner(owner.base() + 225) : owner;
+}
+inline constexpr Owner ToLegacyOwner(Owner owner)
+{
+	return owner >= OWNER_TOWN && owner <= OWNER_DEITY ? Owner(owner.base() - 225) : owner;
+}
+static constexpr uint8_t LEGACY_MAX_COMPANIES = 15; ///< Company count in unextended savegames.
 static const uint MAX_LENGTH_PRESIDENT_NAME_CHARS = 32; ///< The maximum length of a president name in characters including '\0'
 static const uint MAX_LENGTH_COMPANY_NAME_CHARS   = 32; ///< The maximum length of a company name in characters including '\0'
 
@@ -44,12 +53,58 @@ static const uint MAX_COMPETITORS_INTERVAL = 500; ///< The maximum interval (in 
 
 typedef Owner CompanyID;
 
-class CompanyMask : public BaseBitSet<CompanyMask, CompanyID, uint32_t> {
+/** Company bits in explicitly sized words, also used by savegames and network packets. */
+class CompanyMask {
 public:
-	constexpr CompanyMask() : BaseBitSet<CompanyMask, CompanyID, uint32_t>() {}
-	static constexpr size_t DecayValueType(CompanyID value) { return value.base(); }
-
+	static constexpr size_t WORD_COUNT = MAX_COMPANIES / 16;
+	std::array<uint16_t, WORD_COUNT> bits{};
+	constexpr CompanyMask() = default;
+	explicit constexpr CompanyMask(uint16_t legacy) { this->bits[0] = legacy; }
 	constexpr auto operator <=>(const CompanyMask &) const noexcept = default;
+	constexpr CompanyMask &Set() { this->bits.fill(UINT16_MAX); return *this; }
+	constexpr CompanyMask &Reset() { this->bits.fill(0); return *this; }
+	constexpr CompanyMask &Set(CompanyID c, bool value = true)
+	{
+		assert(c < MAX_COMPANIES);
+		uint16_t mask = uint16_t{1} << (c.base() % 16);
+		if (value) this->bits[c.base() / 16] |= mask;
+		else this->bits[c.base() / 16] &= ~mask;
+		return *this;
+	}
+	constexpr CompanyMask &Reset(CompanyID c) { return this->Set(c, false); }
+	constexpr bool Test(CompanyID c) const { return c < MAX_COMPANIES && (this->bits[c.base() / 16] & (uint16_t{1} << (c.base() % 16))) != 0; }
+	constexpr CompanyMask &Flip(CompanyID c) { return this->Set(c, !this->Test(c)); }
+	constexpr CompanyMask &Flip() { for (auto &word : this->bits) word = ~word; return *this; }
+	constexpr bool Any() const { for (auto word : this->bits) if (word != 0) return true; return false; }
+	constexpr bool None() const { return !this->Any(); }
+	constexpr bool All() const { for (auto word : this->bits) if (word != UINT16_MAX) return false; return true; }
+	constexpr CompanyMask &operator |=(const CompanyMask &other) { for (size_t i = 0; i < WORD_COUNT; ++i) this->bits[i] |= other.bits[i]; return *this; }
+	constexpr CompanyMask &operator &=(const CompanyMask &other) { for (size_t i = 0; i < WORD_COUNT; ++i) this->bits[i] &= other.bits[i]; return *this; }
+	constexpr CompanyMask &operator ^=(const CompanyMask &other) { for (size_t i = 0; i < WORD_COUNT; ++i) this->bits[i] ^= other.bits[i]; return *this; }
+	constexpr CompanyMask operator |(const CompanyMask &other) const { CompanyMask result = *this; return result |= other; }
+	constexpr CompanyMask operator &(const CompanyMask &other) const { CompanyMask result = *this; return result &= other; }
+	constexpr CompanyMask operator ^(const CompanyMask &other) const { CompanyMask result = *this; return result ^= other; }
+	constexpr CompanyMask operator ~() const { CompanyMask result = *this; return result.Flip(); }
+	constexpr CompanyMask &Set(const CompanyMask &other) { return *this |= other; }
+	constexpr CompanyMask &Reset(const CompanyMask &other) { return *this &= ~other; }
+	constexpr bool Any(const CompanyMask &other) const { return (*this & other).Any(); }
+	constexpr bool All(const CompanyMask &other) const { return (*this & other) == other; }
+	uint Count() const { uint count = 0; for (auto word : this->bits) count += CountBits(word); return count; }
+	/** Low word for legacy NewGRF variables only. */
+	constexpr uint16_t base() const { return this->bits[0]; }
+	class Iterator {
+		const CompanyMask *mask;
+		uint index;
+		void Skip() { while (this->index < MAX_COMPANIES && !this->mask->Test(CompanyID(this->index))) ++this->index; }
+	public:
+		Iterator(const CompanyMask *mask, uint index) : mask(mask), index(index) { this->Skip(); }
+		CompanyID operator *() const { return CompanyID(this->index); }
+		Iterator &operator ++() { ++this->index; this->Skip(); return *this; }
+		bool operator !=(const Iterator &other) const { return this->index != other.index; }
+	};
+	Iterator begin() const { return Iterator(this, 0); }
+	Iterator end() const { return Iterator(this, MAX_COMPANIES); }
+	const CompanyMask &IterateSetBits() const { return *this; }
 };
 
 struct Company;
@@ -61,33 +116,31 @@ struct CompanyManagerFace {
 };
 
 /** The reason why the company was removed. */
-enum CompanyRemoveReason : uint8_t {
-	CRR_MANUAL,    ///< The company is manually removed.
-	CRR_AUTOCLEAN, ///< The company is removed due to autoclean.
-	CRR_BANKRUPT,  ///< The company went belly-up.
+enum class CompanyRemoveReason : uint8_t {
+	Manual, ///< The company is manually removed.
+	Autoclean, ///< The company is removed due to autoclean.
+	Bankrupt, ///< The company went belly-up.
 
-	CRR_END,       ///< Sentinel for end.
+	End, ///< Sentinel for end.
 
-	CRR_NONE = CRR_MANUAL, ///< Dummy reason for actions that don't need one.
+	None = Manual, ///< Dummy reason for actions that don't need one.
 };
 
-/** The action to do with CMD_COMPANY_CTRL. */
-enum CompanyCtrlAction : uint8_t {
-	CCA_NEW,    ///< Create a new company.
-	CCA_NEW_AI, ///< Create a new AI company.
-	CCA_DELETE, ///< Delete a company.
-	CCA_SALE,   ///< Offer a company for sale.
-	CCA_MERGE,  ///< Merge companies.
-
-	CCA_END,    ///< Sentinel for end.
+/** The action to do with Commands::CompanyControl. */
+enum class CompanyCtrlAction : uint8_t {
+	New,    ///< Create a new company.
+	NewAI,  ///< Create a new AI company.
+	Delete, ///< Delete a company.
+	Sale,   ///< Offer a company for sale.
+	Merge,  ///< Merge companies.
 };
 
-/** The action to do with CMD_COMPANY_ALLOW_LIST_CTRL. */
-enum CompanyAllowListCtrlAction : uint8_t {
-	CALCA_ADD, ///< Create a public key.
-	CALCA_REMOVE, ///< Remove a public key.
-
-	CALCA_END,    ///< Sentinel for end.
+/** The action to do with Commands::CompanyAllowListControl. */
+enum class CompanyAllowListCtrlAction : uint8_t {
+	AddKey,      ///< Create a public key.
+	RemoveKey,   ///< Remove a public key.
+	AllowAny,    ///< Allow joining the company without a key.
+	AllowListed, ///< Allow only listed keys to join the company.
 };
 
 struct CompanyInfoDumper {

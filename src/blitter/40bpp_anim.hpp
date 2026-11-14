@@ -2,17 +2,17 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file 40bpp_optimized.hpp Optimized 40 bpp blitter. */
+/** @file 40bpp_anim.hpp Animated 40 bpp blitter. */
 
 #ifndef BLITTER_40BPP_OPTIMIZED_HPP
 #define BLITTER_40BPP_OPTIMIZED_HPP
 
 
 #include "32bpp_optimized.hpp"
-#include "../video/video_driver.hpp"
+#include "../video/video_driver_base.hpp"
 
 /** The optimized 40 bpp blitter (for OpenGL video driver). */
 class Blitter_40bppAnim : public Blitter_32bppOptimized {
@@ -37,7 +37,7 @@ public:
 	Blitter::PaletteAnimation UsePaletteAnimation() override;
 	bool NeedsAnimationBuffer() override;
 
-	const char *GetName()  override { return "40bpp-anim"; }
+	const char *GetName() const override { return "40bpp-anim"; }
 
 	template <BlitterMode mode> void Draw(const Blitter::BlitterParams *bp, ZoomLevel zoom);
 
@@ -54,7 +54,7 @@ class FBlitter_40bppAnim : public BlitterFactory {
 protected:
 	bool IsUsable() const override
 	{
-		return VideoDriver::GetInstance() == nullptr || VideoDriver::GetInstance()->HasAnimBuffer();
+		return VideoDriverBase::GetInstance() == nullptr || VideoDriverBase::GetInstance()->HasAnimBuffer();
 	}
 
 public:

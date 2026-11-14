@@ -16,11 +16,14 @@ add_files(
     flatset_type.hpp
     format.cpp
     format.hpp
+    format_variant.hpp
     geometry_func.cpp
     geometry_func.hpp
     geometry_type.hpp
     integer_type.hpp
     kdtree.hpp
+    label.cpp
+    label_type.hpp
     math_func.cpp
     math_func.hpp
     mem_func.hpp
@@ -42,6 +45,7 @@ add_files(
     string_consumer.hpp
     strong_typedef_type.hpp
     tinystring_type.hpp
+    type_util.hpp
     typed_container.hpp
     utf8.cpp
     utf8.hpp

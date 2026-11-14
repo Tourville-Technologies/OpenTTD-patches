@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_canals.cpp NewGRF Action 0x00 handler for canals. */
@@ -24,15 +24,15 @@
  */
 static ChangeInfoResult CanalChangeInfo(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf)
 {
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 
-	if (last > CF_END) {
-		GrfMsg(1, "CanalChangeInfo: Canal feature 0x{:02X} is invalid, max {}, ignoring", last, CF_END);
-		return CIR_INVALID_ID;
+	if (last > to_underlying(CanalFeature::End)) {
+		GrfMsg(1, "CanalChangeInfo: Canal feature 0x{:02X} is invalid, max {}, ignoring", last, CanalFeature::End);
+		return ChangeInfoResult::InvalidId;
 	}
 
 	for (uint id = first; id < last; ++id) {
-		CanalProperties *cp = &_cur_gps.grffile->canal_local_properties[id];
+		CanalProperties *cp = &_cur_gps.grffile->canal_local_properties[static_cast<CanalFeature>(id)];
 
 		switch (prop) {
 			case 0x08:
@@ -40,7 +40,7 @@ static ChangeInfoResult CanalChangeInfo(uint first, uint last, int prop, const G
 				break;
 
 			case 0x09:
-				cp->flags = buf.ReadByte();
+				cp->flags = CanalFeatureFlags{buf.ReadByte()};
 				break;
 
 			default:
@@ -52,5 +52,5 @@ static ChangeInfoResult CanalChangeInfo(uint first, uint last, int prop, const G
 	return ret;
 }
 
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_CANALS>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return CIR_UNHANDLED; }
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_CANALS>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return CanalChangeInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::Canals>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return ChangeInfoResult::Unhandled; }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::Canals>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return CanalChangeInfo(first, last, prop, mapping_entry, buf); }

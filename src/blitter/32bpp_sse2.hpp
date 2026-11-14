@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_sse2.hpp SSE2 32 bpp blitter. */
@@ -39,17 +39,17 @@ public:
 	static_assert(sizeof(MapValue) == 2);
 
 	/** Helper for creating specialised functions for specific optimisations. */
-	enum ReadMode : uint8_t {
-		RM_WITH_SKIP,   ///< Use normal code for skipping empty pixels.
-		RM_WITH_MARGIN, ///< Use cached number of empty pixels at begin and end of line to reduce work.
-		RM_NONE,        ///< No specialisation.
+	enum class ReadMode : uint8_t {
+		WithSkip, ///< Use normal code for skipping empty pixels.
+		WithMargin, ///< Use cached number of empty pixels at begin and end of line to reduce work.
+		None, ///< No specialisation.
 	};
 
 	/** Helper for creating specialised functions for the case where the sprite width is odd or even. */
-	enum BlockType : uint8_t {
-		BT_EVEN, ///< An even number of pixels in the width; no need for a special case for the last pixel.
-		BT_ODD,  ///< An odd number of pixels in the width; special case for the last pixel.
-		BT_NONE, ///< No specialisation for either case.
+	enum class BlockType : uint8_t {
+		Even, ///< An even number of pixels in the width; no need for a special case for the last pixel.
+		Odd, ///< An odd number of pixels in the width; special case for the last pixel.
+		None, ///< No specialisation for either case.
 	};
 
 	/** Data stored about a (single) sprite. */
@@ -85,7 +85,7 @@ public:
 		return Blitter_32bppSSE_Base::Encode(sprite_type, sprite, allocator);
 	}
 
-	const char *GetName() override { return "32bpp-sse2"; }
+	const char *GetName() const override { return "32bpp-sse2"; }
 };
 
 /** Factory for the SSE2 32 bpp blitter (without palette animation). */

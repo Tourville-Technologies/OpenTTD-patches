@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industry.h Base of all industries. */
@@ -60,8 +60,10 @@ enum class IndustryControlFlag : uint8_t {
 	NoClosure = 2,
 	/** Indicates that the production level of the industry is externally controlled. */
 	ExternalProdLevel = 3,
-	End,
+	End, ///< End marker.
 };
+
+/** Bitset of \c IndustryControlFlag elements. */
 using IndustryControlFlags = EnumBitSet<IndustryControlFlag, uint8_t, IndustryControlFlag::End>;
 
 /**
@@ -79,7 +81,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 		}
 	};
 	struct ProducedCargo {
-		CargoType cargo{};                         ///< Cargo type
+		CargoType cargo = INVALID_CARGO;           ///< Cargo type
 		uint8_t rate = 0;                          ///< Production rate
 		uint16_t waiting = 0;                      ///< Amount of cargo produced
 		HistoryData<ProducedHistory> history{};    ///< History of cargo produced and transported for this month and 24 previous months
@@ -91,7 +93,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	};
 
 	struct AcceptedCargo {
-		CargoType cargo{};                                       ///< Cargo type
+		CargoType cargo = INVALID_CARGO;                         ///< Cargo type
 		uint16_t waiting = 0;                                    ///< Amount of cargo waiting to processed
 		uint32_t accumulated_waiting = 0;                        ///< Accumulated waiting total over the last month, used to calculate average.
 		EconTime::Date last_accepted{};                          ///< Last day cargo was accepted by this industry
@@ -140,7 +142,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	PartsOfSubsidy part_of_subsidy{};         ///< NOSAVE: is this industry a source/destination of a subsidy?
 
 	Owner founder = INVALID_OWNER;            ///< Founder of the industry
-	uint8_t construction_type;                ///< Way the industry was constructed (@see IndustryConstructionType)
+	IndustryConstructionType construction_type{}; ///< Way the industry was constructed (@see IndustryConstructionType)
 	uint8_t selected_layout;                  ///< Which tile layout was used when creating the industry
 	Owner exclusive_supplier = INVALID_OWNER; ///< Which company has exclusive rights to deliver cargo (INVALID_OWNER = anyone)
 	Owner exclusive_consumer = INVALID_OWNER; ///< Which company has exclusive rights to take cargo (INVALID_OWNER = anyone)
@@ -150,7 +152,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 
 	PersistentStorage *psa = nullptr;         ///< Persistent storage for NewGRF industries.
 
-	Industry(TileIndex tile = INVALID_TILE) : location(tile, 0, 0) {}
+	Industry(IndustryID index, TileIndex tile = INVALID_TILE) : PoolItemBase(index), location(tile, 0, 0) {}
 	~Industry();
 
 	void RecomputeProductionMultipliers();
@@ -162,7 +164,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	 */
 	inline bool TileBelongsToIndustry(TileIndex tile) const
 	{
-		return IsTileType(tile, MP_INDUSTRY) && GetIndustryIndex(tile) == this->index;
+		return IsTileType(tile, TileType::Industry) && GetIndustryIndex(tile) == this->index;
 	}
 
 	/**
@@ -234,7 +236,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	/**
 	 * Get the industry of the given tile
 	 * @param tile the tile to get the industry from
-	 * @pre IsTileType(t, MP_INDUSTRY)
+	 * @pre IsTileType(t, TileType::Industry)
 	 * @return the industry
 	 */
 	static inline Industry *GetByTile(TileIndex tile)
@@ -249,6 +251,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	 * Get the count of industries for this type.
 	 * @param type IndustryType to query
 	 * @pre type < NUM_INDUSTRYTYPES
+	 * @return The number of industries of the given type.
 	 */
 	static inline uint16_t GetIndustryTypeCount(IndustryType type)
 	{

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file base_station_base.h Base classes/functions for base stations. */
@@ -11,11 +11,12 @@
 #define BASE_STATION_BASE_H
 
 #include "core/pool_type.hpp"
-#include "command_type.h"
+#include "command_type_fwd_declare.h"
 #include "viewport_type.h"
 #include "station_map.h"
 #include "core/geometry_type.hpp"
 #include "core/tinystring_type.hpp"
+#include "3rdparty/cpp-btree/btree_map.h"
 #include <memory>
 #include <vector>
 
@@ -25,7 +26,7 @@ extern StationPool _station_pool;
 template <typename T>
 struct SpecMapping {
 	const T *spec = nullptr; ///< Custom spec.
-	uint32_t grfid = 0;      ///< GRF ID of this custom spec.
+	GrfID grfid{};           ///< GRF ID of this custom spec.
 	uint16_t localidx = 0;   ///< Local ID within GRF of this custom spec.
 };
 
@@ -78,6 +79,7 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 	std::vector<StationSpecList> speclist{};           ///< List of rail station specs of this station.
 	std::vector<RoadStopSpecList> roadstop_speclist{}; ///< List of road stop specs of this station
 
+	btree::btree_map<TileIndex, StationRandomTriggers> tile_waiting_random_triggers;
 	uint16_t random_bits = 0;                               ///< Random bits assigned to this station
 	StationRandomTriggers waiting_random_triggers;          ///< Waiting triggers (NewGRF), shared by all station parts/tiles, road stops, ... essentially useless and broken by design.
 	uint8_t delete_ctr = 0;                                 ///< Delete counter. If greater than 0 then it is decremented until it reaches 0; the waypoint is then is deleted.
@@ -93,9 +95,10 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 
 	/**
 	 * Initialize the base station.
+	 * @param index The index of the station within the pool.
 	 * @param tile The location of the station sign
 	 */
-	BaseStation(TileIndex tile) : xy(tile) {}
+	BaseStation(StationID index, TileIndex tile) : PoolItemBase(index), xy(tile) {}
 
 	virtual ~BaseStation();
 
@@ -128,6 +131,10 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 		return this->cached_name;
 	}
 
+	/**
+	 * Move this station's main coordinate somewhere else.
+	 * @param new_xy New tile location of the sign.
+	 */
 	virtual void MoveSign(TileIndex new_xy)
 	{
 		this->xy = new_xy;
@@ -136,11 +143,10 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 
 	/**
 	 * Get the tile area for a given station type.
-	 * @param ta tile area to fill.
 	 * @param type the type of the area
+	 * @return The tile area.
 	 */
-	virtual void GetTileArea(TileArea *ta, StationType type) const = 0;
-
+	virtual TileArea GetTileArea(StationType type) const = 0;
 
 	/**
 	 * Obtain the length of a platform
@@ -220,10 +226,11 @@ struct SpecializedStation : public BaseStation {
 
 	/**
 	 * Set station type correctly
+	 * @param index The index within the station pool.
 	 * @param tile The base tile of the station.
 	 */
-	inline SpecializedStation(TileIndex tile) :
-			BaseStation(tile)
+	inline SpecializedStation(StationID index, TileIndex tile) :
+			BaseStation(index, tile)
 	{
 		this->facilities = EXPECTED_FACIL;
 	}
@@ -250,7 +257,8 @@ struct SpecializedStation : public BaseStation {
 
 	/**
 	 * Gets station with given index
-	 * @return pointer to station with given index casted to T *
+	 * @param index The pool index to look for.
+	 * @return pointer to station with given index cast to T *
 	 */
 	static inline T *Get(auto index)
 	{
@@ -259,6 +267,7 @@ struct SpecializedStation : public BaseStation {
 
 	/**
 	 * Returns station if the index is a valid index for this station type
+	 * @param index The pool index to look for.
 	 * @return pointer to station with given index if it's a station of this type
 	 */
 	static inline T *GetIfValid(auto index)
@@ -274,6 +283,29 @@ struct SpecializedStation : public BaseStation {
 	static inline T *GetByTile(TileIndex tile)
 	{
 		return GetIfValid(GetStationIndex(tile));
+	}
+
+	/**
+	 * Creates a new T-object in the station pool.
+	 * @param args The arguments to the constructor.
+	 * @return The created object.
+	 */
+	template <typename... Targs>
+	static inline T *Create(Targs &&... args)
+	{
+		return BaseStation::Create<T>(std::forward<Targs&&>(args)...);
+	}
+
+	/**
+	 * Creates a new T-object in the station pool.
+	 * @param index The index allocate the object at.
+	 * @param args The arguments to the constructor.
+	 * @return The created object.
+	 */
+	template <typename... Targs>
+	static inline T *CreateAtIndex(StationID index, Targs &&... args)
+	{
+		return BaseStation::CreateAtIndex<T>(index, std::forward<Targs&&>(args)...);
 	}
 
 	/**
@@ -313,7 +345,9 @@ struct SpecializedStation : public BaseStation {
  * @return Speclist of custom spec type.
  */
 template <class T> std::vector<SpecMapping<T>> &GetStationSpecList(BaseStation *bst);
+/** @copydoc GetStationSpecList */
 template <> inline std::vector<SpecMapping<StationSpec>> &GetStationSpecList<StationSpec>(BaseStation *bst) { return bst->speclist; }
+/** @copydoc GetStationSpecList */
 template <> inline std::vector<SpecMapping<RoadStopSpec>> &GetStationSpecList<RoadStopSpec>(BaseStation *bst) { return bst->roadstop_speclist; }
 
 #endif /* BASE_STATION_BASE_H */

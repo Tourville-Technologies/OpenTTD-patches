@@ -3,7 +3,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 use strict;
 use warnings;
@@ -56,6 +56,7 @@ luxembourgish.txt
 macedonian.txt
 malay.txt
 maltese.txt
+maori.txt
 marathi.txt
 norwegian_bokmal.txt
 norwegian_nynorsk.txt
@@ -82,12 +83,12 @@ welsh.txt
 );
 
 my $ref = "master";
-my $commit;
+my $nocommit;
 
 Getopt::Long::Configure("no_auto_abbrev", "bundling");
 GetOptions (
 	"ref|r=s"      => \$ref,
-	"commit|c"     => \$commit,
+	"no-commit|n"  => \$nocommit,
 ) or die("Invalid options");
 
 my $upstream_commit;
@@ -222,6 +223,6 @@ for my $lang (@langs) {
 	write_file($lang, @lines);
 }
 
-if ($commit) {
+if (!$nocommit) {
 	system(qw(git commit -m), "Merge translations up to $upstream_commit", '--author=translators <translators@openttd.org>', '--', @langs);
 }

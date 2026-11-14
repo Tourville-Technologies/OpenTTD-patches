@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town_widget.h Types related to the town widgets. */
@@ -25,9 +25,9 @@ enum TownDirectoryWidgets : WidgetID {
 enum TownAuthorityWidgets : WidgetID {
 	WID_TA_CAPTION,      ///< Caption of window.
 	WID_TA_ZONE_BUTTON,  ///< Turn on/off showing local authority zone.
+	WID_TA_RATING_SCROLLBAR, ///< Company ratings scrollbar.
 	WID_TA_RATING_INFO,  ///< Overview with ratings for each company.
 	WID_TA_COMMAND_LIST, ///< List of commands for the player.
-	WID_TA_SCROLLBAR,    ///< Scrollbar of the list of commands.
 	WID_TA_ACTION_INFO,  ///< Additional information about the action.
 	WID_TA_EXECUTE,      ///< Do-it button.
 	WID_TA_SETTING,      ///< Setting drop-down.

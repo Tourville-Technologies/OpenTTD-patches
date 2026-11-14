@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_simple.cpp Implementation of the simple 32 bpp blitter. */
@@ -42,7 +42,7 @@ void Blitter_32bppSimple::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Zoo
 					if (src->m == 0) {
 						if (src->a != 0) *dst = ComposeColourRGBA(src->r, src->g, src->b, src->a, *dst);
 					} else {
-						if (bp->remap[src->m] != 0) *dst = ComposeColourPA(AdjustBrightness(this->LookupColourInPalette(bp->remap[src->m]), src->v), src->a, *dst);
+						if (bp->remap[src->m] != 0) *dst = ComposeColourPA(AdjustBrightness(ResolveRGBRemap(bp, src->m, this->LookupColourInPalette(bp->remap[src->m])), src->v), src->a, *dst);
 					}
 					break;
 
@@ -54,7 +54,7 @@ void Blitter_32bppSimple::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Zoo
 							*dst = ComposeColourRGBA(c.r, c.g, c.b, c.a, *dst);
 						}
 					} else {
-						if (bp->remap[src->m] != 0) *dst = ComposeColourPA(AdjustBrightness(this->LookupColourInPalette(bp->remap[src->m]), Clamp(src->v + bp->brightness_adjust, 0, 255)), src->a, *dst);
+						if (bp->remap[src->m] != 0) *dst = ComposeColourPA(AdjustBrightness(ResolveRGBRemap(bp, src->m, this->LookupColourInPalette(bp->remap[src->m])), Clamp(src->v + bp->brightness_adjust, 0, 255)), src->a, *dst);
 					}
 					break;
 
@@ -65,7 +65,7 @@ void Blitter_32bppSimple::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Zoo
 							*dst = ComposeColourRGBA(g, g, g, src->a, *dst);
 						}
 					} else {
-						if (bp->remap[src->m] != 0) *dst = ComposeColourPA(AdjustBrightness(this->LookupColourInPalette(bp->remap[src->m]), src->v), src->a, *dst);
+						if (bp->remap[src->m] != 0) *dst = ComposeColourPA(AdjustBrightness(ResolveRGBRemap(bp, src->m, this->LookupColourInPalette(bp->remap[src->m])), src->v), src->a, *dst);
 					}
 					break;
 

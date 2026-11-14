@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cachecheck.cpp Check caches. */
@@ -17,6 +17,7 @@
 #include "debug_desync.h"
 #include "debug_settings.h"
 #include "industry.h"
+#include "object_base.h"
 #include "roadstop_base.h"
 #include "roadveh.h"
 #include "scope_info.h"
@@ -51,17 +52,17 @@ static bool SignalInfraTotalMatches()
 	TypedIndexContainer<std::array<uint, MAX_COMPANIES>, CompanyID> new_signal_totals = {};
 	for (TileIndex tile(0); tile < Map::Size(); ++tile) {
 		switch (GetTileType(tile)) {
-			case MP_RAILWAY:
+			case TileType::Railway:
 				if (HasSignals(tile)) {
 					const Company *c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) new_signal_totals[c->index] += CountBits(GetPresentSignals(tile));
 				}
 				break;
 
-			case MP_TUNNELBRIDGE: {
+			case TileType::TunnelBridge: {
 				/* Only count the tunnel/bridge if we're on the northern end tile. */
 				DiagDirection dir = GetTunnelBridgeDirection(tile);
-				if (dir == DIAGDIR_NE || dir == DIAGDIR_NW) break;
+				if (dir == DiagDirection::NE || dir == DiagDirection::NW) break;
 
 				if (IsTunnelBridgeWithSignalSimulation(tile)) {
 					const Company *c = Company::GetIfValid(GetTileOwner(tile));
@@ -275,7 +276,7 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 				}
 			} else {
 				ForAllStationsAroundTiles(ind->location, [ind, &stlist](Station *st, TileIndex tile) {
-					if (!IsTileType(tile, MP_INDUSTRY) || GetIndustryIndex(tile) != ind->index) return false;
+					if (!IsTileType(tile, TileType::Industry) || GetIndustryIndex(tile) != ind->index) return false;
 					stlist.insert(st);
 					return true;
 				});
@@ -326,10 +327,28 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 					cclog("  {}", line);
 				});
 				if (old_infrastructure[i].signal != c->infrastructure.signal && _network_server && !HasChickenBit(DCBF_DESYNC_CHECK_PERIODIC_SIGNALS)) {
-					Command<CMD_CHANGE_SETTING>::Post("debug.chicken_bits", _settings_game.debug.chicken_bits | (1 << DCBF_DESYNC_CHECK_PERIODIC_SIGNALS));
+					Command<Commands::ChangeSetting>::Post("debug.chicken_bits", _settings_game.debug.chicken_bits | (1 << DCBF_DESYNC_CHECK_PERIODIC_SIGNALS));
 				}
 			}
 			i++;
+		}
+
+		std::vector<uint16_t> object_counts;
+		for (const Object *o : Object::Iterate()) {
+			size_t type = static_cast<size_t>(o->type);
+			if (type >= NUM_OBJECTS) {
+				cclog("Object: {} at {} has invalid type {}", o->index, o->location.tile, o->type);
+				continue;
+			}
+			if (type >= object_counts.size()) object_counts.resize(type + 1);
+			object_counts[type]++;
+		}
+		for (size_t type = 0; type < NUM_OBJECTS; type++) {
+			uint16_t value = Object::GetTypeCount(static_cast<ObjectType>(type));
+			uint16_t expected = (type < object_counts.size()) ? object_counts[type] : 0;
+			if (value != expected) {
+				cclog("Object count mismatch for {}: was: {}, expected: {}", type, value, expected);
+			}
 		}
 	}
 
@@ -338,8 +357,8 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 		for (const RoadStop *rs : RoadStop::Iterate()) {
 			if (IsBayRoadStopTile(rs->xy)) continue;
 
-			rs->GetEntry(DIAGDIR_NE).CheckIntegrity(rs);
-			rs->GetEntry(DIAGDIR_NW).CheckIntegrity(rs);
+			rs->GetEntry(DiagDirection::NE).CheckIntegrity(rs);
+			rs->GetEntry(DiagDirection::NW).CheckIntegrity(rs);
 		}
 
 		struct SavedVehicleInfo {
@@ -385,13 +404,13 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 
 			uint length = 0;
 			for (const Vehicle *u = v; u != nullptr; u = u->Next(), length++) {
-				if (u->IsGroundVehicle() && (HasBit(u->GetGroundVehicleFlags(), GVF_GOINGUP_BIT) || HasBit(u->GetGroundVehicleFlags(), GVF_GOINGDOWN_BIT)) && u->GetGroundVehicleCache()->cached_slope_resistance && HasBit(v->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST)) {
+				if (u->IsGroundVehicle() && (u->GetGroundVehicleFlags().Test(GroundVehicleFlag::GoingUp) || u->GetGroundVehicleFlags().Test(GroundVehicleFlag::GoingDown)) && u->GetGroundVehicleCache()->cached_slope_resistance && HasBit(v->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST)) {
 					CCLOGV("VCF_GV_ZERO_SLOPE_RESIST set incorrectly (1)");
 				}
-				if (u->type == VEH_TRAIN && u->breakdown_ctr != 0 && !Train::From(v)->flags.Test(VehicleRailFlag::ConsistBreakdown) && (Train::From(u)->IsEngine() || Train::From(u)->IsMultiheaded())) {
+				if (u->type == VehicleType::Train && u->breakdown_ctr != 0 && !Train::From(v)->flags.Test(VehicleRailFlag::ConsistBreakdown) && (Train::From(u)->IsEngine() || Train::From(u)->IsMultiheaded())) {
 					CCLOGV("VehicleRailFlag::ConsistBreakdown incorrectly not set");
 				}
-				if (u->type == VEH_TRAIN && ((Train::From(u)->track & TRACK_BIT_WORMHOLE && !Train::From(u)->vehstatus.Test(VehState::Hidden)) || Train::From(u)->track == TRACK_BIT_DEPOT) && !Train::From(v)->flags.Test(VehicleRailFlag::ConsistSpeedReduction)) {
+				if (u->type == VehicleType::Train && ((Train::From(u)->track & TRACK_BIT_WORMHOLE && !Train::From(u)->vehstatus.Test(VehState::Hidden)) || Train::From(u)->track == TRACK_BIT_DEPOT) && !Train::From(v)->flags.Test(VehicleRailFlag::ConsistSpeedReduction)) {
 					CCLOGV("VehicleRailFlag::ConsistSpeedReduction incorrectly not set");
 				}
 			}
@@ -400,14 +419,14 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 				FillNewGRFVehicleCache(u);
 				veh_old.emplace_back(u);
 				switch (u->type) {
-					case VEH_TRAIN:
+					case VehicleType::Train:
 						gro_cache.push_back(Train::From(u)->gcache);
 						train_old.emplace_back(Train::From(u));
 						break;
-					case VEH_ROAD:
+					case VehicleType::Road:
 						gro_cache.push_back(RoadVehicle::From(u)->gcache);
 						break;
-					case VEH_AIRCRAFT:
+					case VehicleType::Aircraft:
 						air_cache.push_back(Aircraft::From(u)->acache);
 						break;
 					default:
@@ -416,10 +435,10 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 			}
 
 			switch (v->type) {
-				case VEH_TRAIN:    Train::From(v)->ConsistChanged(CCF_TRACK); break;
-				case VEH_ROAD:     RoadVehUpdateCache(RoadVehicle::From(v)); break;
-				case VEH_AIRCRAFT: UpdateAircraftCache(Aircraft::From(v));   break;
-				case VEH_SHIP:     Ship::From(v)->UpdateCache();             break;
+				case VehicleType::Train:    Train::From(v)->ConsistChanged(CCF_TRACK); break;
+				case VehicleType::Road:     RoadVehUpdateCache(RoadVehicle::From(v)); break;
+				case VehicleType::Aircraft: UpdateAircraftCache(Aircraft::From(v));   break;
+				case VehicleType::Ship:     Ship::From(v)->UpdateCache();             break;
 				default: break;
 			}
 
@@ -438,7 +457,7 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 							oldv.vcache.cached_vis_effect != u->vcache.cached_vis_effect ? 'v' : '-',
 							HasBit(oldv.vcache.cached_veh_flags ^ u->vcache.cached_veh_flags, VCF_LAST_VISUAL_EFFECT) ? 'l' : '-');
 				}
-				if (u->IsGroundVehicle() && (HasBit(u->GetGroundVehicleFlags(), GVF_GOINGUP_BIT) || HasBit(u->GetGroundVehicleFlags(), GVF_GOINGDOWN_BIT)) && u->GetGroundVehicleCache()->cached_slope_resistance && HasBit(v->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST)) {
+				if (u->IsGroundVehicle() && (u->GetGroundVehicleFlags().Test(GroundVehicleFlag::GoingUp) || u->GetGroundVehicleFlags().Test(GroundVehicleFlag::GoingDown)) && u->GetGroundVehicleCache()->cached_slope_resistance && HasBit(v->vcache.cached_veh_flags, VCF_GV_ZERO_SLOPE_RESIST)) {
 					CCLOGV("VCF_GV_ZERO_SLOPE_RESIST set incorrectly (2)");
 				}
 				if (oldv.acceleration != u->acceleration) {
@@ -480,7 +499,7 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 							a.cached_veh_length != b.cached_veh_length ? 'L' : '-');
 				};
 				switch (u->type) {
-					case VEH_TRAIN: {
+					case VehicleType::Train: {
 						if (gro_cache[length] != Train::From(u)->gcache) {
 							print_gv_cache_diff("train", gro_cache[length], Train::From(u)->gcache);
 						}
@@ -511,14 +530,14 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 						break;
 					}
 
-					case VEH_ROAD: {
+					case VehicleType::Road: {
 						if (gro_cache[length] != RoadVehicle::From(u)->gcache) {
 							print_gv_cache_diff("road vehicle", gro_cache[length], Train::From(u)->gcache);
 						}
 						break;
 					}
 
-					case VEH_AIRCRAFT: {
+					case VehicleType::Aircraft: {
 						if (air_cache[length] != Aircraft::From(u)->acache) {
 							CCLOGV("Aircraft vehicle cache mismatch: {}{}",
 									air_cache[length].cached_max_range != Aircraft::From(u)->acache.cached_max_range ? 'r' : '-',
@@ -559,7 +578,7 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 		}
 
 		for (Station *st : Station::Iterate()) {
-			for (CargoType c = 0; c < NUM_CARGO; c++) {
+			for (CargoType c{}; c < NUM_CARGO; c++) {
 				if (st->goods[c].data == nullptr) continue;
 
 				uint old_count = st->goods[c].data->cargo.TotalCount();
@@ -607,9 +626,27 @@ void CheckCaches(bool force_check, std::function<void(std::string_view)> log, Ch
 		ValidateVehicleTickCaches(cclog_output);
 
 		for (Vehicle *v : Vehicle::Iterate()) {
-			if (v->Previous()) assert_msg(v->Previous()->Next() == v, "{}", v->index);
-			if (v->Next()) assert_msg(v->Next()->Previous() == v, "{}", v->index);
+			if (v->Previous() != nullptr) assert_msg(v->Previous()->Next() == v, "{}", v->index);
+			if (v->Next() != nullptr) assert_msg(v->Next()->Previous() == v, "{}", v->index);
 		}
+
+		/* Check the last vehicle cache. */
+		for (Vehicle *v : Vehicle::Iterate()) {
+			if (v != v->First() || v->vehstatus.Test(VehState::Crashed) || !v->IsPrimaryVehicle()) continue;
+
+			/* Check that the last vehicle is actually last. */
+			if (v->Last()->Next() != nullptr) {
+				cclog("Vehicle cache mismatch, last vehicle must not have a next vehicle: type {}, vehicle {}, company {}, unit number {}, invalid 'Last()'", v->type, v->index, v->owner, v->unitnumber);
+			}
+
+			/* Ensure that all vehicles in the chain have the same last vehicle. */
+			for (Vehicle *u = v; u != nullptr; u = u->Next()) {
+				if (u->Last() != v->Last()) {
+					cclog("Vehicle cache mismatch, all vehicles in chain must have same last vehicle: type {}, vehicle {}, company {}, unit number {}, invalid 'Last()'", v->type, v->index, v->owner, v->unitnumber);
+				}
+			}
+		}
+
 		for (const TemplateVehicle *tv : TemplateVehicle::Iterate()) {
 			if (tv->Prev()) assert_msg(tv->Prev()->Next() == tv, "{}", tv->index);
 			if (tv->Next()) assert_msg(tv->Next()->Prev() == tv, "{}", tv->index);

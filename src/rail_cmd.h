@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file rail_cmd.h Command definitions for rail. */
@@ -28,7 +28,7 @@ enum class BuildSignalFlags : uint8_t {
 	None                   = 0,         ///< No flag set.
 	Convert                = (1U << 0), ///< Convert the present signal type and variant.
 	CtrlPressed            = (1U << 1), ///< Override signal/semaphore, or pre/exit/combo signal or toggle variant (CTRL-toggle)
-	SkipExisting           = (1U << 2), ///< Don't modify an existing signal but don't fail either. Otherewise always set new signal type.
+	SkipExisting           = (1U << 2), ///< Don't modify an existing signal but don't fail either. Otherwise always set new signal type.
 	PermitBidiTunnelBridge = (1U << 3), ///< Permit creation of/conversion to bidirectionally signalled bridges/tunnels.
 };
 DECLARE_ENUM_AS_BIT_SET(BuildSignalFlags)
@@ -57,16 +57,16 @@ struct BuildSignalTrackCmdData final : public AutoFmtTupleCmdData<BuildSignalTra
 	static inline constexpr const char fmt_str[] = "end: {}, t: {}, st: {}, sv: {}, style: {}, mode: {}, df: {:X}, sp: {}";
 };
 
-DEF_CMD_TUPLE(CMD_BUILD_RAILROAD_TRACK,  CmdBuildRailroadTrack,       CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<TileIndex, RailType, Track, BuildRailTrackFlags, bool>)
-DEF_CMD_TUPLE(CMD_REMOVE_RAILROAD_TRACK, CmdRemoveRailroadTrack,                     CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<TileIndex, Track>)
-DEF_CMD_TUPLE(CMD_BUILD_SINGLE_RAIL,     CmdBuildSingleRail,          CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<RailType, Track, BuildRailTrackFlags>)
-DEF_CMD_TUPLE(CMD_REMOVE_SINGLE_RAIL,    CmdRemoveSingleRail,                        CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<Track>)
-DEF_CMD_TUPLE(CMD_BUILD_TRAIN_DEPOT,     CmdBuildTrainDepot,          CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<RailType, DiagDirection>)
-DEF_CMD_TUPLE(CMD_BUILD_SINGLE_SIGNAL,   CmdBuildSingleSignal,                       CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, BuildSingleSignalCmdData)
-DEF_CMD_TUPLE(CMD_REMOVE_SINGLE_SIGNAL,  CmdRemoveSingleSignal,                      CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<Track, RemoveSignalFlags>)
-DEF_CMD_TUPLE(CMD_CONVERT_RAIL,          CmdConvertRail,                                   {}, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<TileIndex, RailType, bool>)
-DEF_CMD_TUPLE(CMD_CONVERT_RAIL_TRACK,    CmdConvertRailTrack,                              {}, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<TileIndex, Track, RailType>)
-DEF_CMD_TUPLE(CMD_BUILD_SIGNAL_TRACK,    CmdBuildSignalTrack,                        CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, BuildSignalTrackCmdData)
-DEF_CMD_TUPLE(CMD_REMOVE_SIGNAL_TRACK,   CmdRemoveSignalTrack,                       CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION, CmdDataT<TileIndex, Track, SignalDragFlags, RemoveSignalFlags>)
+DEF_CMD_TUPLE(Commands::BuildRailLong,      CmdBuildRailroadTrack,       CMD_NO_WATER | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<TileIndex, RailType, Track, BuildRailTrackFlags, bool>)
+DEF_CMD_TUPLE(Commands::RemoveRailLong,     CmdRemoveRailroadTrack,                     CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<TileIndex, Track>)
+DEF_CMD_TUPLE(Commands::BuildRail,          CmdBuildSingleRail,          CMD_NO_WATER | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<RailType, Track, BuildRailTrackFlags>)
+DEF_CMD_TUPLE(Commands::RemoveRail,         CmdRemoveSingleRail,                        CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<Track>)
+DEF_CMD_TUPLE(Commands::BuildRailDepot,     CmdBuildTrainDepot,          CMD_NO_WATER | CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<RailType, DiagDirection>)
+DEF_CMD_TUPLE(Commands::BuildSignal,        CmdBuildSingleSignal,                       CMD_AUTO, CommandType::LandscapeConstruction, BuildSingleSignalCmdData)
+DEF_CMD_TUPLE(Commands::RemoveSignal,       CmdRemoveSingleSignal,                      CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<Track, RemoveSignalFlags>)
+DEF_CMD_TUPLE(Commands::ConvertRail,        CmdConvertRail,                                   {}, CommandType::LandscapeConstruction, CmdDataT<TileIndex, RailType, bool>)
+DEF_CMD_TUPLE(Commands::ConvertRailTrack,   CmdConvertRailTrack,                              {}, CommandType::LandscapeConstruction, CmdDataT<TileIndex, Track, RailType>)
+DEF_CMD_TUPLE(Commands::BuildSignalLong,    CmdBuildSignalTrack,                        CMD_AUTO, CommandType::LandscapeConstruction, BuildSignalTrackCmdData)
+DEF_CMD_TUPLE(Commands::RemoveSignalLong,   CmdRemoveSignalTrack,                       CMD_AUTO, CommandType::LandscapeConstruction, CmdDataT<TileIndex, Track, SignalDragFlags, RemoveSignalFlags>)
 
 #endif /* RAIL_CMD_H */

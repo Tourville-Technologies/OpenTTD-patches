@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -11,7 +11,7 @@
  * The general idea is to have simple abstracting functions for things that
  * require different implementations for different environments.
  * In here the functions, and their documentation, are defined only once
- * and the implementation contains the #ifdefs to change the implementation.
+ * and the implementation contains the \#ifdefs to change the implementation.
  * Since Windows is usually different that is usually the first case, after
  * that the behaviour is usually Unix/BSD-like with occasional variation.
  */

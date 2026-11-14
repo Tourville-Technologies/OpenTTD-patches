@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_object.hpp Main object, on which all objects depend. */
@@ -48,8 +48,11 @@ public:
 	SimpleCountedObject() : ref_count(0) {}
 	virtual ~SimpleCountedObject() = default;
 
+	/** Increase the reference count by one. */
 	inline void AddRef() { ++this->ref_count; }
+	/** Decrease the reference count by one. Once zero call FinaleRelease and then destruct the object. */
 	void Release();
+	/** Called during Release, so the object can throw exceptions (you cannot in destructors). */
 	virtual void FinalRelease() {};
 
 private:
@@ -57,7 +60,7 @@ private:
 };
 
 /**
- * Uper-parent object of all API classes. You should never use this class in
+ * Upper-parent object of all API classes. You should never use this class in
  *   your script, as it doesn't publish any public functions. It is used
  *   internally to have a common place to handle general things, like internal
  *   command processing, and command-validation checks.
@@ -98,7 +101,7 @@ protected:
 	 *  - the data for the object (any supported types)
 	 * @return True iff saving this type is supported.
 	 */
-	virtual bool SaveObject(HSQUIRRELVM) { return false; }
+	virtual bool SaveObject(HSQUIRRELVM) const { return false; }
 
 	/**
 	 * Load this object.
@@ -111,7 +114,7 @@ protected:
 	 * Clone an object.
 	 * @return The clone if cloning this type is supported, nullptr otherwise.
 	 */
-	virtual ScriptObject *CloneObject() { return nullptr; }
+	virtual ScriptObject *CloneObject() const { return nullptr; }
 
 public:
 	/**
@@ -139,7 +142,7 @@ public:
 	static void InitializeRandomizers();
 
 	/**
-	 * Used when trying to instanciate ScriptObject from squirrel.
+	 * Used when trying to instantiate ScriptObject from squirrel.
 	 */
 	static SQInteger Constructor(HSQUIRRELVM);
 
@@ -165,7 +168,7 @@ protected:
 	template <Commands TCmd, typename T> struct ScriptDoCommandHelperNoTile;
 
 	template <Commands Tcmd, typename... Targs>
-	struct ScriptDoCommandHelper<Tcmd, std::tuple<Targs...>> {
+	struct ScriptDoCommandHelper<Tcmd, TypeList<Targs...>> {
 		using PayloadType = CmdPayload<Tcmd>;
 
 		static bool Do(Script_SuspendCallbackProc *callback, TileIndex tile, Targs... args)
@@ -180,7 +183,7 @@ protected:
 	};
 
 	template <Commands Tcmd, typename... Targs>
-	struct ScriptDoCommandHelperNoTile<Tcmd, std::tuple<Targs...>> {
+	struct ScriptDoCommandHelperNoTile<Tcmd, TypeList<Targs...>> {
 		using PayloadType = CmdPayload<Tcmd>;
 
 		static bool Do(Script_SuspendCallbackProc *callback, Targs... args)
@@ -197,8 +200,8 @@ protected:
 	/* Note that output_no_tile is used here instead of input_no_tile, because a tile index used only for error messages is not useful */
 	template <Commands Tcmd>
 	struct Command : public std::conditional_t<::CommandTraits<Tcmd>::output_no_tile,
-			ScriptDoCommandHelperNoTile<Tcmd, typename ::CmdPayload<Tcmd>::Tuple>,
-			ScriptDoCommandHelper<Tcmd, typename ::CmdPayload<Tcmd>::Tuple>> {};
+			ScriptDoCommandHelperNoTile<Tcmd, typename ::CmdPayload<Tcmd>::Types>,
+			ScriptDoCommandHelper<Tcmd, typename ::CmdPayload<Tcmd>::Types>> {};
 
 	/**
 	 * Store the latest command executed by the script.

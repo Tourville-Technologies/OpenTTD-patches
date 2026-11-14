@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehiclelist.cpp Lists of vehicles. */
@@ -24,14 +24,13 @@
  */
 uint32_t VehicleListIdentifier::Pack() const
 {
-	uint8_t c = this->company == OWNER_NONE ? 0xF : this->company.base();
-	assert(c             < (1 <<  8));
-	assert(this->vtype   < (1 <<  2));
-	assert(this->index   < (1 << 20));
-	assert(this->type    < VLT_END);
-	static_assert(VLT_END <= (1 <<  3));
-
-	return c << 28 | this->type << 23 | this->vtype << 26 | this->index;
+	assert(this->type < VehicleListType::End);
+	/* Station, depot, group and slot indices fit in 16 bits. Lists keyed by a
+	 * vehicle need 20 bits, but can recover their vehicle type from that vehicle. */
+	bool vehicle_list = this->type == VehicleListType::VehicleSharedOrders || this->type == VehicleListType::SingleVehicle;
+	assert(this->index < (vehicle_list ? (1U << 20) : (1U << 16)));
+	return this->index | (vehicle_list ? 0 : (to_underlying(this->vtype) << 16)) |
+		(uint32_t(this->company.base()) << 20) | (uint32_t(to_underlying(this->type)) << 28);
 }
 
 /**
@@ -41,13 +40,19 @@ uint32_t VehicleListIdentifier::Pack() const
  */
 bool VehicleListIdentifier::UnpackIfValid(uint32_t data)
 {
-	uint8_t c     = GB(data, 28, 4);
-	this->company = c == 0xF ? OWNER_NONE : (CompanyID)c;
-	this->type    = (VehicleListType)GB(data, 23, 3);
-	this->vtype   = (VehicleType)GB(data, 26, 2);
-	this->index   = GB(data, 0, 20);
-
-	return this->type < VLT_END;
+	this->company = CompanyID(GB(data, 20, 8));
+	this->type = VehicleListType(GB(data, 28, 3));
+	if (this->type >= VehicleListType::End || (this->company >= MAX_COMPANIES && this->company != OWNER_NONE)) return false;
+	bool vehicle_list = this->type == VehicleListType::VehicleSharedOrders || this->type == VehicleListType::SingleVehicle;
+	this->index = GB(data, 0, vehicle_list ? 20 : 16);
+	if (vehicle_list) {
+		const Vehicle *vehicle = Vehicle::GetIfValid(VehicleID(this->index));
+		if (vehicle == nullptr) return false;
+		this->vtype = vehicle->type;
+	} else {
+		this->vtype = VehicleType(GB(data, 16, 2));
+	}
+	return true;
 }
 
 /**
@@ -83,16 +88,15 @@ void BuildDepotVehicleList(VehicleType type, TileIndex tile, VehicleList *engine
 	for (Vehicle *v : VehiclesOnTile(tile, type)) {
 		if (!v->IsInDepot()) continue;
 
-		if (type == VEH_TRAIN) {
+		if (type == VehicleType::Train) {
 			const Train *t = Train::From(v);
-			if (t->IsArticulatedPart() || t->IsRearDualheaded()) continue;
 			if (wagons != nullptr && t->First()->IsFreeWagon()) {
-				if (individual_wagons || t->IsFreeWagon()) wagons->push_back(t);
+				if (!t->IsArticulatedPart() && (individual_wagons || t->IsFreeWagon())) wagons->push_back(t);
 				continue;
 			}
 		}
 
-		if (v->IsPrimaryVehicle()) engines->push_back(v);
+		if (v->IsMovingFront()) engines->push_back(v->First());
 	}
 }
 
@@ -154,7 +158,7 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 	};
 
 	switch (vli.type) {
-		case VL_STATION_LIST:
+		case VehicleListType::Station:
 			FindVehiclesWithOrder(
 				[&vli](const Vehicle *v) { return v->type == vli.vtype; },
 				[&vli](const Order *order) { return (order->IsType(OT_GOTO_STATION) || order->IsType(OT_GOTO_WAYPOINT) || order->IsType(OT_IMPLICIT)) && order->GetDestination() == vli.ToStationID(); },
@@ -162,7 +166,7 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			);
 			break;
 
-		case VL_SHARED_ORDERS: {
+		case VehicleListType::VehicleSharedOrders: {
 			/* Add all vehicles from this vehicle's shared order list */
 			const Vehicle *v = Vehicle::GetIfValid(vli.ToVehicleID());
 			if (v == nullptr || v->type != vli.vtype || !v->IsPrimaryVehicle()) return false;
@@ -173,7 +177,7 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			break;
 		}
 
-		case VL_GROUP_LIST:
+		case VehicleListType::Group:
 			if (vli.index != ALL_GROUP) {
 				for (const Vehicle *v : Vehicle::IterateTypeFrontOnly(vli.vtype)) {
 					if (!HasBit(v->subtype, GVSF_VIRTUAL) && v->IsPrimaryVehicle() &&
@@ -186,11 +190,11 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			fill_all_vehicles();
 			break;
 
-		case VL_STANDARD:
+		case VehicleListType::Company:
 			fill_all_vehicles();
 			break;
 
-		case VL_DEPOT_LIST:
+		case VehicleListType::Depot:
 			FindVehiclesWithOrder(
 				[&vli](const Vehicle *v) { return v->type == vli.vtype; },
 				[&vli](const Order *order) { return order->IsType(OT_GOTO_DEPOT) && !(order->GetDepotActionType() & ODATFB_NEAREST_DEPOT) && order->GetDestination() == vli.ToDestinationID(); },
@@ -198,7 +202,7 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			);
 			break;
 
-		case VL_SLOT_LIST: {
+		case VehicleListType::Slot: {
 			if (vli.index == ALL_TRAINS_TRACE_RESTRICT_SLOT_ID) {
 				fill_all_vehicles();
 			} else {
@@ -211,7 +215,7 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			break;
 		}
 
-		case VL_SINGLE_VEH: {
+		case VehicleListType::SingleVehicle: {
 			const Vehicle *v = Vehicle::GetIfValid(vli.index);
 			if (v != nullptr) add_veh(v);
 			break;

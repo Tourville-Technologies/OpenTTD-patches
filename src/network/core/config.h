@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file config.h Configuration options of the network stuff. It is used even when compiling without network support.
- */
+/** @file config.h Configuration options of the network stuff. It is used even when compiling without network support. */
 
 #ifndef NETWORK_CORE_CONFIG_H
 #define NETWORK_CORE_CONFIG_H
@@ -104,7 +102,7 @@ static const uint NETWORK_SECRET_KEY_LENGTH = 32 * 2 + 1;
 static const uint NETWORK_PUBLIC_KEY_LENGTH = 32 * 2 + 1;
 
 /**
- * Maximum version supported in PACKET_SERVER_GAME_INFO_EXTENDED
+ * Maximum version supported in PacketGameType::ServerGameInfoExtended
  */
 static const uint8_t SERVER_GAME_INFO_EXTENDED_MAX_VERSION = 2;
 

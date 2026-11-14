@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_command.cpp Command handling over network connections. */
@@ -122,7 +122,7 @@ void NetworkExecuteLocalCommandQueue()
 
 	/* Local company may have changed, so we should not restore the old value */
 	_current_company = _local_company;
-	_cmd_client_id = INVALID_CLIENT_ID;
+	_cmd_client_id = ClientID::Invalid;
 
 	if (record_sync_event) RecordSyncEvent(NSRE_CMD);
 }
@@ -147,7 +147,7 @@ static void DistributeCommandPacket(CommandPacket cp, const NetworkClientSocket 
 	cp.frame = _frame_counter_max + 1;
 
 	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
-		if (cs->status >= NetworkClientSocket::STATUS_MAP) {
+		if (cs->status >= NetworkClientSocket::ClientStatus::Map) {
 			/* Callbacks are only send back to the client who sent them in the
 			 *  first place. This filters that out. */
 			cp.callback = (cs != owner) ? CommandCallback::None : callback;

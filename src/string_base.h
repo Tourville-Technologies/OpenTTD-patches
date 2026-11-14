@@ -2,8 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
+
+/** @file string_base.h Base types for interacting with strings. */
 
 #ifndef STRING_BASE_H
 #define STRING_BASE_H
@@ -47,12 +49,14 @@ public:
 
 	/**
 	 * Advance the cursor by one iteration unit.
+	 * @param what The iteration unit to advance by.
 	 * @return New cursor position (in bytes) or #END if the cursor is already at the end of the string.
 	 */
 	virtual size_t Next(IterType what = ITER_CHARACTER) = 0;
 
 	/**
 	 * Move the cursor back by one iteration unit.
+	 * @param what The iteration unit to move by.
 	 * @return New cursor position (in bytes) or #END if the cursor is already at the start of the string.
 	 */
 	virtual size_t Prev(IterType what = ITER_CHARACTER) = 0;

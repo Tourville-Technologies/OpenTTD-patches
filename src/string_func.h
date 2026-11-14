@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -36,6 +36,7 @@ char *stredup(const char *src, const char *last = nullptr) NOACCESS(2);
 
 void strecpy(std::span<char> dst, std::string_view src);
 
+void FormatArrayAsHex(struct format_target &output, std::span<const uint8_t> data, bool upper_case = true);
 std::string FormatArrayAsHex(std::span<const uint8_t> data, bool upper_case = true);
 
 template <typename T>
@@ -227,7 +228,20 @@ inline bool IsPrintable(char32_t c)
  */
 inline bool IsWhitespace(char32_t c)
 {
-	return c == 0x0020 /* SPACE */ || c == 0x3000; /* IDEOGRAPHIC SPACE */
+	return c == 0x0020 /* SPACE */ || (c >= 0x2000 && c <= 0x200C) || c == 0x3000; /* IDEOGRAPHIC SPACE */
+}
+
+/**
+ * Check wheather a character is non-breaking whitespace.
+ * @param c character to check.
+ * @return \c true if a character is a non-breaking whitespace character.
+ */
+inline bool IsNonbreakingWhitespace(char32_t c)
+{
+	return c == 0x00A0 /* NBSP */
+		|| c == 0x202F /* NARROW NO-BREAK SPACE */
+		|| c == 0x200D /* ZERO WIDTH JOINER */
+		|| c == 0x2060; /* WORD JOINER */
 }
 
 /* Needed for NetBSD version (so feature) testing */

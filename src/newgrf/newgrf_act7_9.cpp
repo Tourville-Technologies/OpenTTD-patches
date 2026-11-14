@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act7_9.cpp NewGRF Action 0x07 and Action 0x09 handler. */
@@ -25,6 +25,21 @@
 static std::array<uint32_t, 8> _ttdpatch_flags;
 static std::array<uint32_t, 8> _observed_ttdpatch_flags;
 
+/**
+ * Checks whether the train signals are on the same side as the road vehicles are driving.
+ * This is a flag that can be checked by NewGRFs (TTDPatchFlags bit 0x3B).
+ * @return \c true iff the road vehicles drive on the same side as signals are drawn.
+ */
+static bool IsSignalSideOnTrafficSide()
+{
+	switch (_settings_game.construction.train_signal_side) {
+		case TrainSignalSide::RoadVehicleDrivingSide: return true;
+		case TrainSignalSide::Left: return _settings_game.vehicle.road_side == RoadVehicleDrivingSide::Left;
+		case TrainSignalSide::Right: return _settings_game.vehicle.road_side == RoadVehicleDrivingSide::Right;
+		default: NOT_REACHED();
+	}
+}
+
 /** Initialize the TTDPatch flags */
 void InitializePatchFlags()
 {
@@ -45,7 +60,7 @@ void InitializePatchFlags()
 	                   |                                                       (1U << 0x09)  // trainrefit
 	                   |                                                       (0U << 0x0B)  // subsidiaries
 	                   |         ((_settings_game.order.gradual_loading ? 1U : 0U) << 0x0C)  // gradualloading
-	                   |                                                       (1U << 0x12)  // unifiedmaglevmode - set bit 0 mode. Not revelant to OTTD
+	                   |                                                       (1U << 0x12)  // unifiedmaglevmode - set bit 0 mode. Not relevant to OTTD
 	                   |                                                       (1U << 0x13)  // unifiedmaglevmode - set bit 1 mode
 	                   |                                                       (1U << 0x14)  // bridgespeedlimits
 	                   |                                                       (1U << 0x16)  // eternalgame
@@ -53,10 +68,10 @@ void InitializePatchFlags()
 	                   |                                                       (1U << 0x18)  // newrvs
 	                   |                                                       (1U << 0x19)  // newships
 	                   |                                                       (1U << 0x1A)  // newplanes
-	                   | ((_settings_game.construction.train_signal_side == 1 ? 1U : 0U) << 0x1B)  // signalsontrafficside
+	                   |                  ((IsSignalSideOnTrafficSide() ? 1U : 0U) << 0x1B)  // signalsontrafficside
 	                   |       ((_settings_game.vehicle.disable_elrails ? 0U : 1U) << 0x1C); // electrifiedrailway
 
-	_ttdpatch_flags[2] =                                                       (1U << 0x01)  // loadallgraphics - obsolote
+	_ttdpatch_flags[2] =                                                       (1U << 0x01)  // loadallgraphics - obsolete
 	                   |                                                       (1U << 0x03)  // semaphores
 	                   |                                                       (1U << 0x0A)  // newobjects
 	                   |                                                       (0U << 0x0B)  // enhancedgui
@@ -134,9 +149,9 @@ uint32_t GetParamVal(uint8_t param, uint32_t *cond_val)
 		case 0x84: { // GRF loading stage
 			uint32_t res = 0;
 
-			if (_cur_gps.stage > GLS_INIT) SetBit(res, 0);
-			if (_cur_gps.stage == GLS_RESERVE) SetBit(res, 8);
-			if (_cur_gps.stage == GLS_ACTIVATION) SetBit(res, 9);
+			if (_cur_gps.stage > GrfLoadingStage::Init) SetBit(res, 0);
+			if (_cur_gps.stage == GrfLoadingStage::Reserve) SetBit(res, 8);
+			if (_cur_gps.stage == GrfLoadingStage::Activation) SetBit(res, 9);
 			return res;
 		}
 
@@ -217,31 +232,31 @@ static void SkipIf(ByteReader &buf)
 	if (condtype >= 0x0B) {
 		/* Tests that ignore 'param' */
 		switch (condtype) {
-			case 0x0B: result = !IsValidCargoType(GetCargoTypeByLabel(CargoLabel(std::byteswap(cond_val))));
+			case 0x0B: result = !IsValidCargoType(GetCargoTypeByLabel(UnflattenNewGRFLabel<CargoLabel>(cond_val)));
 				break;
-			case 0x0C: result = IsValidCargoType(GetCargoTypeByLabel(CargoLabel(std::byteswap(cond_val))));
+			case 0x0C: result = IsValidCargoType(GetCargoTypeByLabel(UnflattenNewGRFLabel<CargoLabel>(cond_val)));
 				break;
-			case 0x0D: result = GetRailTypeByLabel(std::byteswap(cond_val)) == INVALID_RAILTYPE;
+			case 0x0D: result = GetRailTypeByLabel(UnflattenNewGRFLabel<RailTypeLabel>(cond_val)) == INVALID_RAILTYPE;
 				break;
-			case 0x0E: result = GetRailTypeByLabel(std::byteswap(cond_val)) != INVALID_RAILTYPE;
+			case 0x0E: result = GetRailTypeByLabel(UnflattenNewGRFLabel<RailTypeLabel>(cond_val)) != INVALID_RAILTYPE;
 				break;
 			case 0x0F: {
-				RoadType rt = GetRoadTypeByLabel(std::byteswap(cond_val));
+				RoadType rt = GetRoadTypeByLabel(UnflattenNewGRFLabel<RoadTypeLabel>(cond_val));
 				result = rt == INVALID_ROADTYPE || !RoadTypeIsRoad(rt);
 				break;
 			}
 			case 0x10: {
-				RoadType rt = GetRoadTypeByLabel(std::byteswap(cond_val));
+				RoadType rt = GetRoadTypeByLabel(UnflattenNewGRFLabel<RoadTypeLabel>(cond_val));
 				result = rt != INVALID_ROADTYPE && RoadTypeIsRoad(rt);
 				break;
 			}
 			case 0x11: {
-				RoadType rt = GetRoadTypeByLabel(std::byteswap(cond_val));
+				RoadType rt = GetRoadTypeByLabel(UnflattenNewGRFLabel<RoadTypeLabel>(cond_val));
 				result = rt == INVALID_ROADTYPE || !RoadTypeIsTram(rt);
 				break;
 			}
 			case 0x12: {
-				RoadType rt = GetRoadTypeByLabel(std::byteswap(cond_val));
+				RoadType rt = GetRoadTypeByLabel(UnflattenNewGRFLabel<RoadTypeLabel>(cond_val));
 				result = rt != INVALID_ROADTYPE && RoadTypeIsTram(rt);
 				break;
 			}
@@ -250,7 +265,7 @@ static void SkipIf(ByteReader &buf)
 	} else if (param == 0x88) {
 		/* GRF ID checks */
 
-		GRFConfig *c = GetGRFConfig(cond_val, mask);
+		GRFConfig *c = GetGRFConfig(UnflattenNewGRFLabel<GrfID>(cond_val), std::byteswap(mask));
 
 		if (c != nullptr && c->flags.Test(GRFConfigFlag::Static) && !_cur_gps.grfconfig->flags.Test(GRFConfigFlag::Static) && _networking) {
 			DisableStaticNewGRFInfluencingNonStaticNewGRFs(*c);
@@ -265,24 +280,24 @@ static void SkipIf(ByteReader &buf)
 		switch (condtype) {
 			/* Tests 0x06 to 0x0A are only for param 0x88, GRFID checks */
 			case 0x06: // Is GRFID active?
-				result = c->status == GCS_ACTIVATED;
+				result = c->status == GRFStatus::Activated;
 				break;
 
 			case 0x07: // Is GRFID non-active?
-				result = c->status != GCS_ACTIVATED;
+				result = c->status != GRFStatus::Activated;
 				break;
 
 			case 0x08: // GRFID is not but will be active?
-				result = c->status == GCS_INITIALISED;
+				result = c->status == GRFStatus::Initialised;
 				break;
 
 			case 0x09: // GRFID is or will be active?
-				result = c->status == GCS_ACTIVATED || c->status == GCS_INITIALISED;
+				result = c->status == GRFStatus::Activated || c->status == GRFStatus::Initialised;
 				break;
 
 			case 0x0A: // GRFID is not nor will be active
 				/* This is the only condtype that doesn't get ignored if the GRFID is not found */
-				result = c == nullptr || c->status == GCS_DISABLED || c->status == GCS_NOT_FOUND;
+				result = c == nullptr || c->status == GRFStatus::Disabled || c->status == GRFStatus::NotFound;
 				break;
 
 			default: GrfMsg(1, "SkipIf: Unsupported GRF condition type {:02X}. Ignoring", condtype); return;
@@ -354,22 +369,34 @@ static void SkipIf(ByteReader &buf)
 		_cur_gps.skip_sprites = -1;
 
 		/* If an action 8 hasn't been encountered yet, disable the grf. */
-		if (_cur_gps.grfconfig->status != (_cur_gps.stage < GLS_RESERVE ? GCS_INITIALISED : GCS_ACTIVATED)) {
+		if (_cur_gps.grfconfig->status != (_cur_gps.stage < GrfLoadingStage::Reserve ? GRFStatus::Initialised : GRFStatus::Activated)) {
 			DisableGrf();
 		}
 	}
 }
 
+/** @copybrief GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x07>::FileScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x07>::SafetyScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x07>::LabelScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::Init */
 template <> void GrfActionHandler<0x07>::Init(ByteReader &) { }
+/** @copydoc GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x07>::Reserve(ByteReader &buf) { SkipIf(buf); }
+/** @copydoc GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x07>::Activation(ByteReader &buf) { SkipIf(buf); }
 
+/** @copybrief GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x09>::FileScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x09>::SafetyScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x09>::LabelScan(ByteReader &) { }
+/** @copydoc GrfActionHandler::Init */
 template <> void GrfActionHandler<0x09>::Init(ByteReader &buf) { SkipIf(buf); }
+/** @copydoc GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x09>::Reserve(ByteReader &buf) { SkipIf(buf); }
+/** @copydoc GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x09>::Activation(ByteReader &buf) { SkipIf(buf); }

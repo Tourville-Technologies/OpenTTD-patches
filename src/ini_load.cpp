@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ini_load.cpp Definition of the #IniLoadFile class, related to reading and storing '*.ini' files. */
@@ -18,7 +18,6 @@
 
 /**
  * Construct a new in-memory item of an Ini file.
- * @param parent the group we belong to
  * @param name   the name of the item
  */
 IniItem::IniItem(std::string_view name)
@@ -37,8 +36,8 @@ void IniItem::SetValue(std::string_view value)
 
 /**
  * Construct a new in-memory group of an Ini file.
- * @param parent the file we belong to
  * @param name   the name of the group
+ * @param type The type of group.
  */
 IniGroup::IniGroup(std::string_view name, IniGroupType type) : type(type), comment("\n")
 {
@@ -103,8 +102,8 @@ void IniGroup::Clear()
 
 /**
  * Construct a new in-memory Ini file representation.
- * @param list_group_names A list with group names that should be loaded as lists instead of variables. @see IGT_LIST
- * @param seq_group_names  A list with group names that should be loaded as lists of names. @see IGT_SEQUENCE
+ * @param list_group_names A list with group names that should be loaded as lists instead of variables. @see IniGroupType::List
+ * @param seq_group_names  A list with group names that should be loaded as lists of names. @see IniGroupType::Sequence
  */
 IniLoadFile::IniLoadFile(const IniGroupNameList &list_group_names, const IniGroupNameList &seq_group_names) :
 		list_group_names(list_group_names),
@@ -162,9 +161,9 @@ IniGroup &IniLoadFile::GetOrCreateGroup(std::string_view name)
  */
 IniGroup &IniLoadFile::CreateGroup(std::string_view name)
 {
-	IniGroupType type = IGT_VARIABLES;
-	if (std::ranges::find(this->list_group_names, name) != this->list_group_names.end()) type = IGT_LIST;
-	if (std::ranges::find(this->seq_group_names, name) != this->seq_group_names.end()) type = IGT_SEQUENCE;
+	IniGroupType type = IniGroupType::Variables;
+	if (std::ranges::find(this->list_group_names, name) != this->list_group_names.end()) type = IniGroupType::List;
+	if (std::ranges::find(this->seq_group_names, name) != this->seq_group_names.end()) type = IniGroupType::Sequence;
 
 	return this->groups.emplace_back(name, type);
 }
@@ -175,8 +174,7 @@ IniGroup &IniLoadFile::CreateGroup(std::string_view name)
  */
 void IniLoadFile::RemoveGroup(std::string_view name)
 {
-	size_t len = name.length();
-	this->groups.remove_if([&name, &len](const IniGroup &group) { return group.name.compare(0, len, name) == 0; });
+	this->groups.remove_if([&name](const IniGroup &group) { return group.name.starts_with(name); });
 }
 
 /**
@@ -212,8 +210,8 @@ void IniLoadFile::LoadFromDisk(const std::string &filename, Subdirectory subdir,
 		++line;
 		StringConsumer consumer{StrTrimView(buffer, StringConsumer::WHITESPACE_OR_NEWLINE)};
 
-		/* Skip comments and empty lines outside IGT_SEQUENCE groups. */
-		if ((group == nullptr || group->type != IGT_SEQUENCE) && (!consumer.AnyBytesLeft() || consumer.PeekCharIfIn("#;"))) {
+		/* Skip comments and empty lines outside IniGroupType::Sequence groups. */
+		if ((group == nullptr || group->type != IniGroupType::Sequence) && (!consumer.AnyBytesLeft() || consumer.PeekCharIfIn("#;"))) {
 			comment += consumer.GetOrigData();
 			comment += "\n";
 			continue;
@@ -229,7 +227,7 @@ void IniLoadFile::LoadFromDisk(const std::string &filename, Subdirectory subdir,
 			group->comment = std::move(comment);
 			comment.clear(); // std::move leaves comment in a "valid but unspecified state" according to the specification.
 		} else if (group != nullptr) {
-			if (group->type == IGT_SEQUENCE) {
+			if (group->type == IniGroupType::Sequence) {
 				/* A sequence group, use the line as item name without further interpretation. */
 				IniItem &item = group->CreateItem(consumer.GetOrigData());
 				item.comment = std::move(comment);

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file articulated_vehicles.cpp Implementation of articulated vehicles. */
@@ -19,13 +19,12 @@
 #include "company_func.h"
 #include "newgrf.h"
 #include "newgrf_extension.h"
+#include "settings_type.h"
 #include <vector>
 
 #include "table/strings.h"
 
 #include "safeguards.h"
-
-static const uint MAX_ARTICULATED_PARTS = 100; ///< Maximum of articulated parts per vehicle, i.e. when to abort calling the articulated vehicle callback.
 
 /**
  * Determines the next articulated part to attach
@@ -41,7 +40,7 @@ static EngineID GetNextArticulatedPart(uint index, EngineID front_type, Vehicle 
 
 	const Engine *front_engine = Engine::Get(front_type);
 
-	if (front_engine->type == VEH_SHIP && !(front_engine->GetGRF() != nullptr && HasBit(front_engine->GetGRF()->observed_feature_tests, GFTOF_MULTI_PART_SHIPS))) {
+	if (front_engine->type == VehicleType::Ship && !(front_engine->GetGRF() != nullptr && HasBit(front_engine->GetGRF()->observed_feature_tests, GFTOF_MULTI_PART_SHIPS))) {
 		return EngineID::Invalid();
 	}
 
@@ -77,64 +76,23 @@ bool IsArticulatedEngine(EngineID engine_type)
 /**
  * Count the number of articulated parts of an engine.
  * @param engine_type The engine to get the number of parts of.
- * @param purchase_window Whether we are in the scope of the purchase window or not, i.e. whether we cannot allocate vehicles.
  * @return The number of parts.
  */
-uint CountArticulatedParts(EngineID engine_type, bool purchase_window)
+uint CountArticulatedParts(EngineID engine_type)
 {
 	if (!EngInfo(engine_type)->callback_mask.Test(VehicleCallbackMask::ArticEngine)) return 0;
 
-	/* If we can't allocate a vehicle now, we can't allocate it in the command
-	 * either, so it doesn't matter how many articulated parts there are. */
-	if (!Vehicle::CanAllocateItem()) return 0;
-
-	std::unique_ptr<Vehicle> v;
-	if (!purchase_window) {
-		v = std::make_unique<Vehicle>();
-		v->engine_type = engine_type;
-		v->owner = _current_company;
-	}
+	Vehicle v(VehicleID::Invalid());
+	v.engine_type = engine_type;
+	v.owner = _current_company;
 
 	uint i;
 	for (i = 1; i < MAX_ARTICULATED_PARTS; i++) {
-		if (GetNextArticulatedPart(i, engine_type, v.get()) == EngineID::Invalid()) break;
+		if (GetNextArticulatedPart(i, engine_type, &v) == EngineID::Invalid()) break;
 	}
 
 	return i - 1;
 }
-
-/**
- * Count the number of articulated parts of an engine.
- * @param engine_type The engine to get the number of parts of.
- * @param purchase_window Whether we are in the scope of the purchase window or not, i.e. whether we cannot allocate vehicles.
- * @param ids [Out] The list of engine IDs.
- */
-void GetArticulatedPartsEngineIDs(EngineID engine_type, bool purchase_window, std::vector<EngineID> &ids)
-{
-	ids.clear();
-	if (!EngInfo(engine_type)->callback_mask.Test(VehicleCallbackMask::ArticEngine)) return;
-
-	/* If we can't allocate a vehicle now, we can't allocate it in the command
-	 * either, so it doesn't matter how many articulated parts there are. */
-	if (!Vehicle::CanAllocateItem()) return;
-
-	Vehicle *v = nullptr;
-	if (!purchase_window) {
-		v = new Vehicle();
-		v->engine_type = engine_type;
-		v->owner = _current_company;
-	}
-
-	uint i;
-	for (i = 1; i < MAX_ARTICULATED_PARTS; i++) {
-		EngineID id = GetNextArticulatedPart(i, engine_type, v);
-		if (id == EngineID::Invalid()) break;
-		ids.push_back(id);
-	}
-
-	delete v;
-}
-
 
 /**
  * Returns the default (non-refitted) cargo and capacity of a specific EngineID.
@@ -147,7 +105,7 @@ static inline std::pair<CargoType, uint> GetVehicleDefaultCapacity(EngineID engi
 	const Engine *e = Engine::Get(engine);
 	CargoType cargo = INVALID_CARGO;
 	if (e->CanCarryCargo()) {
-		if (attempt_refit != INVALID_CARGO && HasBit(e->info.refit_mask, attempt_refit)) {
+		if (attempt_refit != INVALID_CARGO && e->info.refit_mask.Test(attempt_refit)) {
 			cargo = attempt_refit;
 		} else {
 			cargo = e->GetDefaultCargoType();
@@ -165,12 +123,12 @@ static inline std::pair<CargoType, uint> GetVehicleDefaultCapacity(EngineID engi
 static inline CargoTypes GetAvailableVehicleCargoTypes(EngineID engine, bool include_initial_cargo_type)
 {
 	const Engine *e = Engine::Get(engine);
-	if (!e->CanCarryCargo()) return 0;
+	if (!e->CanCarryCargo()) return {};
 
 	CargoTypes cargoes = e->info.refit_mask;
 
 	if (include_initial_cargo_type) {
-		SetBit(cargoes, e->GetDefaultCargoType());
+		cargoes.Set(e->GetDefaultCargoType());
 	}
 
 	return cargoes;
@@ -215,11 +173,11 @@ CargoArray GetCapacityOfArticulatedParts(EngineID engine, CargoType attempt_refi
  */
 CargoTypes GetCargoTypesOfArticulatedParts(EngineID engine)
 {
-	CargoTypes cargoes = 0;
+	CargoTypes cargoes{};
 	const Engine *e = Engine::Get(engine);
 
 	if (auto [cargo, cap] = GetVehicleDefaultCapacity(engine); IsValidCargoType(cargo) && cap > 0) {
-		SetBit(cargoes, cargo);
+		cargoes.Set(cargo);
 	}
 
 	if (!e->IsArticulatedCallbackVehicleType()) return cargoes;
@@ -231,7 +189,7 @@ CargoTypes GetCargoTypesOfArticulatedParts(EngineID engine)
 		if (artic_engine == EngineID::Invalid()) break;
 
 		if (auto [cargo, cap] = GetVehicleDefaultCapacity(artic_engine); IsValidCargoType(cargo) && cap > 0) {
-			SetBit(cargoes, cargo);
+			cargoes.Set(cargo);
 		}
 	}
 
@@ -274,7 +232,7 @@ void GetArticulatedRefitMasks(EngineID engine, bool include_initial_cargo_type, 
 	const Engine *e = Engine::Get(engine);
 	CargoTypes veh_cargoes = GetAvailableVehicleCargoTypes(engine, include_initial_cargo_type);
 	*union_mask = veh_cargoes;
-	*intersection_mask = (veh_cargoes != 0) ? veh_cargoes : ALL_CARGOTYPES;
+	*intersection_mask = veh_cargoes.Any() ? veh_cargoes : ALL_CARGOTYPES;
 
 	if (!e->IsArticulatedCallbackVehicleType()) return;
 	if (!e->info.callback_mask.Test(VehicleCallbackMask::ArticEngine)) return;
@@ -284,8 +242,8 @@ void GetArticulatedRefitMasks(EngineID engine, bool include_initial_cargo_type, 
 		if (artic_engine == EngineID::Invalid()) break;
 
 		veh_cargoes = GetAvailableVehicleCargoTypes(artic_engine, include_initial_cargo_type);
-		*union_mask |= veh_cargoes;
-		if (veh_cargoes != 0) *intersection_mask &= veh_cargoes;
+		union_mask->Set(veh_cargoes);
+		if (veh_cargoes.Any()) *intersection_mask = *intersection_mask & veh_cargoes;
 	}
 }
 /**
@@ -335,12 +293,11 @@ CargoTypes GetUnionOfArticulatedRefitMasks(EngineID engine, bool include_initial
  */
 CargoTypes GetCargoTypesOfArticulatedVehicle(const Vehicle *v, CargoType *cargo_type)
 {
-	CargoTypes cargoes = 0;
+	CargoTypes cargoes{};
 	CargoType first_cargo = INVALID_CARGO;
 
 	do {
 		if (v->cargo_type != INVALID_CARGO && v->GetEngine()->CanCarryCargo()) {
-			SetBit(cargoes, v->cargo_type);
 			if (first_cargo == INVALID_CARGO) first_cargo = v->cargo_type;
 			if (first_cargo != v->cargo_type) {
 				if (cargo_type != nullptr) {
@@ -377,6 +334,7 @@ CargoType GetOverallCargoOfArticulatedVehicle(const Vehicle *v)
  *   For autoreplace/-renew:
  *    - Default cargo type (without capacity)
  *    - intersection and union of refit masks.
+ * @param v The vehicle to check.
  */
 void CheckConsistencyOfArticulatedVehicle(const Vehicle *v)
 {
@@ -386,24 +344,24 @@ void CheckConsistencyOfArticulatedVehicle(const Vehicle *v)
 	GetArticulatedRefitMasks(v->engine_type, true, &purchase_refit_union, &purchase_refit_intersection);
 	CargoArray purchase_default_capacity = GetCapacityOfArticulatedParts(v->engine_type);
 
-	CargoTypes real_refit_union = 0;
+	CargoTypes real_refit_union{};
 	CargoTypes real_refit_intersection = ALL_CARGOTYPES;
-	CargoTypes real_default_cargoes = 0;
+	CargoTypes real_default_cargoes{};
 
 	do {
 		CargoTypes refit_mask = GetAvailableVehicleCargoTypes(v->engine_type, true);
-		real_refit_union |= refit_mask;
-		if (refit_mask != 0) real_refit_intersection &= refit_mask;
+		real_refit_union.Set(refit_mask);
+		if (refit_mask.Any()) real_refit_intersection = real_refit_intersection & refit_mask;
 
-		assert(v->cargo_type < NUM_CARGO || (v->type == VEH_TRAIN && Train::From(v)->IsVirtual()));
-		if (v->cargo_cap > 0) SetBit(real_default_cargoes, v->cargo_type);
+		assert(v->cargo_type < NUM_CARGO || (v->type == VehicleType::Train && Train::From(v)->IsVirtual()));
+		if (v->cargo_cap > 0) real_default_cargoes.Set(v->cargo_type);
 
 		v = v->HasArticulatedPart() ? v->GetNextArticulatedPart() : nullptr;
 	} while (v != nullptr);
 
 	/* Check whether the vehicle carries more cargoes than expected */
 	bool carries_more = false;
-	for (CargoType cargo_type : SetCargoBitIterator(real_default_cargoes)) {
+	for (CargoType cargo_type : real_default_cargoes) {
 		if (purchase_default_capacity[cargo_type] == 0) {
 			carries_more = true;
 			break;
@@ -436,7 +394,7 @@ void AddArticulatedParts(Vehicle *first)
 		if (!Vehicle::CanAllocateItem()) return;
 
 		GroundVehicleCache *gcache = nullptr;
-		if (type == VEH_TRAIN || type == VEH_ROAD) {
+		if (type == VehicleType::Train || type == VehicleType::Road) {
 			gcache = v->GetGroundVehicleCache();
 			gcache->first_engine = v->engine_type; // Needs to be set before first callback
 		}
@@ -445,15 +403,16 @@ void AddArticulatedParts(Vehicle *first)
 		switch (type) {
 			default: NOT_REACHED();
 
-			case VEH_TRAIN: {
+			case VehicleType::Train: {
 				Train *front = Train::From(first);
-				Train *t = new Train();
+				Train *t = Train::Create();
 				v->SetNext(t);
 				v = t;
 
 				t->subtype = 0;
 				t->track = front->track;
 				t->railtypes = front->railtypes;
+				t->flags.Set(VehicleRailFlag::AllowedOnNormalRail, _settings_game.vehicle.disable_elrails && RailVehInfo(front->engine_type)->intended_railtypes.Test(RAILTYPE_ELECTRIC));
 
 				t->spritenum = e_artic->VehInfo<RailVehicleInfo>().image_index;
 				if (e_artic->CanCarryCargo()) {
@@ -471,9 +430,9 @@ void AddArticulatedParts(Vehicle *first)
 				break;
 			}
 
-			case VEH_ROAD: {
+			case VehicleType::Road: {
 				RoadVehicle *front = RoadVehicle::From(first);
-				RoadVehicle *rv = new RoadVehicle();
+				RoadVehicle *rv = RoadVehicle::Create();
 				v->SetNext(rv);
 				v = rv;
 
@@ -499,13 +458,13 @@ void AddArticulatedParts(Vehicle *first)
 				break;
 			}
 
-			case VEH_SHIP: {
+			case VehicleType::Ship: {
 				Ship *front = Ship::From(first);
-				Ship *s = new Ship();
+				Ship *s = Ship::Create();
 				v->SetNext(s);
 				v = s;
 
-				s->direction = DIR_N;
+				s->direction = Direction::N;
 				s->rotation = s->direction;
 				s->x_pos = 0;
 				s->y_pos = 0;
@@ -536,7 +495,7 @@ void AddArticulatedParts(Vehicle *first)
 		v->value = 0;
 		v->random_bits = Random();
 
-		if (type == VEH_SHIP) continue;
+		if (type == VehicleType::Ship) continue;
 
 		v->direction = first->direction;
 		v->tile = first->tile;
@@ -550,8 +509,8 @@ void AddArticulatedParts(Vehicle *first)
 
 		if (flip_image) v->spritenum++;
 
-		if (v->type == VEH_TRAIN) {
-			auto prob = TestVehicleBuildProbability(v, v->engine_type, BuildProbabilityType::Reversed);
+		if (v->type == VehicleType::Train) {
+			auto prob = TestVehicleBuildProbability(v, BuildProbabilityType::Reversed);
 			if (prob.has_value()) Train::From(v)->flags.Set(VehicleRailFlag::Flipped, prob.value());
 		}
 		v->UpdatePosition();

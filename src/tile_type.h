@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file tile_type.h Types related to tiles. */
@@ -40,27 +40,32 @@ static constexpr uint MAX_RAINFOREST_HEIGHT = 255;                 ///< Maximum 
 static constexpr uint DEF_SNOW_COVERAGE = 40;                      ///< Default snow coverage.
 static constexpr uint DEF_DESERT_COVERAGE = 50;                    ///< Default desert coverage.
 
+static constexpr size_t TILE_TYPE_BITS = 4; ///< How many bits in map array are dedicated for type of each tile.
 
 /**
  * The different types of tiles.
  *
  * Each tile belongs to one type, according whatever is build on it.
  *
- * @note A railway with a crossing street is marked as MP_ROAD.
+ * @note A railway with a crossing street is marked as TileType::Road.
  */
-enum TileType : uint8_t {
-	MP_CLEAR,               ///< A tile without any structures, i.e. grass, rocks, farm fields etc.
-	MP_RAILWAY,             ///< A railway
-	MP_ROAD,                ///< A tile with road (or tram tracks)
-	MP_HOUSE,               ///< A house by a town
-	MP_TREES,               ///< Tile got trees
-	MP_STATION,             ///< A tile of a station
-	MP_WATER,               ///< Water tile
-	MP_VOID,                ///< Invisible tiles at the SW and SE border
-	MP_INDUSTRY,            ///< Part of an industry
-	MP_TUNNELBRIDGE,        ///< Tunnel entry/exit and bridge heads
-	MP_OBJECT,              ///< Contains objects such as transmitters and owned land
+enum class TileType : uint8_t {
+	Clear,        ///< A tile without any structures, i.e. grass, rocks, farm fields etc.
+	Railway,      ///< A tile with railway.
+	Road,         ///< A tile with road and/or tram tracks.
+	House,        ///< A house by a town.
+	Trees,        ///< Tile with one or more trees.
+	Station,      ///< A tile of a station or airport.
+	Water,        ///< Water tile.
+	Void,         ///< Invisible tiles at the SW and SE border.
+	Industry,     ///< Part of an industry.
+	TunnelBridge, ///< Tunnel entry/exit and bridge heads.
+	Object,       ///< Contains objects such as transmitters and owned land.
+	End,          ///< End marker.
+	MaxSize = 1U << TILE_TYPE_BITS, ///< The maximum possible number of tile types to be stored in the map.
 };
+
+static_assert(TileType::End <= TileType::MaxSize);
 
 /**
  * Additional infos of a tile on a tropic game.
@@ -68,19 +73,19 @@ enum TileType : uint8_t {
  * The tropiczone is not modified during gameplay. It mainly affects tree growth. (desert tiles are visible though)
  *
  * In randomly generated maps:
- *  TROPICZONE_DESERT: Generated everywhere, if there is neither water nor mountains (TileHeight >= 4) in a certain distance from the tile.
- *  TROPICZONE_RAINFOREST: Generated everywhere, if there is no desert in a certain distance from the tile.
- *  TROPICZONE_NORMAL: Everywhere else, i.e. between desert and rainforest and on sea (if you clear the water).
+ *  TropicZone::Desert: Generated everywhere, if there is neither water nor mountains (TileHeight >= 4) in a certain distance from the tile.
+ *  TropicZone::Rainforest: Generated everywhere, if there is no desert in a certain distance from the tile.
+ *  TropicZone::Normal: Everywhere else, i.e. between desert and rainforest and on sea (if you clear the water).
  *
  * In scenarios:
- *  TROPICZONE_NORMAL: Default value.
- *  TROPICZONE_DESERT: Placed manually.
- *  TROPICZONE_RAINFOREST: Placed if you plant certain rainforest-trees.
+ *  TropicZone::Normal: Default value.
+ *  TropicZone::Desert: Placed manually.
+ *  TropicZone::Rainforest: Placed if you plant certain rainforest-trees.
  */
-enum TropicZone : uint8_t {
-	TROPICZONE_NORMAL     = 0,      ///< Normal tropiczone
-	TROPICZONE_DESERT     = 1,      ///< Tile is desert
-	TROPICZONE_RAINFOREST = 2,      ///< Rainforest tile
+enum class TropicZone : uint8_t {
+	Normal = 0, ///< Normal tropiczone
+	Desert = 1, ///< Tile is desert
+	Rainforest = 2, ///< Rainforest tile
 };
 
 /**
@@ -196,7 +201,7 @@ struct TileIndexIntegerMixin {
  * This type represents an absolute tile ID, TileIndexDiff is used for relative values.
  *
  * Subtracting a TileIndex from another TileIndex results in a TileIndexDiff.
- * Adding a TileIndex to another TileIndex is not allowd.
+ * Adding a TileIndex to another TileIndex is not allowed.
  *
  * TileIndex - TileIndex --> TileIndexDiff
  * TileIndex + TileIndex --> delete
@@ -217,7 +222,7 @@ static_assert(sizeof(TileIndex) == 4);
  */
 inline constexpr TileIndex INVALID_TILE = TileIndex{ (uint32_t)-1 };
 
-debug_inline uint32_t debug_tile_index_type_erasure(TileIndex tile) { return tile.base(); }
+[[debug_inline]] inline uint32_t debug_tile_index_type_erasure(TileIndex tile) { return tile.base(); }
 [[noreturn]] void assert_tile_error(int line, const char *file, const char *expr, TileIndex tile);
 
 #endif /* TILE_TYPE_H */

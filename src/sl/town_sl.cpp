@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town_sl.cpp Code handling saving and loading of towns and houses */
@@ -40,7 +40,7 @@ void RebuildTownCaches(bool cargo_update_required)
 	}
 
 	for (TileIndex t(0); t < Map::Size(); t++) {
-		if (!IsTileType(t, MP_HOUSE)) continue;
+		if (!IsTileType(t, TileType::House)) continue;
 
 		HouseID house_id = GetTranslatedHouseID(GetCleanHouseType(t));
 		Town *town = Town::GetByTile(t);
@@ -69,7 +69,7 @@ static void CheckMultiTileHouseTypes(bool &cargo_update_required, bool translate
 
 	/* Check for cases when a NewGRF has set a wrong house substitute type. */
 	for (TileIndex t(0); t < Map::Size(); t++) {
-		if (!IsTileType(t, MP_HOUSE)) continue;
+		if (!IsTileType(t, TileType::House)) continue;
 
 		HouseID house_type = get_clean_house_type(t);
 		TileIndex north_tile = t + GetHouseNorthPart(house_type); // modifies 'house_type'!
@@ -78,17 +78,17 @@ static void CheckMultiTileHouseTypes(bool &cargo_update_required, bool translate
 			bool valid_house = true;
 			if (hs->building_flags.Test(BuildingFlag::Size2x1)) {
 				TileIndex tile = t + TileDiffXY(1, 0);
-				if (!IsTileType(tile, MP_HOUSE) || get_clean_house_type(tile) != house_type + 1) valid_house = false;
+				if (!IsTileType(tile, TileType::House) || get_clean_house_type(tile) != house_type + 1) valid_house = false;
 			} else if (hs->building_flags.Test(BuildingFlag::Size1x2)) {
 				TileIndex tile = t + TileDiffXY(0, 1);
-				if (!IsTileType(tile, MP_HOUSE) || get_clean_house_type(tile) != house_type + 1) valid_house = false;
+				if (!IsTileType(tile, TileType::House) || get_clean_house_type(tile) != house_type + 1) valid_house = false;
 			} else if (hs->building_flags.Test(BuildingFlag::Size2x2)) {
 				TileIndex tile = t + TileDiffXY(0, 1);
-				if (!IsTileType(tile, MP_HOUSE) || get_clean_house_type(tile) != house_type + 1) valid_house = false;
+				if (!IsTileType(tile, TileType::House) || get_clean_house_type(tile) != house_type + 1) valid_house = false;
 				tile = t + TileDiffXY(1, 0);
-				if (!IsTileType(tile, MP_HOUSE) || get_clean_house_type(tile) != house_type + 2) valid_house = false;
+				if (!IsTileType(tile, TileType::House) || get_clean_house_type(tile) != house_type + 2) valid_house = false;
 				tile = t + TileDiffXY(1, 1);
-				if (!IsTileType(tile, MP_HOUSE) || get_clean_house_type(tile) != house_type + 3) valid_house = false;
+				if (!IsTileType(tile, TileType::House) || get_clean_house_type(tile) != house_type + 3) valid_house = false;
 			}
 			/* If not all tiles of this house are present remove the house.
 			 * The other tiles will get removed later in this loop because
@@ -97,7 +97,7 @@ static void CheckMultiTileHouseTypes(bool &cargo_update_required, bool translate
 				DoClearSquare(t);
 				cargo_update_required = true;
 			}
-		} else if (!IsTileType(north_tile, MP_HOUSE) || get_clean_house_type(north_tile) != house_type) {
+		} else if (!IsTileType(north_tile, TileType::House) || get_clean_house_type(north_tile) != house_type) {
 			/* This tile should be part of a multi-tile building but the
 			 * north tile of this house isn't on the map. */
 			DoClearSquare(t);
@@ -117,7 +117,7 @@ static void CheckMultiTileHouseTypes(bool &cargo_update_required, bool translate
 void UpdateHousesAndTowns(bool cargo_update_required)
 {
 	for (TileIndex t(0); t < Map::Size(); t++) {
-		if (!IsTileType(t, MP_HOUSE)) continue;
+		if (!IsTileType(t, TileType::House)) continue;
 
 		HouseID house_id = GetCleanHouseType(t);
 		if (!HouseSpec::Get(house_id)->enabled && house_id >= NEW_HOUSE_OFFSET) {
@@ -243,6 +243,62 @@ struct TownSuppliedStructHandler final : public TypedSaveLoadStructHandler<TownS
 	}
 };
 
+struct TownAcceptedHistoryStructHandler final : public TypedSaveLoadStructHandler<TownAcceptedHistoryStructHandler, Town::AcceptedCargo> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		static const NamedSaveLoad _supplied_history_desc[] = {
+			NSL("accepted", SLE_VAR(Town::AcceptedHistory, accepted, SLE_UINT32)),
+		};
+		return _supplied_history_desc;
+	}
+
+	void Save(Town::AcceptedCargo *p) const override
+	{
+		SlSetStructListLength(p->history.size());
+
+		for (auto &h : p->history) {
+			SlObject(&h, this->GetLoadDescription());
+		}
+	}
+
+	void Load(Town::AcceptedCargo *p) const override
+	{
+		size_t len = SlGetStructListLength(p->history.size());
+
+		for (auto &h : p->history) {
+			if (--len > p->history.size()) break; // unsigned so wraps after hitting zero.
+			SlObject(&h, this->GetLoadDescription());
+		}
+	}
+};
+
+struct TownAcceptedStructHandler final : public TypedSaveLoadStructHandler<TownAcceptedStructHandler, Town> {
+	NamedSaveLoadTable GetDescription() const override
+	{
+		static const NamedSaveLoad _supplied_desc[] = {
+			NSL("cargo", SLE_VAR(Town::AcceptedCargo, cargo, SLE_UINT8)),
+			NSLT_STRUCTLIST<TownAcceptedHistoryStructHandler>("history"),
+		};
+		return _supplied_desc;
+	}
+
+	void Save(Town *t) const override
+	{
+		SlSetStructListLength(t->accepted.size());
+		for (Town::AcceptedCargo &p : t->accepted) {
+			SlObjectSaveFiltered(&p, this->GetLoadDescription());
+		}
+	}
+
+	void Load(Town *t) const override
+	{
+		t->accepted.resize(SlGetStructListLength(NUM_CARGO));
+		for (Town::AcceptedCargo &p : t->accepted) {
+			SlObjectLoadFiltered(&p, this->GetLoadDescription());
+		}
+	}
+};
+
 struct TownReceivedStructHandler final : public TypedSaveLoadStructHandler<TownReceivedStructHandler, Town> {
 	NamedSaveLoadTable GetDescription() const override
 	{
@@ -261,7 +317,7 @@ struct TownReceivedStructHandler final : public TypedSaveLoadStructHandler<TownR
 	{
 		size_t count = SlGetStructListLength(std::size(t->received));
 		for (size_t i = 0; i < count; i++) {
-			SlObjectLoadFiltered(&t->received[i], this->GetLoadDescription());
+			SlObjectLoadFiltered(&t->received[static_cast<TownAcceptanceEffect>(i)], this->GetLoadDescription());
 		}
 	}
 };
@@ -301,7 +357,7 @@ static const NamedSaveLoad _town_desc[] = {
 	NSL("", SLE_CONDNULL(4, SLV_3, SLV_85)),                           ///< population, no longer in use
 	NSL("", SLE_CONDNULL(2, SL_MIN_VERSION, SLV_92)),                  ///< num_houses, no longer in use
 
-	NSL("townnamegrfid",   SLE_CONDVAR(Town, townnamegrfid,         SLE_UINT32, SLV_66, SL_MAX_VERSION)),
+	NSL("townnamegrfid",   SLE_CONDVAR(Town, townnamegrfid,         SLE_LABEL, SLV_66, SL_MAX_VERSION)),
 	NSL("townnametype",        SLE_VAR(Town, townnametype,          SLE_UINT16)),
 	NSL("townnameparts",       SLE_VAR(Town, townnameparts,         SLE_UINT32)),
 	NSL("name",            SLE_CONDSTR(Town, name,                  SLE_STR | SLF_ALLOW_CONTROL, 0, SLV_84, SL_MAX_VERSION)),
@@ -309,23 +365,23 @@ static const NamedSaveLoad _town_desc[] = {
 	NSL("flags",               SLE_VAR(Town, flags,                 SLE_UINT8)),
 	NSL("church_count",  SLE_CONDVAR_X(Town, church_count,        SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_MULTI_BUILDING))),
 	NSL("stadium_count", SLE_CONDVAR_X(Town, stadium_count,       SLE_UINT16, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_MULTI_BUILDING))),
-	NSL("statues",         SLE_CONDVAR(Town, statues,               SLE_FILE_U8  | SLE_VAR_U32, SL_MIN_VERSION, SLV_104)),
-	NSL("statues",         SLE_CONDVAR(Town, statues,               SLE_FILE_U16 | SLE_VAR_U32,               SLV_104, SLV_15_COMPANY)),
-	NSL("statues",         SLE_CONDVAR(Town, statues,               SLE_UINT32,               SLV_15_COMPANY, SL_MAX_VERSION)),
+	NSL("statues",         SLE_CONDVAR_X(Town, statues.bits[0],               SLE_FILE_U8  | SLE_VAR_U16, SL_MIN_VERSION, SLV_104, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("statues",         SLE_CONDVAR_X(Town, statues.bits[0],               SLE_UINT16,               SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("statues", SLE_CONDARR_X(Town, statues.bits, SLE_UINT16, CompanyMask::WORD_COUNT, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240))),
 
 	NSL("", SLE_CONDNULL(1, SL_MIN_VERSION, SLV_2)),                   ///< sort_index, no longer in use
 
-	NSL("have_ratings",    SLE_CONDVAR(Town, have_ratings,          SLE_FILE_U8  | SLE_VAR_U32, SL_MIN_VERSION, SLV_104)),
-	NSL("have_ratings",    SLE_CONDVAR(Town, have_ratings,          SLE_FILE_U16 | SLE_VAR_U32,               SLV_104, SLV_15_COMPANY)),
-	NSL("have_ratings",    SLE_CONDVAR(Town, have_ratings,          SLE_UINT32,               SLV_15_COMPANY, SL_MAX_VERSION)),
+	NSL("have_ratings",    SLE_CONDVAR_X(Town, have_ratings.bits[0],          SLE_FILE_U8  | SLE_VAR_U16, SL_MIN_VERSION, SLV_104, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("have_ratings",    SLE_CONDVAR_X(Town, have_ratings.bits[0],          SLE_UINT16,               SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("have_ratings", SLE_CONDARR_X(Town, have_ratings.bits, SLE_UINT16, CompanyMask::WORD_COUNT, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240))),
 	NSL("ratings",         SLE_CONDARR(Town, ratings,               SLE_INT16, 8,               SL_MIN_VERSION, SLV_104)),
-	NSL("ratings",         SLE_CONDARR(Town, ratings,               SLE_INT16, OLD_MAX_COMPANIES, SLV_104, SLV_15_COMPANY)),
-	NSL("ratings",         SLE_CONDARR(Town, ratings,               SLE_INT16, MAX_COMPANIES, SLV_15_COMPANY, SL_MAX_VERSION)),
-	NSL("", SLE_CONDNULL_X(MAX_COMPANIES, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_SPRINGPP))),
+	NSL("ratings",         SLE_CONDARR_X(Town, ratings,               SLE_INT16, LEGACY_MAX_COMPANIES, SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("ratings",         SLE_CONDARR_X(Town, ratings,               SLE_INT16, MAX_COMPANIES, SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240))),
+	NSL("", SLE_CONDNULL_X(LEGACY_MAX_COMPANIES, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_SPRINGPP))),
 	/* failed bribe attempts are stored since savegame format 4 */
 	NSL("unwanted",        SLE_CONDARR(Town, unwanted,              SLE_INT8,  8,               SLV_4, SLV_104)),
-	NSL("unwanted",        SLE_CONDARR(Town, unwanted,              SLE_INT8,  OLD_MAX_COMPANIES, SLV_104, SLV_15_COMPANY)),
-	NSL("unwanted",        SLE_CONDARR(Town, unwanted,              SLE_INT8,  MAX_COMPANIES, SLV_15_COMPANY, SL_MAX_VERSION)),
+	NSL("unwanted",        SLE_CONDARR_X(Town, unwanted,              SLE_INT8,  LEGACY_MAX_COMPANIES, SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("unwanted",        SLE_CONDARR_X(Town, unwanted,              SLE_INT8,  MAX_COMPANIES, SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240))),
 
 	NSL("", SLEG_CONDVAR(_old_pass_supplied[LAST_MONTH].production, SLE_FILE_U16 | SLE_VAR_U32, SL_MIN_VERSION, SLV_9)),
 	NSL("", SLEG_CONDVAR(_old_mail_supplied[LAST_MONTH].production, SLE_FILE_U16 | SLE_VAR_U32, SL_MIN_VERSION, SLV_9)),
@@ -356,14 +412,14 @@ static const NamedSaveLoad _town_desc[] = {
 	NSL("",                                SLE_CONDNULL(2, SL_MIN_VERSION, SLV_164)), ///< pct_pass_transported / pct_mail_transported, now computed on the fly
 	NSL("",                                SLE_CONDNULL_X(3, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_CHILLPP, SL_CHILLPP_232))),
 
-	NSL("received[TE_FOOD].old_act",       SLE_CONDVAR(Town, received[TAE_FOOD].old_act,      SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
-	NSL("received[TAE_WATER].old_act",     SLE_CONDVAR(Town, received[TAE_WATER].old_act,     SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
+	NSL("received[TE_FOOD].old_act",       SLE_CONDVAR(Town, received[TownAcceptanceEffect::Food].old_act,      SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
+	NSL("received[TAE_WATER].old_act",     SLE_CONDVAR(Town, received[TownAcceptanceEffect::Water].old_act,     SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
 	NSL("",                                SLE_CONDNULL_X(2, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_CHILLPP, SL_CHILLPP_232))),
-	NSL("received[TE_FOOD].new_act",       SLE_CONDVAR(Town, received[TAE_FOOD].new_act,      SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
-	NSL("received[TE_WATER].new_act",      SLE_CONDVAR(Town, received[TAE_WATER].new_act,     SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
+	NSL("received[TE_FOOD].new_act",       SLE_CONDVAR(Town, received[TownAcceptanceEffect::Food].new_act,      SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
+	NSL("received[TE_WATER].new_act",      SLE_CONDVAR(Town, received[TownAcceptanceEffect::Water].new_act,     SLE_UINT16,                 SL_MIN_VERSION, SLV_165)),
 	NSL("",                                SLE_CONDNULL_X(2, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_CHILLPP, SL_CHILLPP_232))),
 
-	NSL("goal",                            SLE_CONDARR(Town, goal, SLE_UINT32, NUM_TAE, SLV_165, SL_MAX_VERSION)),
+	NSL("goal",                            SLE_CONDARR(Town, goal, SLE_UINT32, to_underlying(TownAcceptanceEffect::End), SLV_165, SL_MAX_VERSION)),
 
 	NSL("text",                            SLE_CONDSSTR(Town, text, SLE_STR | SLF_ALLOW_CONTROL, SLV_168, SL_MAX_VERSION)),
 
@@ -405,6 +461,7 @@ static const NamedSaveLoad _town_desc[] = {
 
 	NSLT_STRUCTLIST<TownOldSuppliedStructHandler>("supplied", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_SUPPLY_HISTORY, 0, 0)),
 	NSLT_STRUCTLIST<TownSuppliedStructHandler>("supplied", SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_TOWN_SUPPLY_HISTORY, 1)),
+	NSLT_STRUCTLIST<TownAcceptedStructHandler>("accepted"),
 	NSLT_STRUCTLIST<TownReceivedStructHandler>("received"),
 	NSLT_STRUCT<TownSettingsOverrideStructHandler>("setting_overrides"),
 };
@@ -445,19 +502,19 @@ static void Load_TOWN()
 	}
 
 	uint num_cargo = IsSavegameVersionBefore(SLV_EXTEND_CARGOTYPES) ? 32 : NUM_CARGO;
-	static_assert(static_cast<uint>(TAE_BEGIN) == 0 && static_cast<uint>(NUM_TAE) == 6);
+	static_assert(static_cast<size_t>(TownAcceptanceEffect::Begin) == 0 && static_cast<size_t>(TownAcceptanceEffect::End) == 6);
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Town *t = new (TownID(index)) Town();
+		Town *t = Town::CreateAtIndex(TownID(index));
 		SlObjectLoadFiltered(t, slt);
 
-		if (t->townnamegrfid == 0 && !IsInsideMM(t->townnametype, SPECSTR_TOWNNAME_START, SPECSTR_TOWNNAME_END) && GetStringTab(t->townnametype) != TEXT_TAB_OLD_CUSTOM) {
+		if (t->townnamegrfid.Empty() && !IsInsideMM(t->townnametype, SPECSTR_TOWNNAME_START, SPECSTR_TOWNNAME_END) && GetStringTab(static_cast<StringID>(t->townnametype)) != TEXT_TAB_OLD_CUSTOM) {
 			SlErrorCorrupt("Invalid town name generator");
 		}
 
 		if (!SlIsTableChunk()) {
-			for (CargoType i = 0; i < num_cargo; i++) {
+			for (CargoType i{}; i < num_cargo; i++) {
 				TransportedCargoStat<uint32_t> cargo_stat{};
 				SlObjectLoadFiltered(&cargo_stat, supplied_desc);
 
@@ -470,8 +527,8 @@ static void Load_TOWN()
 				s.history[THIS_MONTH].production = cargo_stat.new_max;
 				s.history[THIS_MONTH].transported = cargo_stat.new_act;
 			}
-			for (int i = TAE_BEGIN; i < NUM_TAE; i++) {
-				SlObjectLoadFiltered(&t->received[i], received_desc);
+			for (TownAcceptanceEffect tae = TownAcceptanceEffect::Begin; tae != TownAcceptanceEffect::End; tae++) {
+				SlObjectLoadFiltered(&t->received[tae], received_desc);
 			}
 
 			if ((!IsSavegameVersionBefore(SLV_166) && IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE)) || SlXvIsFeaturePresent(XSLFI_TOWN_CARGO_MATRIX)) {
@@ -486,10 +543,10 @@ static void Load_TOWN()
 
 		if (IsSavegameVersionBefore(SLV_165)) {
 			/* Passengers and mail were always treated as slots 0 and 2 in older saves. */
-			auto &pass = t->supplied.emplace_back(0);
+			auto &pass = t->supplied.emplace_back(static_cast<CargoType>(0));
 			pass.history[LAST_MONTH] = _old_pass_supplied[LAST_MONTH];
 			pass.history[THIS_MONTH] = _old_pass_supplied[THIS_MONTH];
-			auto &mail = t->supplied.emplace_back(2);
+			auto &mail = t->supplied.emplace_back(static_cast<CargoType>(2));
 			mail.history[LAST_MONTH] = _old_mail_supplied[LAST_MONTH];
 			mail.history[THIS_MONTH] = _old_mail_supplied[THIS_MONTH];
 		}
@@ -596,9 +653,9 @@ static ChunkSaveLoadSpecialOpResult Special_TNNC(uint32_t chunk_id, ChunkSaveLoa
 
 /** Chunk handler for towns. */
 static const ChunkHandler town_chunk_handlers[] = {
-	{ 'HIDS', Save_HIDS, Load_HIDS, nullptr,   nullptr, CH_TABLE },
-	{ 'CITY', Save_TOWN, Load_TOWN, Ptrs_TOWN, nullptr, CH_TABLE },
-	{ 'TNNC', Save_TNNC, Load_TNNC, nullptr,   nullptr, CH_RIFF,  Special_TNNC },
+	{ 'HIDS', Save_HIDS, Load_HIDS, nullptr,   nullptr, ChunkType::Table },
+	{ 'CITY', Save_TOWN, Load_TOWN, Ptrs_TOWN, nullptr, ChunkType::Table },
+	{ 'TNNC', Save_TNNC, Load_TNNC, nullptr,   nullptr, ChunkType::Riff,  Special_TNNC },
 };
 
 extern const ChunkHandlerTable _town_chunk_handlers(town_chunk_handlers);

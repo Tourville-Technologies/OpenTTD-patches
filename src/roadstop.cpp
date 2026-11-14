@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file roadstop.cpp Implementation of the roadstop base class. */
@@ -31,8 +31,6 @@ RoadStop::~RoadStop()
 	if (this->status.Test(RoadStopStatusFlag::BaseEntry)) {
 		delete this->entries;
 	}
-
-	if (CleaningPool()) return;
 }
 
 /**
@@ -401,7 +399,7 @@ void RoadStop::Entry::Enter(const RoadVehicle *rv)
  */
 /* static */ bool RoadStop::IsDriveThroughRoadStopContinuation(TileIndex rs, TileIndex next)
 {
-	return IsTileType(next, MP_STATION) &&
+	return IsTileType(next, TileType::Station) &&
 			GetStationIndex(next) == GetStationIndex(rs) &&
 			GetStationType(next) == GetStationType(rs) &&
 			IsDriveThroughStopTile(next) &&
@@ -418,8 +416,8 @@ void RoadStop::Entry::Enter(const RoadVehicle *rv)
 static DiagDirection GetEntryDirection(bool east, Axis axis)
 {
 	switch (axis) {
-		case AXIS_X: return east ? DIAGDIR_NE : DIAGDIR_SW;
-		case AXIS_Y: return east ? DIAGDIR_SE : DIAGDIR_NW;
+		case Axis::X: return east ? DiagDirection::NE : DiagDirection::SW;
+		case Axis::Y: return east ? DiagDirection::SE : DiagDirection::NW;
 		default: NOT_REACHED();
 	}
 }
@@ -443,7 +441,7 @@ void RoadStop::Entry::Rebuild(const RoadStop *rs, int side)
 	TileIndexDiff offset = TileOffsByAxis(axis);
 	for (TileIndex tile = rs->xy; IsDriveThroughRoadStopContinuation(rs->xy, tile); tile += offset) {
 		this->length += TILE_SIZE;
-		for (const RoadVehicle *rv : VehiclesOnTile<VEH_ROAD>(tile)) {
+		for (const RoadVehicle *rv : VehiclesOnTile<VehicleType::Road>(tile)) {
 			/* Not a RV or not in the right direction or crashed :( */
 			DiagDirection diag_dir = DirToDiagDir(rv->direction);
 			if (rv->overtaking != 0) diag_dir = ReverseDiagDir(diag_dir);

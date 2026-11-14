@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_airport.cpp NewGRF handling of airports. */
@@ -30,10 +30,10 @@
 template <>
 /* static */ void AirportClass::InsertDefaults()
 {
-	AirportClass::Get(AirportClass::Allocate('SMAL'))->name = STR_AIRPORT_CLASS_SMALL;
-	AirportClass::Get(AirportClass::Allocate('LARG'))->name = STR_AIRPORT_CLASS_LARGE;
-	AirportClass::Get(AirportClass::Allocate('HUB_'))->name = STR_AIRPORT_CLASS_HUB;
-	AirportClass::Get(AirportClass::Allocate('HELI'))->name = STR_AIRPORT_CLASS_HELIPORTS;
+	AirportClass::Get(AirportClass::Allocate("SMAL"))->name = STR_AIRPORT_CLASS_SMALL;
+	AirportClass::Get(AirportClass::Allocate("LARG"))->name = STR_AIRPORT_CLASS_LARGE;
+	AirportClass::Get(AirportClass::Allocate("HUB_"))->name = STR_AIRPORT_CLASS_HUB;
+	AirportClass::Get(AirportClass::Allocate("HELI"))->name = STR_AIRPORT_CLASS_HELIPORTS;
 }
 
 template <>
@@ -43,7 +43,7 @@ bool AirportClass::IsUIAvailable(uint) const
 }
 
 /* Instantiate AirportClass. */
-template class NewGRFClass<AirportSpec, AirportClassID, APC_MAX>;
+template class NewGRFClass<AirportSpec, AirportClassID>;
 
 
 AirportOverrideManager _airport_mngr(NEW_AIRPORT_OFFSET, NUM_AIRPORTS, AT_INVALID);
@@ -61,7 +61,7 @@ AirportSpec AirportSpec::specs[NUM_AIRPORTS]; ///< Airport specifications.
 	assert(type < lengthof(AirportSpec::specs));
 	const AirportSpec *as = &AirportSpec::specs[type];
 	if (type >= NEW_AIRPORT_OFFSET && !as->enabled) {
-		if (_airport_mngr.GetGRFID(type) == 0) return as;
+		if (_airport_mngr.GetGRFID(type).Empty()) return as;
 		uint8_t subst_id = _airport_mngr.GetSubstituteID(type);
 		if (subst_id == AT_INVALID) return as;
 		as = &AirportSpec::specs[subst_id];
@@ -82,7 +82,10 @@ AirportSpec AirportSpec::specs[NUM_AIRPORTS]; ///< Airport specifications.
 	return &AirportSpec::specs[type];
 }
 
-/** Check whether this airport is available to build. */
+/**
+ * Check whether this airport is available to build.
+ * @return \c true iff the airport is available.
+ */
 bool AirportSpec::IsAvailable() const
 {
 	if (!this->enabled) return false;
@@ -103,7 +106,7 @@ bool AirportSpec::IsWithinMapBounds(uint8_t table, TileIndex tile) const
 
 	uint8_t w = this->size_x;
 	uint8_t h = this->size_y;
-	if (this->layouts[table].rotation == DIR_E || this->layouts[table].rotation == DIR_W) std::swap(w, h);
+	if (this->layouts[table].rotation == Direction::E || this->layouts[table].rotation == Direction::W) std::swap(w, h);
 
 	return TileX(tile) + w < Map::SizeX() &&
 		TileY(tile) + h < Map::SizeY();
@@ -154,7 +157,7 @@ void AirportOverrideManager::SetEntitySpec(AirportSpec &&as)
 		overridden_as->grf_prop.override_id = airport_id;
 		overridden_as->enabled = false;
 		this->entity_overrides[i] = this->invalid_id;
-		this->grfid_overrides[i] = 0;
+		this->grfid_overrides[i] = {};
 	}
 }
 
@@ -184,7 +187,7 @@ void AirportOverrideManager::SetEntitySpec(AirportSpec &&as)
 
 GrfSpecFeature AirportResolverObject::GetFeature() const
 {
-	return GSF_AIRPORTS;
+	return GrfSpecFeature::Airports;
 }
 
 uint32_t AirportResolverObject::GetDebugID() const
@@ -211,9 +214,9 @@ uint32_t AirportResolverObject::GetDebugID() const
 		if (value == 0) return;
 
 		/* Create storage on first modification. */
-		uint32_t grfid = (this->ro.grffile != nullptr) ? this->ro.grffile->grfid : 0;
+		GrfID grfid = (this->ro.grffile != nullptr) ? this->ro.grffile->grfid : GrfID{};
 		assert(PersistentStorage::CanAllocateItem());
-		this->st->airport.psa = new PersistentStorage(grfid, GSF_AIRPORTS, this->st->airport.tile);
+		this->st->airport.psa = PersistentStorage::Create(grfid, GrfSpecFeature::Airports, this->st->airport.tile);
 	}
 	this->st->airport.psa->StoreValue(pos, value);
 }

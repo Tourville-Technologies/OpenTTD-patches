@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_internal.h Variables and function used internally. */
@@ -36,19 +36,18 @@ static const uint32_t FIND_SERVER_EXTENDED_TOKEN = 0x2A49582A;
 #define ENABLE_NETWORK_SYNC_EVERY_FRAME
 #endif /* RANDOM_DEBUG */
 
-typedef class ServerNetworkGameSocketHandler NetworkClientSocket;
+using NetworkClientSocket = class ServerNetworkGameSocketHandler; ///< @copydoc ServerNetworkGameSocketHandler
 
 /** Status of the clients during joining. */
-enum NetworkJoinStatus : uint8_t {
-	NETWORK_JOIN_STATUS_CONNECTING,
-	NETWORK_JOIN_STATUS_AUTHORIZING,
-	NETWORK_JOIN_STATUS_WAITING,
-	NETWORK_JOIN_STATUS_DOWNLOADING,
-	NETWORK_JOIN_STATUS_PROCESSING,
-	NETWORK_JOIN_STATUS_REGISTERING,
+enum class NetworkJoinStatus : uint8_t {
+	Connecting, ///< Opening the connection to the server.
+	Authorizing, ///< Starting authorizing the client to join the game and optionally company.
+	Waiting, ///< Waiting for other clients to finish downloading the map.
+	Downloading, ///< Downloading the map from the server.
+	Processing, ///< Loading the savegame.
+	Registering, ///< Creating a new company.
 
-	NETWORK_JOIN_STATUS_GETTING_COMPANY_INFO,
-	NETWORK_JOIN_STATUS_END,
+	End, ///< Sentinel for end-of-enumeration.
 };
 
 extern uint32_t _frame_counter_server; // The frame_counter of the server, if in network-mode
@@ -111,7 +110,7 @@ struct NetworkSharedSecrets {
 template <typename T>
 struct GeneralCommandPacket {
 	uint32_t frame = 0;                       ///< the frame in which this packet is executed
-	ClientID client_id = INVALID_CLIENT_ID;   ///< originating client ID (or INVALID_CLIENT_ID if not specified)
+	ClientID client_id = ClientID::Invalid;   ///< originating client ID (or ClientID::Invalid if not specified)
 	CompanyID company = CompanyID::Invalid(); ///< company that is executing the command
 	bool my_cmd = false;                      ///< did the command originate from "me"
 
@@ -154,7 +153,7 @@ void NetworkFreeLocalCommandQueue();
 void NetworkSyncCommandQueue(NetworkClientSocket *cs);
 
 void ShowNetworkError(StringID error_string);
-void NetworkTextMessage(NetworkAction action, TextColour colour, bool self_send, std::string_view name, std::string_view str = {}, NetworkTextMessageData data = NetworkTextMessageData(), std::string_view data_str = {});
+void NetworkTextMessage(NetworkAction action, ExtendedTextColour colour, bool self_send, std::string_view name, std::string_view str = {}, NetworkTextMessageData data = NetworkTextMessageData(), std::string_view data_str = {});
 uint NetworkCalculateLag(const NetworkClientSocket *cs);
 StringID GetNetworkErrorMsg(NetworkErrorCode err);
 bool NetworkMakeClientNameUnique(std::string &new_name);

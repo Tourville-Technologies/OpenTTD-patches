@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraphjob.h Declaration of link graph job classes used for cargo distribution. */
@@ -30,7 +30,7 @@ extern LinkGraphJobPool _link_graph_job_pool;
 /**
  * Class for calculation jobs to be run on link graphs.
  */
-class LinkGraphJob : public LinkGraphJobPool::PoolItem<&_link_graph_job_pool>{
+class LinkGraphJob : public LinkGraphJobPool::PoolItem<&_link_graph_job_pool> {
 public:
 	/**
 	 * Annotation for a link graph demand edge.
@@ -266,11 +266,12 @@ public:
 	/**
 	 * Bare constructor, only for save/load. link_graph, join_date and actually
 	 * settings have to be brutally const-casted in order to populate them.
+	 * @param index Index into the LinkGraphJob pool.
 	 */
-	LinkGraphJob() : settings(_settings_game.linkgraph),
+	LinkGraphJob(LinkGraphJobID index) : PoolItemBase(index), link_graph(LinkGraphID::Invalid()), settings(_settings_game.linkgraph),
 			join_tick(0), start_tick(0), day_length_factor(1), job_completed(false), job_aborted(false) {}
 
-	LinkGraphJob(const LinkGraph &orig, uint duration_multiplier);
+	LinkGraphJob(LinkGraphJobID index, const LinkGraph &orig, uint duration_multiplier);
 	~LinkGraphJob();
 
 	void Init();
@@ -382,19 +383,34 @@ public:
 
 	Path(NodeID n, bool source = false);
 
-	/** Get the node this leg passes. */
+	/**
+	 * Get the node this leg passes.
+	 * @return The node.
+	 */
 	inline NodeID GetNode() const { return this->node; }
 
-	/** Get the overall origin of the path. */
+	/**
+	 * Get the overall origin of the path.
+	 * @return The origin node.
+	 */
 	inline NodeID GetOrigin() const { return this->origin; }
 
-	/** Get the parent leg of this one. */
+	/**
+	 * Get the parent leg of this one.
+	 * @return The parent of this leg.
+	 */
 	inline Path *GetParent() { return reinterpret_cast<Path *>(this->parent_storage & ~static_cast<uintptr_t>(1)); }
 
-	/** Get the overall capacity of the path. */
+	/**
+	 * Get the overall capacity of the path.
+	 * @return The path's capacity.
+	 */
 	inline uint GetCapacity() const { return this->capacity; }
 
-	/** Get the free capacity of the path. */
+	/**
+	 * Get the free capacity of the path.
+	 * @return The path's capacity that isn't used.
+	 */
 	inline int GetFreeCapacity() const { return this->free_capacity; }
 
 	/**
@@ -418,19 +434,34 @@ public:
 		return Path::GetCapacityRatio(this->free_capacity, this->capacity);
 	}
 
-	/** Get the overall distance of the path. */
+	/**
+	 * Get the overall distance of the path.
+	 * @return The path's length.
+	 */
 	inline uint GetDistance() const { return this->distance; }
 
-	/** Reduce the flow on this leg only by the specified amount. */
+	/**
+	 * Reduce the flow on this leg only by the specified amount.
+	 * @param f The amount of flow to decrease by.
+	 */
 	inline void ReduceFlow(uint f) { this->flow -= f; }
 
-	/** Increase the flow on this leg only by the specified amount. */
+	/**
+	 * Increase the flow on this leg only by the specified amount.
+	 * @param f The amount of flow to increase by.
+	 */
 	inline void AddFlow(uint f) { this->flow += f; }
 
-	/** Get the flow on this leg. */
+	/**
+	 * Get the flow on this leg.
+	 * @return The accumulated flow.
+	 */
 	inline uint GetFlow() const { return this->flow; }
 
-	/** Get the number of "forked off" child legs of this one. */
+	/**
+	 * Get the number of "forked off" child legs of this one.
+	 * @return The number of children.
+	 */
 	inline uint GetNumChildren() const { return this->num_children; }
 
 	/**
@@ -452,15 +483,16 @@ public:
 
 protected:
 
-	/*
+	/** @{
 	 * Some boundaries to clamp against in order to avoid integer overflows.
 	 */
 	static constexpr int PATH_CAP_MULTIPLIER = 16;
 	static constexpr int PATH_CAP_MIN_FREE = (INT_MIN + 1) / PATH_CAP_MULTIPLIER;
 	static constexpr int PATH_CAP_MAX_FREE = (INT_MAX - 1) / PATH_CAP_MULTIPLIER;
+	/** @} */
 
 	uint distance = 0;            ///< Sum(distance of all legs up to this one).
-	uint capacity = 0;            ///< This capacity is min(capacity) fom all edges.
+	uint capacity = 0;            ///< This capacity is min(capacity) of all edges.
 	int free_capacity = 0;        ///< This capacity is min(edge.capacity - edge.flow) for the current run of Dijkstra.
 	uint flow = 0;                ///< Flow the current run of the mcf solver assigns.
 	NodeID node = INVALID_NODE;   ///< Link graph node this leg passes.

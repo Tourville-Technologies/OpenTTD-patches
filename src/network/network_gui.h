@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_gui.h GUIs related to networking. */
@@ -12,14 +12,14 @@
 
 #include "../company_type.h"
 #include "../date_type.h"
-#include "../economy_type.h"
+#include "../money_type.h"
 #include "../window_type.h"
 #include "network_type.h"
 #include "network_gamelist.h"
 
 void ShowNetworkNeedPassword(NetworkPasswordType npt, std::shared_ptr<class NetworkAuthenticationPasswordRequest> request);
 void ShowNetworkGiveMoneyWindow(CompanyID company);
-void ShowNetworkChatQueryWindow(DestType type, int dest);
+void ShowNetworkChatQueryWindow(NetworkChatDestinationType type, int dest);
 void ShowJoinStatusWindow();
 void ShowNetworkGameWindow();
 void ShowClientList();
@@ -40,6 +40,7 @@ struct NetworkCompanyInfo : NetworkCompanyStats {
 	std::string clients;      ///< The clients that control this company (Name1, name2, ..)
 };
 
+/** Reasons to close the window that opts you in for relaying the network game. */
 enum NetworkRelayWindowCloseData : uint8_t {
 	NRWCD_UNHANDLED = 0, ///< Relay request is unhandled.
 	NRWCD_HANDLED = 1, ///< Relay request is handled, either by user or by timeout.

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_actb.cpp NewGRF Action 0x0B handler. */
@@ -11,6 +11,7 @@
 #include "../debug.h"
 #include "newgrf_bytereader.h"
 #include "newgrf_internal.h"
+#include "../language.h"
 
 #include "table/strings.h"
 
@@ -60,7 +61,7 @@ static void GRFLoadError(ByteReader &buf)
 
 	/* Skip the error until the activation stage unless bit 7 of the severity
 	 * is set. */
-	if (!HasBit(severity, 7) && _cur_gps.stage == GLS_INIT) {
+	if (!HasBit(severity, 7) && _cur_gps.stage == GrfLoadingStage::Init) {
 		GrfMsg(7, "GRFLoadError: Skipping non-fatal GRFLoadError in stage {}", _cur_gps.stage);
 		return;
 	}
@@ -73,9 +74,6 @@ static void GRFLoadError(ByteReader &buf)
 		/* This is a fatal error, so make sure the GRF is deactivated and no
 		 * more of it gets loaded. */
 		DisableGrf();
-
-		/* Make sure we show fatal errors, instead of silly infos from before */
-		_cur_gps.grfconfig->error.reset();
 	}
 
 	if (message_id >= lengthof(msgstr) && message_id != 0xFF) {
@@ -88,45 +86,53 @@ static void GRFLoadError(ByteReader &buf)
 		return;
 	}
 
-	/* For now we can only show one message per newgrf file. */
-	if (_cur_gps.grfconfig->error.has_value()) return;
+	/* An error may be emitted multiple times in different loading stages. Re-use if so. */
+	auto it = std::ranges::find(_cur_gps.grfconfig->errors, _cur_gps.nfo_line, &GRFError::nfo_line);
+	if (it == std::end(_cur_gps.grfconfig->errors)) {
+		it = _cur_gps.grfconfig->errors.emplace(it, sevstr[severity], _cur_gps.nfo_line);
+	}
 
-	_cur_gps.grfconfig->error = {sevstr[severity]};
-	GRFError *error = &_cur_gps.grfconfig->error.value();
+	GRFError &error = *it;
 
 	if (message_id == 0xFF) {
 		/* This is a custom error message. */
 		if (buf.HasData()) {
 			std::string_view message = buf.ReadString();
 
-			error->custom_message = TranslateTTDPatchCodes(_cur_gps.grffile->grfid, lang, true, message, SCC_RAW_STRING_POINTER);
+			error.custom_message = TranslateTTDPatchCodes(_cur_gps.grffile->grfid, _current_language->newgrflangid, true, message, SCC_RAW_STRING_POINTER);
 		} else {
 			GrfMsg(7, "GRFLoadError: No custom message supplied.");
-			error->custom_message.clear();
+			error.custom_message.clear();
 		}
 	} else {
-		error->message = msgstr[message_id];
+		error.message = msgstr[message_id];
 	}
 
 	if (buf.HasData()) {
 		std::string_view data = buf.ReadString();
 
-		error->data = TranslateTTDPatchCodes(_cur_gps.grffile->grfid, lang, true, data);
+		error.data = TranslateTTDPatchCodes(_cur_gps.grffile->grfid, _current_language->newgrflangid, true, data);
 	} else {
 		GrfMsg(7, "GRFLoadError: No message data supplied.");
-		error->data.clear();
+		error.data.clear();
 	}
 
 	/* Only two parameter numbers can be used in the string. */
-	for (uint i = 0; i < error->param_value.size() && buf.HasData(); i++) {
+	for (uint i = 0; i < error.param_value.size() && buf.HasData(); i++) {
 		uint param_number = buf.ReadByte();
-		error->param_value[i] = _cur_gps.grffile->GetParam(param_number);
+		error.param_value[i] = _cur_gps.grffile->GetParam(param_number);
 	}
 }
 
+/** @copybrief GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x0B>::FileScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x0B>::SafetyScan(ByteReader &) { }
+/** @copybrief GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x0B>::LabelScan(ByteReader &) { }
+/** @copydoc GrfActionHandler::Init */
 template <> void GrfActionHandler<0x0B>::Init(ByteReader &buf) { GRFLoadError(buf); }
+/** @copydoc GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x0B>::Reserve(ByteReader &buf) { GRFLoadError(buf); }
+/** @copydoc GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x0B>::Activation(ByteReader &buf) { GRFLoadError(buf); }

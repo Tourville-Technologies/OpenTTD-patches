@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town_land.h Sprites to use and how to display them for town tiles. */
@@ -1814,8 +1814,8 @@ static_assert(lengthof(_town_draw_tile_data) == (NEW_HOUSE_OFFSET) * 4 * 4);
 	{CalTime::Year{mnd}, CalTime::Year{mxd}, p, rc, bn, rr, mg, \
 	{ca1, ca2, ca3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, \
 	{INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO, INVALID_CARGO}, \
-	bf, ba, true, SubstituteGRFFileProps(INVALID_HOUSE_ID), HouseCallbackMasks{}, {COLOUR_BEGIN, COLOUR_BEGIN, COLOUR_BEGIN, COLOUR_BEGIN}, \
-	16, HouseExtraFlags{}, HCF_NONE, HOUSE_NO_CLASS, AnimationInfo<void>{}, 0, 0, 0, {}, {cg1, cg2, cg3}}
+	bf, ba, true, SubstituteGRFFileProps(INVALID_HOUSE_ID), HouseCallbackMasks{}, {Colours::Begin, Colours::Begin, Colours::Begin, Colours::Begin}, \
+	16, HouseExtraFlags{}, HCF_NONE, HOUSE_NO_CLASS, AnimationInfo<void>{}, 0, 0, CargoTypes{}, {}, {cg1, cg2, cg3}}
 /** House specifications from original data */
 extern const HouseSpec _original_house_specs[] = {
 	/**

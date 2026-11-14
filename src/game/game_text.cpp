@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_text.cpp Implementation of handling translated strings. */
@@ -12,6 +12,7 @@
 #include "../debug.h"
 #include "../fileio_func.h"
 #include "../tar_type.h"
+#include "../script/api/script_text.hpp"
 #include "../script/squirrel_class.hpp"
 #include "../strings_func.h"
 #include "game_text.hpp"
@@ -19,6 +20,7 @@
 #include "game_info.hpp"
 
 #include "table/strings.h"
+#include "../table/control_codes.h"
 #include "../table/strgen_tables.h"
 
 #include <memory>
@@ -51,7 +53,7 @@ void CDECL StrgenFatalI(const std::string &msg)
 LanguageStrings ReadRawLanguageStrings(const std::string &file)
 {
 	size_t to_read;
-	auto fh = FioFOpenFile(file, "rb", GAME_DIR, &to_read);
+	auto fh = FioFOpenFile(file, "rb", Subdirectory::Gs, &to_read);
 	if (!fh.has_value()) return LanguageStrings();
 
 	auto pos = file.rfind(PATHSEPCHAR);
@@ -168,15 +170,20 @@ struct StringNameWriter : HeaderWriter {
  */
 class LanguageScanner : protected FileScanner {
 private:
-	std::weak_ptr<GameStrings> gs;
-	std::string exclude;
+	std::weak_ptr<GameStrings> gs; ///< The (already) loaded game strings.
+	std::string exclude; ///< The file name to exclude during scanning.
 
 public:
-	/** Initialise */
+	/**
+	 * Initialise the scanner.
+	 * @param gs The (already) loaded game strings to add to.
+	 * @param exclude The file name to exclude during sanning.
+	 */
 	LanguageScanner(std::weak_ptr<GameStrings> gs, const std::string &exclude) : gs(gs), exclude(exclude) {}
 
 	/**
-	 * Scan.
+	 * Actually run the scan.
+	 * @param directory The directory to scan in.
 	 */
 	void Scan(const std::string &directory)
 	{
@@ -213,7 +220,7 @@ static std::shared_ptr<GameStrings> LoadTranslations()
 	basename.erase(e + 1);
 
 	std::string filename = basename + "lang" PATHSEP "english.txt";
-	if (!FioCheckFileExists(filename.c_str() , GAME_DIR)) return nullptr;
+	if (!FioCheckFileExists(filename.c_str(), Subdirectory::Gs)) return nullptr;
 
 	auto ls = ReadRawLanguageStrings(filename);
 	if (!ls.IsValid()) return nullptr;
@@ -228,18 +235,18 @@ static std::shared_ptr<GameStrings> LoadTranslations()
 
 		const std::string tar_filename = info->GetTarFile();
 		TarList::iterator iter;
-		if (!tar_filename.empty() && (iter = _tar_list[GAME_DIR].find(tar_filename)) != _tar_list[GAME_DIR].end()) {
+		if (!tar_filename.empty() && (iter = _tar_list[Subdirectory::Gs].find(tar_filename)) != _tar_list[Subdirectory::Gs].end()) {
 			/* The main script is in a tar file, so find all files that
 			 * are in the same tar and add them to the langfile scanner. */
-			for (const auto &tar : _tar_filelist[GAME_DIR]) {
+			for (const auto &[name, entry] : _tar_filelist[Subdirectory::Gs]) {
 				/* Not in the same tar. */
-				if (tar.second.tar_filename != iter->first) continue;
+				if (entry.tar_filename != iter->first) continue;
 
 				/* Check the path and extension. */
-				if (tar.first.size() <= ldir.size() || tar.first.compare(0, ldir.size(), ldir) != 0) continue;
-				if (tar.first.compare(tar.first.size() - 4, 4, ".txt") != 0) continue;
+				if (!name.starts_with(ldir)) continue;
+				if (!name.ends_with(".txt")) continue;
 
-				scanner.AddFile(tar.first, 0, tar_filename);
+				scanner.AddFile(name, 0, tar_filename);
 			}
 		} else {
 			/* Scan filesystem */

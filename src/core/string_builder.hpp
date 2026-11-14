@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file string_builder.hpp Types and functions related to struct StringBuilder. */
+/** @file string_builder.hpp Compose strings from textual and binary data. */
 
 #ifndef STRING_BUILDER_HPP
 #define STRING_BUILDER_HPP
@@ -29,6 +29,7 @@ public:
 	using pointer = void;
 	using reference = void;
 
+	/** The type of the size of our strings. */
 	using size_type = std::string_view::size_type;
 
 	/**
@@ -87,6 +88,7 @@ public:
 
 	/**
 	 * Append string.
+	 * @param str The string to append.
 	 */
 	void Put(std::string_view str) { this->string->append(str.data(), str.data() + str.size()); }
 
@@ -127,6 +129,8 @@ public:
 
 	/**
 	 * Append integer 'value' in given number 'base'.
+	 * @param value The value.
+	 * @param base The base to format the value in.
 	 */
 	template <class T>
 	void PutIntegerBase(T value, int base)

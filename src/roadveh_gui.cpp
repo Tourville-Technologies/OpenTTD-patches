@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file roadveh_gui.cpp GUI for road vehicles. */
@@ -33,7 +33,7 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 	Money feeder_share = 0;
 
 	DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_BUILT_VALUE, PackEngineNameDParam(v->engine_type, EngineNameContext::VehicleDetails), v->build_year, v->value));
-	y += GetCharacterHeight(FS_NORMAL);
+	y += GetCharacterHeight(FontSize::Normal);
 
 	if (v->HasArticulatedPart()) {
 		CargoArray max_cargo{};
@@ -47,7 +47,7 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 			}
 		}
 
-		std::string capacity = GetString(STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY);
+		std::string capacity;
 		std::string_view list_separator = GetListSeparator();
 
 		bool first = true;
@@ -66,8 +66,8 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 			}
 		}
 
-		DrawString(r.left, r.right, y, capacity, TC_BLUE);
-		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+		DrawString(r.left, r.right, y, GetString(STR_VEHICLE_DETAILS_TRAIN_ARTICULATED_RV_CAPACITY, capacity), TextColour::Blue);
+		y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 
 		for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
 			if (u->cargo_cap == 0) continue;
@@ -80,12 +80,12 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 				str = GetString(STR_VEHICLE_DETAILS_CARGO_EMPTY);
 			}
 			DrawString(r.left, r.right, y, str);
-			y += GetCharacterHeight(FS_NORMAL);
+			y += GetCharacterHeight(FontSize::Normal);
 		}
 		y += WidgetDimensions::scaled.vsep_normal;
 	} else {
 		DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_CAPACITY, v->cargo_type, v->cargo_cap, GetCargoSubtypeText(v)));
-		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+		y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 
 		std::string str;
 		if (v->cargo.StoredCount() > 0) {
@@ -95,12 +95,12 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 			str = GetString(STR_VEHICLE_DETAILS_CARGO_EMPTY);
 		}
 		DrawString(r.left, r.right, y, str);
-		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+		y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 	}
 
 	/* Draw Transfer credits text */
 	DrawString(r.left, r.right, y, GetString(STR_VEHICLE_INFO_FEEDER_CARGO_VALUE, feeder_share));
-	y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
+	y += GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal;
 
 	if (RoadVehicle::From(v)->critical_breakdown_count > 0) {
 		DrawString(r.left, r.right, y, GetString(STR_NEED_REPAIR, RoadVehicle::From(v)->GetDisplayEffectiveMaxSpeed()));
@@ -113,11 +113,12 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
  * @param r         Rect to draw at
  * @param selection Selected vehicle to draw a frame around
  * @param skip      Number of pixels to skip at the front (for scrolling)
+ * @param image_type Context where the image is being drawn.
  */
 void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, EngineImageType image_type, int skip)
 {
 	bool rtl = _current_text_dir == TD_RTL;
-	Direction dir = rtl ? DIR_E : DIR_W;
+	Direction dir = rtl ? Direction::E : Direction::W;
 	const RoadVehicle *u = RoadVehicle::From(v);
 
 	DrawPixelInfo tmp_dpi;
@@ -157,6 +158,6 @@ void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, Engi
 	if (v->index == selection) {
 		int height = ScaleSpriteTrad(12);
 		Rect hr = {(rtl ? px : 0), 0, (rtl ? max_width : px) - 1, height - 1};
-		DrawFrameRect(hr.Translate(r.left, CentreBounds(r.top, r.bottom, height)).Expand(WidgetDimensions::scaled.bevel), COLOUR_WHITE, FrameFlag::BorderOnly);
+		DrawFrameRect(hr.Translate(r.left, CentreBounds(r.top, r.bottom, height)).Expand(WidgetDimensions::scaled.bevel), Colours::White, FrameFlag::BorderOnly);
 	}
 }

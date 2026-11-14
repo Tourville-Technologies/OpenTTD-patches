@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_house.h Functions related to NewGRF houses. */
@@ -11,10 +11,11 @@
 #define NEWGRF_HOUSE_H
 
 #include "newgrf_callbacks.h"
-#include "tile_cmd.h"
 #include "house_type.h"
 #include "newgrf_spritegroup.h"
 #include "newgrf_town.h"
+
+struct TileInfo;
 
 /** Scope resolver for houses. */
 struct HouseScopeResolver : public ScopeResolver {
@@ -35,6 +36,7 @@ struct HouseScopeResolver : public ScopeResolver {
 	 * @param not_yet_constructed House is still under construction.
 	 * @param initial_random_bits Random bits during construction checks.
 	 * @param watched_cargo_triggers Cargo types that triggered the watched cargo callback.
+	 * @param view The house's 'view'.
 	 */
 	HouseScopeResolver(ResolverObject &ro, HouseID house_id, TileIndex tile, Town *town,
 			bool not_yet_constructed, uint8_t initial_random_bits, CargoTypes watched_cargo_triggers, int view)
@@ -82,13 +84,13 @@ struct HouseResolverObject : public SpecializedResolverObject<HouseRandomTrigger
 
 	HouseResolverObject(HouseID house_id, TileIndex tile, Town *town,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t param1 = 0, uint32_t param2 = 0,
-			bool not_yet_constructed = false, uint8_t initial_random_bits = 0, CargoTypes watched_cargo_triggers = 0, int view = 0);
+			bool not_yet_constructed = false, uint8_t initial_random_bits = 0, CargoTypes watched_cargo_triggers = {}, int view = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF:   return &this->house_scope;
-			case VSG_SCOPE_PARENT: return &this->town_scope;
+			case VarSpriteGroupScope::Self: return &this->house_scope;
+			case VarSpriteGroupScope::Parent: return &this->town_scope;
 			default: return ResolverObject::GetScope(scope, relative);
 		}
 	}
@@ -111,12 +113,12 @@ struct HouseResolverObject : public SpecializedResolverObject<HouseRandomTrigger
  * need to be persistent; it just needs to keep class ids unique.
  */
 struct HouseClassMapping {
-	uint32_t grfid;     ///< The GRF ID of the file this class belongs to
+	GrfID grfid;     ///< The GRF ID of the file this class belongs to
 	uint8_t  class_id;  ///< The class id within the grf file
 };
 
 void ResetHouseClassIDs();
-HouseClassID AllocateHouseClassID(uint8_t grf_class_id, uint32_t grfid);
+HouseClassID AllocateHouseClassID(uint8_t grf_class_id, GrfID grfid);
 
 void InitializeBuildingCounts();
 void InitializeBuildingCounts(Town *t);
@@ -133,7 +135,7 @@ void TriggerHouseAnimation_WatchedCargoAccepted(TileIndex tile, CargoTypes trigg
 uint8_t GetNewHouseTileAnimationSpeed(TileIndex tile);
 
 uint16_t GetHouseCallback(CallbackID callback, uint32_t param1, uint32_t param2, HouseID house_id, Town *town, TileIndex tile,
-		bool not_yet_constructed = false, uint8_t initial_random_bits = 0, CargoTypes watched_cargo_triggers = 0, int view = 0);
+		bool not_yet_constructed = false, uint8_t initial_random_bits = 0, CargoTypes watched_cargo_triggers = {}, int view = 0);
 
 bool HouseAllowsConstruction(HouseID house_id, TileIndex tile, Town *t, uint8_t random_bits);
 bool CanDeleteHouse(TileIndex tile);

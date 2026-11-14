@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file plans_cmd.cpp Handling of plan related commands. */
@@ -30,7 +30,7 @@ CommandCost CmdAddPlan(DoCommandFlags flags)
 	if (!Plan::CanAllocateItem()) return CommandCost(STR_ERROR_TOO_MANY_PLANS);
 	CommandCost cost;
 	if (flags.Test(DoCommandFlag::Execute)) {
-		Plan *plan = new Plan(_current_company);
+		Plan *plan = Plan::Create(_current_company);
 		cost.SetResultData(plan->index);
 	}
 	return cost;
@@ -41,7 +41,7 @@ bool AddPlanLine(PlanID plan, std::vector<TileIndex> tiles)
 	PlanLineCmdData data;
 	data.plan = plan;
 	data.tiles = std::move(tiles);
-	return DoCommandP<CMD_ADD_PLAN_LINE>(data, STR_NULL);
+	return DoCommandP<Commands::AddPlanLine>(data, STR_NULL);
 }
 
 /**
@@ -66,7 +66,7 @@ CommandCost CmdAddPlanLine(DoCommandFlags flags, const PlanLineCmdData &data)
 		if (p->IsListable()) {
 			pl.SetVisibility(p->visible);
 			if (p->visible) pl.MarkDirty();
-			InvalidateWindowData(WC_PLANS, 0, INVALID_PLAN, false);
+			InvalidateWindowData(WindowClass::Plans, 0, INVALID_PLAN, false);
 		}
 	}
 	return CommandCost();
@@ -88,7 +88,7 @@ CommandCost CmdChangePlanVisibility(DoCommandFlags flags, PlanID plan, bool visi
 	if (flags.Test(DoCommandFlag::Execute)) {
 		if (p->visible_by_all != visible) {
 			p->visible_by_all = visible;
-			InvalidateWindowData(WC_PLANS, 0, INVALID_PLAN, false);
+			InvalidateWindowData(WindowClass::Plans, 0, INVALID_PLAN, false);
 			if (p->owner != _local_company && p->visible) {
 				for (PlanLine &line : p->lines) {
 					if (line.visible) line.MarkDirty();
@@ -110,13 +110,13 @@ CommandCost CmdChangePlanColour(DoCommandFlags flags, PlanID plan, Colours colou
 {
 	Plan *p = Plan::GetIfValid(plan);
 	if (p == nullptr) return CMD_ERROR;
-	if (colour >= COLOUR_END) return CMD_ERROR;
+	if (colour >= Colours::End) return CMD_ERROR;
 	CommandCost ret = CheckOwnership(p->owner);
 	if (ret.Failed()) return ret;
 	if (flags.Test(DoCommandFlag::Execute)) {
 		p->colour = colour;
 		_plan_update_counter++;
-		InvalidateWindowData(WC_PLANS, 0, INVALID_PLAN, false);
+		InvalidateWindowData(WindowClass::Plans, 0, INVALID_PLAN, false);
 		for (const PlanLine &line : p->lines) {
 			if (line.visible) line.MarkDirty();
 		}
@@ -140,7 +140,7 @@ CommandCost CmdRemovePlan(DoCommandFlags flags, PlanID plan)
 	if (flags.Test(DoCommandFlag::Execute)) {
 		if (p->IsListable()) {
 			p->SetVisibility(false);
-			InvalidateWindowData(WC_PLANS, 0, p->index, false);
+			InvalidateWindowData(WindowClass::Plans, 0, p->index, false);
 		}
 		if (p == _current_plan) _current_plan = nullptr;
 		delete p;
@@ -166,7 +166,7 @@ CommandCost CmdRemovePlanLine(DoCommandFlags flags, PlanID plan, uint32_t line)
 		p->lines[line].SetVisibility(false);
 		p->lines.erase(p->lines.begin() + line);
 		if (p->IsListable()) {
-			InvalidateWindowData(WC_PLANS, 0, INVALID_PLAN, false);
+			InvalidateWindowData(WindowClass::Plans, 0, INVALID_PLAN, false);
 		}
 	}
 	return CommandCost();
@@ -192,7 +192,7 @@ CommandCost CmdRenamePlan(DoCommandFlags flags, PlanID plan, const std::string &
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		p->name = text;
-		InvalidateWindowClassesData(WC_PLANS);
+		InvalidateWindowClassesData(WindowClass::Plans);
 	}
 
 	return CommandCost();
@@ -213,7 +213,7 @@ CommandCost CmdAcquireUnownedPlan(DoCommandFlags flags, PlanID plan)
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		p->owner = _current_company;
-		InvalidateWindowClassesData(WC_PLANS);
+		InvalidateWindowClassesData(WindowClass::Plans);
 		if (p->visible) {
 			for (PlanLine &line : p->lines) {
 				if (line.visible) line.MarkDirty();
@@ -224,7 +224,7 @@ CommandCost CmdAcquireUnownedPlan(DoCommandFlags flags, PlanID plan)
 	return CommandCost();
 }
 
-void PlanLineCmdData::Serialise(BufferSerialisationRef buffer) const
+void PlanLineCmdData::SerialisePayload(BufferSerialisationRef buffer) const
 {
 	buffer.Send_uint16(this->plan);
 	buffer.Send_uint32((uint32_t)this->tiles.size());

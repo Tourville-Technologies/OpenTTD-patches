@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cheat_sl.cpp Code handling saving and loading of cheats */
@@ -94,7 +94,7 @@ static void Load_CHTS()
 	if (SlIsTableChunk()) {
 		struct UnknownCheatHandler : public TableHeaderSpecialHandler {
 			bool MissingField(const std::string &key, uint8_t type, std::vector<SaveLoad> &saveloads) override {
-				if (type == SLE_FILE_I8) {
+				if (type == to_underlying(SLE_FILE_I8)) {
 					Debug(sl, 1, "CHTS chunk: Unknown cheat field: '{}'", key);
 					saveloads.push_back(SLEG_VAR(_unknown_cheat_fields[key], SLE_BOOL));
 					return true;
@@ -167,8 +167,8 @@ static void Load_CHTX()
 
 /** Chunk handlers related to cheats. */
 static const ChunkHandler cheat_chunk_handlers[] = {
-	{ 'CHTS', Save_CHTS, Load_CHTS, nullptr, nullptr, CH_TABLE },
-	{ 'CHTX', nullptr,   Load_CHTX, nullptr, nullptr, CH_READONLY },
+	{ 'CHTS', Save_CHTS, Load_CHTS, nullptr, nullptr, ChunkType::Table },
+	{ 'CHTX', nullptr,   Load_CHTX, nullptr, nullptr, ChunkType::ReadOnly },
 };
 
 extern const ChunkHandlerTable _cheat_chunk_handlers(cheat_chunk_handlers);

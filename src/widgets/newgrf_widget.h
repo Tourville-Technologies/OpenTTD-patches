@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_widget.h Types related to the newgrf widgets. */
@@ -49,7 +49,7 @@ enum NewGRFStateWidgets : WidgetID {
 	WID_NS_NEWGRF_INFO,       ///< Panel for Info on selected NewGRF.
 	WID_NS_OPEN_URL,          ///< Open URL of NewGRF.
 	WID_NS_NEWGRF_TEXTFILE,   ///< Open NewGRF readme, changelog (+1) or license (+2).
-	WID_NS_SET_PARAMETERS = WID_NS_NEWGRF_TEXTFILE + TFT_CONTENT_END,   ///< Open Parameters Window for selected NewGRF for editing parameters.
+	WID_NS_SET_PARAMETERS = WID_NS_NEWGRF_TEXTFILE + to_underlying(TextfileType::ContentEnd), ///< Open Parameters Window for selected NewGRF for editing parameters.
 	WID_NS_VIEW_PARAMETERS,   ///< Open Parameters Window for selected NewGRF for viewing parameters.
 	WID_NS_TOGGLE_PALETTE,    ///< Toggle Palette of selected, active NewGRF.
 	WID_NS_APPLY_CHANGES,     ///< Apply changes to NewGRF config.

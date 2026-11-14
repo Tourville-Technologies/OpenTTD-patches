@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_roadvehs.cpp NewGRF Action 0x00 handler for road vehicles. */
@@ -30,11 +30,11 @@
  */
 static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf)
 {
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 
 	for (uint id = first; id < last; ++id) {
-		Engine *e = GetNewEngine(_cur_gps.grffile, VEH_ROAD, id);
-		if (e == nullptr) return CIR_INVALID_ID; // No engine could be allocated, so neither can any next vehicles
+		Engine *e = GetNewEngine(_cur_gps.grffile, VehicleType::Road, id);
+		if (e == nullptr) return ChangeInfoResult::InvalidId; // No engine could be allocated, so neither can any next vehicles
 
 		EngineInfo *ei = &e->info;
 		RoadVehicleInfo *rvi = &e->VehInfo<RoadVehicleInfo>();
@@ -67,7 +67,7 @@ static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, c
 
 				if (spriteid < CUSTOM_VEHICLE_SPRITENUM) spriteid >>= 1;
 
-				if (IsValidNewGRFImageIndex<VEH_ROAD>(spriteid)) {
+				if (IsValidNewGRFImageIndex<VehicleType::Road>(spriteid)) {
 					rvi->image_index = spriteid;
 				} else {
 					GrfMsg(1, "RoadVehicleChangeInfo: Invalid Sprite {} specified, ignoring", orig_spriteid);
@@ -195,10 +195,10 @@ static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, c
 				_gted[e->index].UpdateRefittability(prop == 0x24 && count != 0);
 				if (prop == 0x24) _gted[e->index].defaultcargo_grf = _cur_gps.grffile;
 				CargoTypes &ctt = prop == 0x24 ? _gted[e->index].ctt_include_mask : _gted[e->index].ctt_exclude_mask;
-				ctt = 0;
+				ctt.Reset();
 				while (count--) {
 					CargoType ctype = GetCargoTranslation(buf.ReadByte(), _cur_gps.grffile);
-					if (IsValidCargoType(ctype)) SetBit(ctt, ctype);
+					if (IsValidCargoType(ctype)) ctt.Set(ctype);
 				}
 				break;
 			}
@@ -223,7 +223,7 @@ static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, c
 				break;
 
 			case 0x2A: // Badge list
-				e->badges = ReadBadgeList(buf, GSF_ROADVEHICLES);
+				e->badges = ReadBadgeList(buf, GrfSpecFeature::RoadVehicles);
 				break;
 
 			default:
@@ -235,5 +235,5 @@ static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, c
 	return ret;
 }
 
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_ROADVEHICLES>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return CIR_UNHANDLED; }
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_ROADVEHICLES>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return RoadVehicleChangeInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::RoadVehicles>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return ChangeInfoResult::Unhandled; }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::RoadVehicles>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return RoadVehicleChangeInfo(first, last, prop, mapping_entry, buf); }

@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file engine_gui.h %Engine GUI functions, used by build_vehicle_gui and autoreplace_gui */
+/** @file engine_gui.h %Engine GUI functions, used by build_vehicle_gui and autoreplace_gui. */
 
 #ifndef ENGINE_GUI_H
 #define ENGINE_GUI_H
@@ -28,7 +28,7 @@ struct GUIEngineListSortCache {
 	mutable btree::btree_map<EngineID, uint> capacities;
 
 	void UpdateCargoFilter(const BuildVehicleWindowBase *parent, CargoType cargo_filter_criteria);
-	uint GetArticulatedCapacity(EngineID eng, bool dual_headed = false) const;
+	uint GetArticulatedCapacity(EngineID eng) const;
 };
 
 template <>
@@ -64,16 +64,39 @@ void DrawShipEngine(int left, int right, int preferred_x, int y, EngineID engine
 void DrawAircraftEngine(int left, int right, int preferred_x, int y, EngineID engine, PaletteID pal, EngineImageType image_type);
 
 extern bool _engine_sort_direction;
-extern uint8_t _engine_sort_last_criteria[];
-extern bool _engine_sort_last_order[];
-extern bool _engine_sort_show_hidden_engines[];
-extern const std::initializer_list<const StringID> _engine_sort_listing[];
-extern EngList_SortTypeFunction * const _engine_sort_functions[][13];
+extern VehicleTypeIndexArray<uint8_t> _engine_sort_last_criteria;
+extern VehicleTypeIndexArray<bool> _engine_sort_last_order;
+extern VehicleTypeIndexArray<bool> _engine_sort_show_hidden_engines;
+
+
+/**
+ * Get the engine sorter functions for a \c VehicleType
+ * @param vehicle_type the vehicle type
+ * @return list of sorter functions.
+ */
+inline std::span<EngList_SortTypeFunction * const> GetEngineSortFunctions(VehicleType vehicle_type)
+{
+	extern const std::array<std::initializer_list<EngList_SortTypeFunction * const>, 4> _engine_sort_functions;
+	assert(vehicle_type < VehicleType::CompanyEnd);
+	return _engine_sort_functions[to_underlying(vehicle_type)];
+}
+
+/**
+ * Get the engine sorter names for a \c VehicleType
+ * @param vehicle_type the vehicle type
+ * @return list of sorter names.
+ */
+inline std::span<StringID const> GetEngineSortNames(VehicleType vehicle_type)
+{
+	extern const std::array<std::initializer_list<const StringID>, 4> _engine_sort_listing;
+	assert(vehicle_type < VehicleType::CompanyEnd);
+	return _engine_sort_listing[to_underlying(vehicle_type)];
+}
 
 /* Functions in build_vehicle_gui.cpp */
 uint GetEngineListHeight(VehicleType type);
 void DisplayVehicleSortDropDown(Window *w, VehicleType vehicle_type, int selected, WidgetID button);
-void DrawEngineList(VehicleType type, const Rect &r, const GUIEngineList &eng_list, const class Scrollbar &sb, EngineID selected_id, bool show_count, GroupID selected_group, const GUIBadgeClasses &badge_classes);
+void DrawEngineList(VehicleType type, const Rect &r, const GUIEngineList &eng_list, const class Scrollbar &sb, EngineID selected_id, bool show_count, GroupID selected_group, const GUIBadgeClasses &badge_classes, StringID sort_criteria);
 void GUIEngineListAddChildren(GUIEngineList &dst, const GUIEngineList &src, EngineID parent = EngineID::Invalid(), uint8_t indent = 0);
 
 #endif /* ENGINE_GUI_H */

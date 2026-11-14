@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file league_gui.cpp GUI for league tables. */
@@ -57,7 +57,7 @@ static inline StringID GetPerformanceTitleFromValue(uint value)
 class PerformanceLeagueWindow : public Window {
 private:
 	GUIList<const Company *> companies{};
-	uint ordinal_width = 0; ///< The width of the ordinal number
+	uint rank_width = 0; ///< The width of the rank
 	uint text_width = 0; ///< The width of the actual text
 	int line_height = 0; ///< Height of the text lines
 	Dimension icon{}; ///< Dimension of the company icon.
@@ -79,16 +79,18 @@ private:
 		this->companies.RebuildDone();
 	}
 
-	/** Sort the company league by performance history */
-	static bool PerformanceSorter(const Company * const &c1, const Company * const &c2)
+	/** Sort the company league by performance history. @copydoc GUIList::Sorter */
+	static bool PerformanceSorter(const Company * const &a, const Company * const &b)
 	{
-		return c2->old_economy[0].performance_history < c1->old_economy[0].performance_history;
+		return b->old_economy[0].performance_history < a->old_economy[0].performance_history;
 	}
 
 public:
 	PerformanceLeagueWindow(WindowDesc &desc, WindowNumber window_number) : Window(desc)
 	{
 		this->invalidation_policy = WindowInvalidationPolicy::NoQueue;
+		this->companies.ForceRebuild();
+		this->BuildCompanyList();
 		this->InitNested(window_number);
 		this->companies.ForceRebuild();
 		this->companies.NeedResort();
@@ -108,20 +110,20 @@ public:
 
 		Rect ir = r.Shrink(WidgetDimensions::scaled.framerect);
 		int icon_y_offset = (this->line_height - this->icon.height) / 2;
-		int text_y_offset = (this->line_height - GetCharacterHeight(FS_NORMAL)) / 2;
+		int text_y_offset = (this->line_height - GetCharacterHeight(FontSize::Normal)) / 2;
 
 		bool rtl = _current_text_dir == TD_RTL;
-		Rect ordinal = ir.WithWidth(this->ordinal_width, rtl);
-		uint icon_left = ir.Indent(rtl ? this->text_width : this->ordinal_width, rtl).left;
-		Rect text    = ir.WithWidth(this->text_width, !rtl);
+		Rect rank_rect = ir.WithWidth(this->rank_width, rtl);
+		Rect icon_rect = ir.Indent(this->rank_width + WidgetDimensions::scaled.hsep_wide, rtl).WithWidth(this->icon.width, rtl);
+		Rect text_rect = ir.Indent(this->rank_width + this->icon.width + WidgetDimensions::scaled.hsep_wide * 2, rtl);
 
 		for (uint i = 0; i != this->companies.size(); i++) {
 			const Company *c = this->companies[i];
-			DrawString(ordinal.left, ordinal.right, ir.top + text_y_offset, GetString(STR_COMPANY_LEAGUE_COMPANY_RANK, i + 1));
+			DrawString(rank_rect.left, rank_rect.right, ir.top + text_y_offset, GetString(STR_COMPANY_LEAGUE_COMPANY_RANK, i + 1));
 
-			DrawCompanyIcon(c->index, icon_left, ir.top + icon_y_offset);
+			DrawCompanyIcon(c->index, icon_rect.left, ir.top + icon_y_offset);
 
-			DrawString(text.left, text.right, ir.top + text_y_offset, GetString(STR_COMPANY_LEAGUE_COMPANY_NAME, c->index, c->index, GetPerformanceTitleFromValue(c->old_economy[0].performance_history)));
+			DrawString(text_rect.left, text_rect.right, ir.top + text_y_offset, GetString(STR_COMPANY_LEAGUE_COMPANY_NAME, c->index, c->index, GetPerformanceTitleFromValue(c->old_economy[0].performance_history)));
 			ir.top += this->line_height;
 		}
 	}
@@ -130,11 +132,10 @@ public:
 	{
 		if (widget != WID_PLT_BACKGROUND) return;
 
-		this->ordinal_width = 0;
+		this->rank_width = 0;
 		for (uint i = 0; i < MAX_COMPANIES; i++) {
-			this->ordinal_width = std::max(this->ordinal_width, GetStringBoundingBox(GetString(STR_COMPANY_LEAGUE_COMPANY_RANK, i + 1)).width);
+			this->rank_width = std::max(this->rank_width, GetStringBoundingBox(GetString(STR_COMPANY_LEAGUE_COMPANY_RANK, i + 1)).width);
 		}
-		this->ordinal_width += WidgetDimensions::scaled.hsep_wide; // Keep some extra spacing
 
 		uint widest_width = 0;
 		StringID widest_title = STR_NULL;
@@ -147,7 +148,7 @@ public:
 		}
 
 		this->icon = GetSpriteSize(SPR_COMPANY_ICON);
-		this->line_height = std::max<int>(this->icon.height + WidgetDimensions::scaled.vsep_normal, GetCharacterHeight(FS_NORMAL));
+		this->line_height = std::max<int>(this->icon.height + WidgetDimensions::scaled.vsep_normal, GetCharacterHeight(FontSize::Normal));
 
 		for (const Company *c : Company::Iterate()) {
 			widest_width = std::max(widest_width, GetStringBoundingBox(GetString(STR_COMPANY_LEAGUE_COMPANY_NAME, c->index, c->index, widest_title)).width);
@@ -155,8 +156,8 @@ public:
 
 		this->text_width = widest_width + WidgetDimensions::scaled.hsep_indent * 3; // Keep some extra spacing
 
-		size.width = WidgetDimensions::scaled.framerect.Horizontal() + this->ordinal_width + this->icon.width + this->text_width + WidgetDimensions::scaled.hsep_wide;
-		size.height = this->line_height * MAX_COMPANIES + WidgetDimensions::scaled.framerect.Vertical();
+		size.width = WidgetDimensions::scaled.framerect.Horizontal() + this->rank_width + WidgetDimensions::scaled.hsep_wide + this->icon.width + WidgetDimensions::scaled.hsep_wide + this->text_width;
+		size.height = this->line_height * std::max<uint>(3, static_cast<uint>(this->companies.size())) + WidgetDimensions::scaled.framerect.Vertical();
 	}
 
 	void OnGameTick() override
@@ -176,26 +177,39 @@ public:
 		if (data == 0) {
 			/* This needs to be done in command-scope to enforce rebuilding before resorting invalid data */
 			this->companies.ForceRebuild();
+			if (gui_scope) { this->BuildCompanyList(); this->ReInit(); }
 		} else {
 			this->companies.ForceResort();
 		}
 	}
 };
 
-static constexpr NWidgetPart _nested_performance_league_widgets[] = {
+static std::unique_ptr<NWidgetBase> MakePerformanceLeaguePanel()
+{
+	auto panel = std::make_unique<NWidgetBackground>(WWT_PANEL, Colours::Brown, WID_PLT_BACKGROUND);
+	panel->SetMinimalSize(400, 0);
+	return MakeScrollableCompanyPanel(std::move(panel), WID_PLT_SCROLLBAR, Colours::Brown, 240);
+}
+
+static constexpr std::initializer_list<NWidgetPart> _nested_performance_league_widgets = {
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
-		NWidget(WWT_CAPTION, COLOUR_BROWN), SetStringTip(STR_COMPANY_LEAGUE_TABLE_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
-		NWidget(WWT_SHADEBOX, COLOUR_BROWN),
-		NWidget(WWT_STICKYBOX, COLOUR_BROWN),
+		NWidget(WWT_CLOSEBOX, Colours::Brown),
+		NWidget(WWT_CAPTION, Colours::Brown), SetStringTip(STR_COMPANY_LEAGUE_TABLE_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+		NWidget(WWT_SHADEBOX, Colours::Brown),
+		NWidget(WWT_STICKYBOX, Colours::Brown),
 	EndContainer(),
-	NWidget(WWT_PANEL, COLOUR_BROWN, WID_PLT_BACKGROUND), SetMinimalSize(400, 0), SetMinimalTextLines(15, WidgetDimensions::unscaled.framerect.Vertical()),
+	NWidgetFunction(MakePerformanceLeaguePanel),
+	NWidget(WWT_PANEL, Colours::Brown), SetFill(1, 0),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(NWID_SPACER), SetFill(1, 0),
+			NWidget(WWT_RESIZEBOX, Colours::Brown),
+		EndContainer(),
 	EndContainer(),
 };
 
 static WindowDesc _performance_league_desc(__FILE__, __LINE__,
-	WDP_AUTO, "performance_league", 0, 0,
-	WC_COMPANY_LEAGUE, WC_NONE,
+	WindowPosition::Automatic, "performance_league", 0, 0,
+	WindowClass::CompanyLeague, WindowClass::None,
 	{},
 	_nested_performance_league_widgets
 );
@@ -209,28 +223,29 @@ static void HandleLinkClick(Link link)
 {
 	TileIndex xy;
 	switch (link.type) {
-		case LT_NONE: return;
+		case LinkType::None:
+			return;
 
-		case LT_TILE:
+		case LinkType::Tile:
 			if (!IsValidTile(TileIndex(link.target))) return;
 			xy = TileIndex{link.target};
 			break;
 
-		case LT_INDUSTRY:
+		case LinkType::Industry:
 			if (!Industry::IsValidID(link.target)) return;
 			xy = Industry::Get(link.target)->location.tile;
 			break;
 
-		case LT_TOWN:
+		case LinkType::Town:
 			if (!Town::IsValidID(link.target)) return;
 			xy = Town::Get(link.target)->xy;
 			break;
 
-		case LT_COMPANY:
+		case LinkType::Company:
 			ShowCompany((CompanyID)link.target);
 			return;
 
-		case LT_STORY_PAGE: {
+		case LinkType::StoryPage: {
 			if (!StoryPage::IsValidID(link.target)) return;
 			CompanyID story_company = StoryPage::Get(link.target)->company;
 			ShowStoryBook(story_company, static_cast<StoryPageID>(link.target));
@@ -320,11 +335,11 @@ public:
 		Rect ir = r.Shrink(WidgetDimensions::scaled.framerect);
 
 		if (!lt->header.empty()) {
-			ir.top = DrawStringMultiLine(ir, lt->header.GetDecodedString(), TC_BLACK) + WidgetDimensions::scaled.vsep_wide;
+			ir.top = DrawStringMultiLine(ir, lt->header.GetDecodedString(), TextColour::Black) + WidgetDimensions::scaled.vsep_wide;
 		}
 
 		int icon_y_offset = (this->line_height - this->icon_size.height) / 2;
-		int text_y_offset = (this->line_height - GetCharacterHeight(FS_NORMAL)) / 2;
+		int text_y_offset = (this->line_height - GetCharacterHeight(FontSize::Normal)) / 2;
 
 		/* Calculate positions.of the columns */
 		bool rtl = _current_text_dir == TD_RTL;
@@ -337,14 +352,14 @@ public:
 		for (const auto &[rank, lte] : this->rows) {
 			DrawString(rank_rect.left, rank_rect.right, ir.top + text_y_offset, GetString(STR_COMPANY_LEAGUE_COMPANY_RANK, rank + 1));
 			if (this->icon_size.width > 0 && lte->company != CompanyID::Invalid()) DrawCompanyIcon(lte->company, icon_rect.left, ir.top + icon_y_offset);
-			DrawString(text_rect.left, text_rect.right, ir.top + text_y_offset, lte->text.GetDecodedString(), TC_BLACK);
-			DrawString(score_rect.left, score_rect.right, ir.top + text_y_offset, lte->score.GetDecodedString(), TC_BLACK, SA_RIGHT | SA_FORCE);
+			DrawString(text_rect.left, text_rect.right, ir.top + text_y_offset, lte->text.GetDecodedString(), TextColour::Black);
+			DrawString(score_rect.left, score_rect.right, ir.top + text_y_offset, lte->score.GetDecodedString(), TextColour::Black, AlignmentH::ForceRight);
 			ir.top += this->line_height;
 		}
 
 		if (!lt->footer.empty()) {
 			ir.top += WidgetDimensions::scaled.vsep_wide;
-			ir.top = DrawStringMultiLine(ir, lt->footer.GetDecodedString(), TC_BLACK);
+			ir.top = DrawStringMultiLine(ir, lt->footer.GetDecodedString(), TextColour::Black);
 		}
 	}
 
@@ -356,7 +371,7 @@ public:
 		if (lt == nullptr) return;
 
 		this->icon_size = GetSpriteSize(SPR_COMPANY_ICON);
-		this->line_height = std::max<int>(this->icon_size.height + WidgetDimensions::scaled.fullbevel.Vertical(), GetCharacterHeight(FS_NORMAL));
+		this->line_height = std::max<int>(this->icon_size.height + WidgetDimensions::scaled.fullbevel.Vertical(), GetCharacterHeight(FontSize::Normal));
 
 		/* Calculate maximum width of every column */
 		this->rank_width = this->text_width = this->score_width = 0;
@@ -400,7 +415,9 @@ public:
 		if (widget != WID_SLT_BACKGROUND) return;
 
 		auto *wid = this->GetWidget<NWidgetResizeBase>(WID_SLT_BACKGROUND);
-		int index = (pt.y - WidgetDimensions::scaled.framerect.top - wid->pos_y - this->header_height) / this->line_height;
+		int row_y = pt.y - WidgetDimensions::scaled.framerect.top - wid->pos_y - this->header_height;
+		if (row_y < 0) return;
+		int index = row_y / this->line_height;
 		if (index >= 0 && static_cast<uint>(index) < this->rows.size()) {
 			const LeagueTableElement *lte = this->rows[index].second;
 			HandleLinkClick(lte->link);
@@ -419,20 +436,32 @@ public:
 	}
 };
 
-static constexpr NWidgetPart _nested_script_league_widgets[] = {
+static std::unique_ptr<NWidgetBase> MakeScriptLeaguePanel()
+{
+	auto panel = std::make_unique<NWidgetBackground>(WWT_PANEL, Colours::Brown, WID_SLT_BACKGROUND);
+	panel->SetMinimalSize(400, 0);
+	return MakeScrollableCompanyPanel(std::move(panel), WID_SLT_SCROLLBAR, Colours::Brown, 240);
+}
+
+static constexpr std::initializer_list<NWidgetPart> _nested_script_league_widgets = {
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
-		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_SLT_CAPTION),
-		NWidget(WWT_SHADEBOX, COLOUR_BROWN),
-		NWidget(WWT_STICKYBOX, COLOUR_BROWN),
+		NWidget(WWT_CLOSEBOX, Colours::Brown),
+		NWidget(WWT_CAPTION, Colours::Brown, WID_SLT_CAPTION),
+		NWidget(WWT_SHADEBOX, Colours::Brown),
+		NWidget(WWT_STICKYBOX, Colours::Brown),
 	EndContainer(),
-	NWidget(WWT_PANEL, COLOUR_BROWN, WID_SLT_BACKGROUND), SetMinimalSize(400, 0), SetMinimalTextLines(15, WidgetDimensions::unscaled.framerect.Vertical()),
+	NWidgetFunction(MakeScriptLeaguePanel),
+	NWidget(WWT_PANEL, Colours::Brown), SetFill(1, 0),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(NWID_SPACER), SetFill(1, 0),
+			NWidget(WWT_RESIZEBOX, Colours::Brown),
+		EndContainer(),
 	EndContainer(),
 };
 
 static WindowDesc _script_league_desc(__FILE__, __LINE__,
-	WDP_AUTO, "script_league", 0, 0,
-	WC_COMPANY_LEAGUE, WC_NONE,
+	WindowPosition::Automatic, "script_league", 0, 0,
+	WindowClass::CompanyLeague, WindowClass::None,
 	{},
 	_nested_script_league_widgets
 );

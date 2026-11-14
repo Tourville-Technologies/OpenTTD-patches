@@ -2,21 +2,23 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file newgrf_station.h Header file for NewGRF stations */
+/** @file newgrf_station.h Header file for NewGRF stations. */
 
 #ifndef NEWGRF_STATION_H
 #define NEWGRF_STATION_H
 
 #include "core/enum_type.hpp"
+#include "newgrf_station_id.h"
 #include "newgrf_animation_type.h"
 #include "newgrf_badge_type.h"
 #include "newgrf_callbacks.h"
 #include "newgrf_class.h"
 #include "newgrf_commons.h"
 #include "cargo_type.h"
+#include "station_map.h"
 #include "station_type.h"
 #include "rail_type.h"
 #include "newgrf_spritegroup.h"
@@ -65,7 +67,7 @@ struct StationScopeResolver : public ScopeResolver {
 	 * @param rt %RailType of the station (unbuilt stations only).
 	 */
 	StationScopeResolver(ResolverObject &ro, const StationSpec *statspec, BaseStation *st, TileIndex tile, RailType rt)
-		: ScopeResolver(ro), tile(tile), st(st), statspec(statspec), cargo_type(INVALID_CARGO), axis(INVALID_AXIS), rt(rt)
+		: ScopeResolver(ro), tile(tile), st(st), statspec(statspec), cargo_type(INVALID_CARGO), axis(Axis::Invalid), rt(rt)
 	{
 	}
 
@@ -92,13 +94,13 @@ struct StationResolverObject : public SpecializedResolverObject<StationRandomTri
 
 	TownScopeResolver *GetTown();
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF:
+			case VarSpriteGroupScope::Self:
 				return &this->station_scope;
 
-			case VSG_SCOPE_PARENT: {
+			case VarSpriteGroupScope::Parent: {
 				TownScopeResolver *tsr = this->GetTown();
 				if (tsr != nullptr) return tsr;
 				[[fallthrough]];
@@ -115,26 +117,20 @@ struct StationResolverObject : public SpecializedResolverObject<StationRandomTri
 	uint32_t GetDebugID() const override;
 };
 
-static const uint32_t STATION_CLASS_LABEL_DEFAULT = 'DFLT';
-static const uint32_t STATION_CLASS_LABEL_WAYPOINT = 'WAYP';
+static constexpr StationClassID STAT_CLASS_DFLT{0}; ///< Default station class.
+static constexpr StationClassID STAT_CLASS_WAYP{1}; ///< Waypoint class.
 
-enum StationClassID : uint16_t {
-	STAT_CLASS_BEGIN = 0,    ///< the lowest valid value
-	STAT_CLASS_DFLT = 0,     ///< Default station class.
-	STAT_CLASS_WAYP,         ///< Waypoint class.
-	STAT_CLASS_MAX = UINT16_MAX, ///< Maximum number of classes.
-};
-
-/** Allow incrementing of StationClassID variables */
-DECLARE_INCREMENT_DECREMENT_OPERATORS(StationClassID)
-
+/** Flags describing behaviour of NewGRF stations. */
 enum class StationSpecFlag : uint8_t {
 	SeparateGround = 0, ///< Use different sprite set for ground sprites.
-	DivByStationSize = 1, ///< Divide cargo amount by station size.
+	DivByStationSize = 1, ///< Divide cargo amount by station size (perimeter).
 	Cb141RandomBits = 2, ///< Callback 141 needs random bits.
 	CustomFoundations = 3, ///< Draw custom foundations.
 	ExtendedFoundations = 4, ///< Extended foundation block instead of simple.
+	DivByStationArea = 5, ///< Divide cargo amount by station area.
 };
+
+/** Bitset of \c StationSpecFlag elements. */
 using StationSpecFlags = EnumBitSet<StationSpecFlag, uint8_t>;
 
 enum class StationSpecIntlFlag : uint8_t {
@@ -193,12 +189,16 @@ struct StationSpec : NewGRFSpecBase<StationClassID> {
 	};
 	std::vector<BridgeAboveFlags> bridge_above_flags; ///< List of bridge above flags.
 
+	/** Flags describing the behaviour for individual tiles of a station. */
 	enum class TileFlag : uint8_t {
 		Pylons = 0, ///< Tile should contain catenary pylons.
 		NoWires = 1, ///< Tile should NOT contain catenary wires.
 		Blocked = 2, ///< Tile is blocked to vehicles.
 	};
+
+	/** Bitset of \c TileFlag elements. */
 	using TileFlags = EnumBitSet<TileFlag, uint8_t>;
+
 	std::vector<TileFlags> tileflags; ///< List of tile flags.
 
 	AnimationInfo<StationAnimationTriggers> animation;
@@ -218,7 +218,10 @@ struct StationSpec : NewGRFSpecBase<StationClassID> {
 };
 
 /** Class containing information relating to station classes. */
-using StationClass = NewGRFClass<StationSpec, StationClassID, STAT_CLASS_MAX>;
+using StationClass = NewGRFClass<StationSpec, StationClassID>;
+
+static const StationClass::GlobalID STATION_CLASS_LABEL_DEFAULT{"DFLT"}; ///< Class label for default rail station.
+static const StationClass::GlobalID STATION_CLASS_LABEL_WAYPOINT{"WAYP"}; ///< Class label for default rail waypoints.
 
 const StationSpec *GetStationSpec(TileIndex t);
 
@@ -240,11 +243,11 @@ inline uint16_t GetStationLayoutKey(uint8_t platforms, uint8_t length)
  */
 inline bool IsWaypointClass(const StationClass &cls)
 {
-	return cls.global_id == STATION_CLASS_LABEL_WAYPOINT || GB(cls.global_id, 24, 8) == UINT8_MAX;
+	return cls.global_id == STATION_CLASS_LABEL_WAYPOINT || cls.global_id[0] == UINT8_MAX;
 }
 
 /* Evaluate a tile's position within a station, and return the result a bitstuffed format. */
-uint32_t GetPlatformInfo(Axis axis, uint8_t tile, int platforms, int length, int x, int y, bool centred);
+uint32_t GetPlatformInfo(StationGfx gfx, int platforms, int length, int platform, int position, bool centred);
 
 SpriteID GetCustomStationRelocation(const StationSpec *statspec, BaseStation *st, TileIndex tile, RailType rt, uint32_t var10 = 0);
 SpriteID GetCustomStationFoundationRelocation(const StationSpec *statspec, BaseStation *st, TileIndex tile, uint layout, uint edge_info);

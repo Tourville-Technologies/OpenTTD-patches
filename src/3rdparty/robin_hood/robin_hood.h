@@ -831,19 +831,35 @@ struct hash<T, typename std::enable_if<enable_hash_as_base<T>>::type> {
 
 /* Inline hash method support */
 
-struct hash_method_tag{};
+struct hash_helper {
+    size_t hash_bytes(void const* ptr, size_t len) noexcept
+    {
+        return robin_hood::hash_bytes(ptr, len);
+    }
+
+    size_t hash_int(uint64_t x) noexcept
+    {
+         return robin_hood::hash_int(x);
+    }
+
+    template <typename T>
+    size_t hash_type(const T &obj) noexcept
+    {
+         return robin_hood::hash<T>()(obj);
+    }
+};
 
 template <typename T>
 concept HasHashMethod = requires(const T &obj)
 {
-    { obj.hash(hash_method_tag{}) } -> std::same_as<size_t>;
+    { obj.hash(hash_helper{}) } -> std::same_as<size_t>;
 };
 
 template <typename T> requires HasHashMethod<T>
 struct hash<T> {
-    size_t operator()(const T &obj) const noexcept(noexcept(std::declval<T>().hash(hash_method_tag{})))
+    size_t operator()(const T &obj) const noexcept(noexcept(std::declval<T>().hash(hash_helper{})))
     {
-        return obj.hash(hash_method_tag{});
+        return obj.hash(hash_helper{});
     }
 };
 
@@ -1379,7 +1395,7 @@ private:
     // Lower bits are used for indexing into the array (2^n size)
     // The upper 1-5 bits need to be a reasonable good hash, to save comparisons.
     template <typename HashKey>
-    void keyToIdx(HashKey&& key, size_t* idx, InfoType* info) const {
+    void keyToIdx(const HashKey& key, size_t* idx, InfoType* info) const {
         // In addition to whatever hash is used, add another mul & shift so we get better hashing.
         // This serves as a bad hash prevention, if the given data is
         // badly mixed.
@@ -2406,7 +2422,7 @@ private:
     // This potentially shifts nodes out of the way, updates mInfo and number of inserted
     // elements, so the only operation left to do is create/assign a new node at that spot.
     template <typename OtherKey>
-    std::pair<size_t, InsertionState> insertKeyPrepareEmptySpot(OtherKey&& key) {
+    std::pair<size_t, InsertionState> insertKeyPrepareEmptySpot(const OtherKey& key) {
         for (int i = 0; i < 256; ++i) {
             size_t idx{};
             InfoType info{};

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file settings_widget.h Types related to the settings widgets. */
@@ -43,14 +43,14 @@ enum GameOptionsWidgets : WidgetID {
 	WID_GO_BASE_GRF_CONTENT_DOWNLOAD, ///< 'Get Content' button for base GRF.
 	WID_GO_BASE_GRF_OPEN_URL,      ///< Open base GRF URL.
 	WID_GO_BASE_GRF_TEXTFILE,      ///< Open base GRF readme, changelog (+1) or license (+2).
-	WID_GO_BASE_GRF_DESCRIPTION = WID_GO_BASE_GRF_TEXTFILE + TFT_CONTENT_END,     ///< Description of selected base GRF.
+	WID_GO_BASE_GRF_DESCRIPTION = WID_GO_BASE_GRF_TEXTFILE + to_underlying(TextfileType::ContentEnd), ///< Description of selected base GRF.
 	WID_GO_BASE_SFX_DROPDOWN,      ///< Use to select a base SFX.
 	WID_GO_BASE_SFX_CONTENT_DOWNLOAD, ///< 'Get Content' button for base SFX.
 	WID_GO_TEXT_SFX_VOLUME,        ///< Sound effects volume label.
 	WID_GO_BASE_SFX_VOLUME,        ///< Change sound effects volume.
 	WID_GO_BASE_SFX_OPEN_URL,      ///< Open base SFX URL.
 	WID_GO_BASE_SFX_TEXTFILE,      ///< Open base SFX readme, changelog (+1) or license (+2).
-	WID_GO_BASE_SFX_DESCRIPTION = WID_GO_BASE_SFX_TEXTFILE + TFT_CONTENT_END,     ///< Description of selected base SFX.
+	WID_GO_BASE_SFX_DESCRIPTION = WID_GO_BASE_SFX_TEXTFILE + to_underlying(TextfileType::ContentEnd), ///< Description of selected base SFX.
 	WID_GO_BASE_MUSIC_DROPDOWN,    ///< Use to select a base music set.
 	WID_GO_BASE_MUSIC_CONTENT_DOWNLOAD, ///< 'Get Content' button for base music.
 	WID_GO_TEXT_MUSIC_VOLUME,      ///< Music volume label.
@@ -58,7 +58,7 @@ enum GameOptionsWidgets : WidgetID {
 	WID_GO_BASE_MUSIC_JUKEBOX,     ///< Open the jukebox.
 	WID_GO_BASE_MUSIC_OPEN_URL,    ///< Open base music URL.
 	WID_GO_BASE_MUSIC_TEXTFILE,    ///< Open base music readme, changelog (+1) or license (+2).
-	WID_GO_BASE_MUSIC_DESCRIPTION = WID_GO_BASE_MUSIC_TEXTFILE + TFT_CONTENT_END, ///< Description of selected base music set.
+	WID_GO_BASE_MUSIC_DESCRIPTION = WID_GO_BASE_MUSIC_TEXTFILE + to_underlying(TextfileType::ContentEnd), ///< Description of selected base music set.
 	WID_GO_VIDEO_ACCEL_BUTTON,     ///< Toggle for video acceleration.
 	WID_GO_VIDEO_ACCEL_TEXT,       ///< Text for video acceleration toggle.
 	WID_GO_VIDEO_VSYNC_BUTTON,     ///< Toggle for video vsync.
@@ -89,7 +89,7 @@ enum GameOptionsWidgets : WidgetID {
 	WID_GO_RESTRICT_DROPDOWN,  ///< The drop down box to restrict the list of settings
 	WID_GO_TYPE_DROPDOWN,      ///< The drop down box to choose client/game/company/all settings
 
-	WID_GO_SETTING_DROPDOWN = -1, ///< Dynamically created dropdown for changing setting value.
+	WID_GO_SETTING_DROPDOWN = INVALID_WIDGET, ///< Dynamically created dropdown for changing setting value.
 };
 
 /** Widgets of the #CustomCurrencyWindow class. */

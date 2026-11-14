@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file crashlog_win.cpp Implementation of a crashlogger for Windows */
+/** @file crashlog_win.cpp Implementation of a crashlogger for Windows. */
 
 #include "../../stdafx.h"
 #include "../../crashlog.h"
@@ -19,7 +19,7 @@
 #include "../../strings_func.h"
 #include "../../gamelog.h"
 #include "../../sl/saveload.h"
-#include "../../video/video_driver.hpp"
+#include "../../video/video_driver_base.hpp"
 #include "../../library_loader.h"
 #include "../../screenshot.h"
 #include "../../debug.h"
@@ -801,7 +801,7 @@ static LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 #endif
 	}
 
-	if ((VideoDriver::GetInstance() == nullptr || VideoDriver::GetInstance()->HasGUI()) && crash_win_esp != nullptr) {
+	if ((VideoDriverBase::GetInstance() == nullptr || VideoDriverBase::GetInstance()->HasGUI()) && crash_win_esp != nullptr) {
 #ifdef _M_AMD64
 		ep->ContextRecord->Rip = (DWORD64)ShowCrashlogWindow;
 		ep->ContextRecord->Rsp = (DWORD64)crash_win_esp;

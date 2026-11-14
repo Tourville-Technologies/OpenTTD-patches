@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file rail.h Rail specific functions. */
@@ -10,18 +10,17 @@
 #ifndef RAIL_H
 #define RAIL_H
 
+#include "engine_type.h"
 #include "rail_type.h"
 #include "track_type.h"
-#include "gfx_type.h"
-#include "core/bitmath_func.hpp"
+#include "sprite_id_type.h"
 #include "core/enum_type.hpp"
-#include "economy_func.h"
+#include "core/flatset_type.hpp"
 #include "slope_type.h"
-#include "strings_type.h"
+#include "strings_id_type.h"
 #include "date_type.h"
 #include "signal_type.h"
 #include "rail_map.h"
-#include "settings_type.h"
 #include "newgrf_badge_type.h"
 #include "debug_dbg_assert.h"
 #include <vector>
@@ -35,6 +34,8 @@ enum class RailTypeFlag : uint8_t {
 	Allow90Deg      = 4, ///< Bit number for always allowed 90 degree turns, regardless of setting.
 	Disallow90Deg   = 5, ///< Bit number for never allowed 90 degree turns, regardless of setting.
 };
+
+/** Bitset of \c RailTypeFlag elements. */
 using RailTypeFlags = EnumBitSet<RailTypeFlag, uint8_t>;
 
 /** Railtype control flags. */
@@ -49,22 +50,22 @@ using RailTypeCtrlFlags = EnumBitSet<RailTypeCtrlFlag, uint8_t>;
 
 struct SpriteGroup;
 
-/** Sprite groups for a railtype. */
-enum RailTypeSpriteGroup : uint8_t {
-	RTSG_CURSORS,     ///< Cursor and toolbar icon images
-	RTSG_OVERLAY,     ///< Images for overlaying track
-	RTSG_GROUND,      ///< Main group of ground images
-	RTSG_TUNNEL,      ///< Main group of ground images for snow or desert
-	RTSG_WIRES,       ///< Catenary wires
-	RTSG_PYLONS,      ///< Catenary pylons
-	RTSG_BRIDGE,      ///< Bridge surface images
-	RTSG_CROSSING,    ///< Level crossing overlay images
-	RTSG_DEPOT,       ///< Depot images
-	RTSG_FENCES,      ///< Fence images
-	RTSG_TUNNEL_PORTAL, ///< Tunnel portal overlay
-	RTSG_SIGNALS,     ///< Signal images
-	RTSG_GROUND_COMPLETE, ///< Complete ground images
-	RTSG_END,
+/** Sprite types for a railtype. */
+enum class RailSpriteType : uint8_t {
+	UI, ///< Cursor and toolbar icon images
+	Overlay, ///< Images for overlaying track
+	Ground, ///< Main group of ground images
+	Tunnel, ///< Main group of ground images for snow or desert
+	Wires, ///< Catenary wires
+	Pylons, ///< Catenary pylons
+	Bridge, ///< Bridge surface images
+	Crossing, ///< Level crossing overlay images
+	Depot, ///< Depot images
+	Fences, ///< Fence images
+	TunnelPortal, ///< Tunnel portal overlay
+	Signals, ///< Signal images
+	GroundComplete, ///< Complete ground images
+	End, ///< End marker.
 };
 
 /**
@@ -122,9 +123,6 @@ enum RailFenceOffset : uint8_t {
 	RFO_SLOPE_NW_SW,   //!< Slope NW,   Track Y,     Fence SW
 };
 
-/** List of rail type labels. */
-typedef std::vector<RailTypeLabel> RailTypeLabelList;
-
 /**
  * This struct contains all the info that is needed to draw and construct tracks.
  */
@@ -150,6 +148,8 @@ public:
 		SpriteID bridge_deck;  ///< bridge deck sprites base
 	} base_sprites;
 
+	using SignalSprites = EnumIndexArray<EnumIndexArray<EnumIndexArray<PalSpriteID, SignalState, SignalState::End>, SignalVariant, SignalVariant::End>, SignalType, SignalType::End>;
+
 	/**
 	 * struct containing the sprites for the rail GUI. @note only sprites referred to
 	 * directly in the code are listed
@@ -163,7 +163,7 @@ public:
 		SpriteID build_depot;        ///< button for building depots
 		SpriteID build_tunnel;       ///< button for building a tunnel
 		SpriteID convert_rail;       ///< button for converting rail
-		PalSpriteID signals[SIGTYPE_END][2][2]; ///< signal GUI sprites (type, variant, state)
+		SignalSprites signals;       ///< signal GUI sprites (type, variant, state)
 	} gui_sprites;
 
 	struct {
@@ -256,7 +256,7 @@ public:
 	/**
 	 * Rail type labels this type provides in addition to the main label.
 	 */
-	RailTypeLabelList alternate_labels;
+	FlatSet<RailTypeLabel> alternate_labels;
 
 	/**
 	 * Colour on mini-map
@@ -291,18 +291,18 @@ public:
 	/**
 	 * NewGRF providing the Action3 for the railtype. nullptr if not available.
 	 */
-	const GRFFile *grffile[RTSG_END];
+	EnumIndexArray<const GRFFile *, RailSpriteType, RailSpriteType::End> grffile{};
 
 	/**
 	 * Sprite groups for resolving sprites
 	 */
-	const SpriteGroup *group[RTSG_END];
+	EnumIndexArray<const SpriteGroup *, RailSpriteType, RailSpriteType::End> group{};
 
 	std::vector<BadgeID> badges;
 
 	inline bool UsesOverlay() const
 	{
-		return this->group[RTSG_GROUND] != nullptr;
+		return this->group[RailSpriteType::Ground] != nullptr;
 	}
 
 	/**
@@ -311,10 +311,23 @@ public:
 	 *    is determined by normal rail. Check sprites 1005 and following for this order<p>
 	 * 2) The position where the railtype is loaded must always be the same, otherwise
 	 *    the offset will fail.
+	 * @return The offset.
 	 */
 	inline uint GetRailtypeSpriteOffset() const
 	{
 		return 82 * this->fallback_railtype;
+	}
+
+	/**
+	 * Get the RailType for this RailTypeInfo.
+	 * @return RailType in static RailTypeInfo definitions.
+	 */
+	RailType Index() const
+	{
+		extern RailTypeInfo _railtypes[RAILTYPE_END];
+		size_t index = this - _railtypes;
+		dbg_assert_msg(index < RAILTYPE_END, "{}", index);
+		return static_cast<RailType>(index);
 	}
 };
 
@@ -329,19 +342,6 @@ inline const RailTypeInfo *GetRailTypeInfo(RailType railtype)
 	extern RailTypeInfo _railtypes[RAILTYPE_END];
 	dbg_assert_msg(railtype < RAILTYPE_END, "{}", railtype);
 	return &_railtypes[railtype];
-}
-
-/**
- * Returns the railtype for a Railtype information.
- * @param rti Pointer to static RailTypeInfo
- * @return Railtype in static railtype definitions
- */
-inline RailType GetRailTypeInfoIndex(const RailTypeInfo *rti)
-{
-	extern RailTypeInfo _railtypes[RAILTYPE_END];
-	size_t index = rti - _railtypes;
-	dbg_assert(index < RAILTYPE_END && rti == _railtypes + index);
-	return static_cast<RailType>(index);
 }
 
 /**
@@ -459,7 +459,7 @@ inline bool RailNoLevelCrossings(RailType rt)
  * @param def Default value to use if the rail type doesn't specify anything.
  * @return True if 90 degree turns are disallowed between the two rail types.
  */
-inline bool Rail90DegTurnDisallowed(RailType rt1, RailType rt2, bool def = _settings_game.pf.forbid_90_deg)
+inline bool Rail90DegTurnDisallowed(RailType rt1, RailType rt2, bool def /* = _settings_game.pf.forbid_90_deg */)
 {
 	if (rt1 == INVALID_RAILTYPE || rt2 == INVALID_RAILTYPE) return def;
 
@@ -472,17 +472,17 @@ inline bool Rail90DegTurnDisallowed(RailType rt1, RailType rt2, bool def = _sett
 	return rt1_90deg || rt2_90deg;
 }
 
-inline bool Rail90DegTurnDisallowedTilesFromDiagDir(TileIndex t1, TileIndex t2, DiagDirection t1_towards_t2, bool def = _settings_game.pf.forbid_90_deg)
+inline bool Rail90DegTurnDisallowedTilesFromDiagDir(TileIndex t1, TileIndex t2, DiagDirection t1_towards_t2, bool def /* = _settings_game.pf.forbid_90_deg */)
 {
 	return Rail90DegTurnDisallowed(GetTileRailTypeByEntryDir(t1, ReverseDiagDir(t1_towards_t2)), GetTileRailTypeByEntryDir(t2, t1_towards_t2), def);
 }
 
-inline bool Rail90DegTurnDisallowedAdjacentTiles(TileIndex t1, TileIndex t2, bool def = _settings_game.pf.forbid_90_deg)
+inline bool Rail90DegTurnDisallowedAdjacentTiles(TileIndex t1, TileIndex t2, bool def /* = _settings_game.pf.forbid_90_deg */)
 {
 	return Rail90DegTurnDisallowedTilesFromDiagDir(t1, t2, DiagdirBetweenTiles(t1, t2), def);
 }
 
-inline bool Rail90DegTurnDisallowedTilesFromTrackdir(TileIndex t1, TileIndex t2, Trackdir t1_td, bool def = _settings_game.pf.forbid_90_deg)
+inline bool Rail90DegTurnDisallowedTilesFromTrackdir(TileIndex t1, TileIndex t2, Trackdir t1_td, bool def /* = _settings_game.pf.forbid_90_deg */)
 {
 	return Rail90DegTurnDisallowedTilesFromDiagDir(t1, t2, TrackdirToExitdir(t1_td), def);
 }
@@ -495,7 +495,7 @@ inline bool Rail90DegTurnDisallowedTilesFromTrackdir(TileIndex t1, TileIndex t2,
 inline Money RailBuildCost(RailType railtype)
 {
 	dbg_assert(railtype < RAILTYPE_END);
-	return (_price[PR_BUILD_RAIL] * GetRailTypeInfo(railtype)->cost_multiplier) >> 3;
+	return (_price[Price::BuildRail] * GetRailTypeInfo(railtype)->cost_multiplier) >> 3;
 }
 
 /**
@@ -511,7 +511,7 @@ inline Money RailClearCost(RailType railtype)
 	 * cost.
 	 */
 	dbg_assert(railtype < RAILTYPE_END);
-	return std::max(_price[PR_CLEAR_RAIL], -RailBuildCost(railtype) * 3 / 4);
+	return std::max(_price[Price::ClearRail], -RailBuildCost(railtype) * 3 / 4);
 }
 
 /**
@@ -540,34 +540,14 @@ inline Money RailConvertCost(RailType from, RailType to)
 	return rebuildcost;
 }
 
-/**
- * Calculates the maintenance cost of a number of track bits.
- * @param railtype The railtype to get the cost of.
- * @param num Number of track bits of this railtype.
- * @param total_num Total number of track bits of all railtypes.
- * @return Total cost.
- */
-inline Money RailMaintenanceCost(RailType railtype, uint32_t num, uint32_t total_num)
-{
-	dbg_assert(railtype < RAILTYPE_END);
-	return (_price[PR_INFRASTRUCTURE_RAIL] * GetRailTypeInfo(railtype)->maintenance_multiplier * num * (1 + IntSqrt(total_num))) >> 11; // 4 bits fraction for the multiplier and 7 bits scaling.
-}
-
-/**
- * Calculates the maintenance cost of a number of signals.
- * @param num Number of signals.
- * @return Total cost.
- */
-inline Money SignalMaintenanceCost(uint32_t num)
-{
-	return (_price[PR_INFRASTRUCTURE_RAIL] * 15 * num * (1 + IntSqrt(num))) >> 8; // 1 bit fraction for the multiplier and 7 bits scaling.
-}
+Money RailMaintenanceCost(RailType railtype, uint32_t num, uint32_t total_num);
+Money SignalMaintenanceCost(uint32_t num);
 
 void MarkSingleSignalDirty(TileIndex tile, Trackdir td);
 void MarkSingleSignalDirtyAtZ(TileIndex tile, Trackdir td, bool opposite_side, uint z);
 void GetSignalXYZByTrackdir(TileIndex tile, Trackdir td, bool opposite_side, uint &x, uint &y, uint &z);
 
-void DrawTrainDepotSprite(int x, int y, int image, RailType railtype);
+void DrawTrainDepotSprite(int x, int y, DiagDirection dir, RailType railtype);
 int TicksToLeaveDepot(const Train *v);
 
 Foundation GetRailFoundation(Slope tileh, TrackBits bits);

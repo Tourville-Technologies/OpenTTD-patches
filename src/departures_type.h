@@ -4,7 +4,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file departures_type.h Types related to departures. */
@@ -116,9 +116,12 @@ struct Departure {
 	DepartureShowAs show_as = DSA_NORMAL;  ///< Show as type
 	const Vehicle *vehicle = nullptr;      ///< The vehicle performing this departure
 	const Order *order = nullptr;          ///< The order corresponding to this departure
+	const Order *dispatch_order = nullptr; ///< The original dispatch order, if applicable
 	Ticks scheduled_waiting_time = INVALID_WAIT_TICKS; ///< Scheduled waiting time if scheduled dispatch is used
+	Ticks dispatch_offset = 0;             ///< Tick offset from original dispatch order, if applicable
 	uint32_t sequence_id = 0;              ///< Nominal sequence ID, used in determining vehicle_idx
 	uint32_t vehicle_idx = 0;              ///< Nominal vehicle index within a shared order group
+	std::string schedule_route_id;         ///< Scheduled dispatch route ID
 
 	inline bool operator==(const Departure& d) const {
 		if (this->calling_at.size() != d.calling_at.size()) return false;
@@ -199,6 +202,7 @@ private:
 			SmartTerminusEnabled,
 			DispatchArrivalTicksEnabled,
 			VehicleCycleTrackingEnabled,
+			DispatchScheduleRouteIDEnabled,
 		};
 	};
 
@@ -212,6 +216,7 @@ public:
 	inline bool SmartTerminusEnabled() const { return HasBit(this->flags, FlagBits::SmartTerminusEnabled); }
 	inline bool DispatchArrivalTicksEnabled() const { return HasBit(this->flags, FlagBits::DispatchArrivalTicksEnabled); }
 	inline bool VehicleCycleTrackingEnabled() const { return HasBit(this->flags, FlagBits::VehicleCycleTrackingEnabled); }
+	inline bool DispatchScheduleRouteIDEnabled() const { return HasBit(this->flags, FlagBits::DispatchScheduleRouteIDEnabled); }
 
 	inline void SetViaMode(bool allow_via, bool check_show_as_via_type)
 	{
@@ -242,6 +247,10 @@ public:
 	inline void SetVehicleCycleTrackingEnabled(bool enabled)
 	{
 		AssignBit(this->flags, FlagBits::VehicleCycleTrackingEnabled, enabled);
+	}
+	inline void SetDispatchScheduleRouteIDEnabled(bool enabled)
+	{
+		AssignBit(this->flags, FlagBits::DispatchScheduleRouteIDEnabled, enabled);
 	}
 
 	bool IsDeparture(const Order *order, const DepartureOrderDestinationDetector &source) const;

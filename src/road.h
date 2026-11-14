@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file road.h Road specific functions. */
@@ -11,9 +11,9 @@
 #define ROAD_H
 
 #include "road_type.h"
-#include "gfx_type.h"
-#include "core/bitmath_func.hpp"
-#include "strings_type.h"
+#include "sprite_id_type.h"
+#include "core/flatset_type.hpp"
+#include "strings_id_type.h"
 #include "date_type.h"
 #include "core/enum_type.hpp"
 #include "newgrf.h"
@@ -23,19 +23,6 @@
 #include <array>
 #include <vector>
 
-enum RoadTramType : bool {
-	RTT_ROAD,
-	RTT_TRAM,
-};
-
-enum RoadTramTypes : uint8_t {
-	RTTB_ROAD = 1 << RTT_ROAD,
-	RTTB_TRAM = 1 << RTT_TRAM,
-};
-DECLARE_ENUM_AS_BIT_SET(RoadTramTypes)
-
-static const RoadTramType _roadtramtypes[] = { RTT_ROAD, RTT_TRAM };
-
 /** Roadtype flag bit numbers. */
 enum class RoadTypeFlag : uint8_t {
 	Catenary        = 0, ///< Bit number for adding catenary
@@ -44,6 +31,8 @@ enum class RoadTypeFlag : uint8_t {
 	Hidden          = 3, ///< Bit number for hidden from construction.
 	TownBuild       = 4, ///< Bit number for allowing towns to build this roadtype.
 };
+
+/** Bitset of \c RoadTypeFlag elements. */
 using RoadTypeFlags = EnumBitSet<RoadTypeFlag, uint8_t>;
 
 /** Roadtype extra flags. */
@@ -65,25 +54,22 @@ enum RoadTypeCollisionMode : uint8_t {
 
 struct SpriteGroup;
 
-/** Sprite groups for a roadtype. */
-enum RoadTypeSpriteGroup : uint8_t {
-	ROTSG_CURSORS,        ///< Optional: Cursor and toolbar icon images
-	ROTSG_OVERLAY,        ///< Optional: Images for overlaying track
-	ROTSG_GROUND,         ///< Required: Main group of ground images
-	ROTSG_TUNNEL,         ///< Optional: Ground images for tunnels
-	ROTSG_CATENARY_FRONT, ///< Optional: Catenary front
-	ROTSG_CATENARY_BACK,  ///< Optional: Catenary back
-	ROTSG_BRIDGE,         ///< Required: Bridge surface images
-	ROTSG_reserved2,      ///<           Placeholder, if we need specific level crossing sprites.
-	ROTSG_DEPOT,          ///< Optional: Depot images
-	ROTSG_reserved3,      ///<           Placeholder, if we add road fences (for highways).
-	ROTSG_ROADSTOP,       ///< Required: Bay stop surface
-	ROTSG_ONEWAY,         ///< Optional: One-way indicator images
-	ROTSG_END,
+/** Sprite types for a roadtype. */
+enum class RoadSpriteType : uint8_t {
+	UI, ///< Optional: Cursor and toolbar icon images
+	Overlay, ///< Optional: Images for overlaying track
+	Ground, ///< Required: Main group of ground images
+	Tunnel, ///< Optional: Ground images for tunnels
+	CatenaryFront, ///< Optional: Catenary front
+	CatenaryRear, ///< Optional: Catenary back
+	Bridge, ///< Required: Bridge surface images
+	ReservedCrossing, ///< Placeholder, if we need specific level crossing sprites.
+	Depot, ///< Optional: Depot images
+	ReservedFence, ///< Placeholder, if we add road fences (for highways).
+	Roadstop, ///< Required: Bay stop surface
+	Oneway, ///< Optional: One-way indicator images
+	End, ///< End marker.
 };
-
-/** List of road type labels. */
-typedef std::vector<RoadTypeLabel> RoadTypeLabelList;
 
 class RoadTypeInfo {
 public:
@@ -120,12 +106,12 @@ public:
 		StringID err_build_road;        ///< Building a normal piece of road
 		StringID err_remove_road;       ///< Removing a normal piece of road
 		StringID err_depot;             ///< Building a depot
-		StringID err_build_station[2];  ///< Building a bus or truck station
-		StringID err_remove_station[2]; ///< Removing of a bus or truck station
+		EnumIndexArray<StringID, RoadStopType, RoadStopType::End> err_build_station; ///< Building a bus or truck station
+		EnumIndexArray<StringID, RoadStopType, RoadStopType::End> err_remove_station; ///< Removing of a bus or truck station
 		StringID err_convert_road;      ///< Converting a road type
 
-		StringID picker_title[2];       ///< Title for the station picker for bus or truck stations
-		StringID picker_tooltip[2];     ///< Tooltip for the station picker for bus or truck stations
+		EnumIndexArray<StringID, RoadStopType, RoadStopType::End> picker_title; ///< Title for the station picker for bus or truck stations
+		EnumIndexArray<StringID, RoadStopType, RoadStopType::End> picker_tooltip; ///< Tooltip for the station picker for bus or truck stations
 	} strings;                        ///< Strings associated with the rail type.
 
 	/** bitmask to the OTHER roadtypes on which a vehicle of THIS roadtype generates power */
@@ -169,7 +155,7 @@ public:
 	/**
 	 * Road type labels this type provides in addition to the main label.
 	 */
-	RoadTypeLabelList alternate_labels;
+	FlatSet<RoadTypeLabel> alternate_labels;
 
 	/**
 	 * Colour on mini-map
@@ -204,18 +190,30 @@ public:
 	/**
 	 * NewGRF providing the Action3 for the roadtype. nullptr if not available.
 	 */
-	const GRFFile *grffile[ROTSG_END];
+	EnumIndexArray<const GRFFile *, RoadSpriteType, RoadSpriteType::End> grffile{};
 
 	/**
 	 * Sprite groups for resolving sprites
 	 */
-	const SpriteGroup *group[ROTSG_END];
+	EnumIndexArray<const SpriteGroup *, RoadSpriteType, RoadSpriteType::End> group{};
 
 	std::vector<BadgeID> badges;
 
 	inline bool UsesOverlay() const
 	{
-		return this->group[ROTSG_GROUND] != nullptr;
+		return this->group[RoadSpriteType::Ground] != nullptr;
+	}
+
+	/**
+	 * Get the RoadType for this RoadTypeInfo.
+	 * @return RoadType in static RoadTypeInfo definitions.
+	 */
+	RoadType Index() const
+	{
+		extern RoadTypeInfo _roadtypes[ROADTYPE_END];
+		size_t index = this - _roadtypes;
+		dbg_assert_msg(index < ROADTYPE_END, "{}", index);
+		return static_cast<RoadType>(index);
 	}
 };
 
@@ -228,27 +226,27 @@ inline RoadTypes GetMaskForRoadTramType(RoadTramType rtt)
 {
 	extern RoadTypes _roadtypes_road;
 	extern RoadTypes _roadtypes_tram;
-	return rtt == RTT_ROAD ? _roadtypes_road : _roadtypes_tram;
+	return rtt == RoadTramType::Road ? _roadtypes_road : _roadtypes_tram;
 }
 
 inline bool RoadTypeIsRoad(RoadType roadtype)
 {
-	return GetMaskForRoadTramType(RTT_ROAD).Test(roadtype);
+	return GetMaskForRoadTramType(RoadTramType::Road).Test(roadtype);
 }
 
 inline bool RoadTypeIsTram(RoadType roadtype)
 {
-	return GetMaskForRoadTramType(RTT_TRAM).Test(roadtype);
+	return GetMaskForRoadTramType(RoadTramType::Tram).Test(roadtype);
 }
 
 inline RoadTramType GetRoadTramType(RoadType roadtype)
 {
-	return RoadTypeIsTram(roadtype) ? RTT_TRAM : RTT_ROAD;
+	return RoadTypeIsTram(roadtype) ? RoadTramType::Tram : RoadTramType::Road;
 }
 
 inline RoadTramType OtherRoadTramType(RoadTramType rtt)
 {
-	return rtt == RTT_ROAD ? RTT_TRAM : RTT_ROAD;
+	return rtt == RoadTramType::Road ? RoadTramType::Tram : RoadTramType::Road;
 }
 
 /**
@@ -261,19 +259,6 @@ inline const RoadTypeInfo *GetRoadTypeInfo(RoadType roadtype)
 	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
 	assert(roadtype < ROADTYPE_END);
 	return &_roadtypes[roadtype];
-}
-
-/**
- * Returns the railtype for a Railtype information.
- * @param rti Pointer to static RailTypeInfo
- * @return Railtype in static railtype definitions
- */
-inline RoadType GetRoadTypeInfoIndex(const RoadTypeInfo *rti)
-{
-	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
-	size_t index = rti - _roadtypes;
-	assert(index < ROADTYPE_END && rti == _roadtypes + index);
-	return static_cast<RoadType>(index);
 }
 
 /**
@@ -297,7 +282,7 @@ inline bool HasPowerOnRoad(RoadType enginetype, RoadType tiletype)
 inline Money RoadBuildCost(RoadType roadtype)
 {
 	assert(roadtype < ROADTYPE_END);
-	return (_price[PR_BUILD_ROAD] * GetRoadTypeInfo(roadtype)->cost_multiplier) >> 3;
+	return (_price[Price::BuildRoad] * GetRoadTypeInfo(roadtype)->cost_multiplier) >> 3;
 }
 
 /**
@@ -310,11 +295,11 @@ inline Money RoadClearCost(RoadType roadtype)
 	assert(roadtype < ROADTYPE_END);
 
 	/* Flat fee for removing road. */
-	if (RoadTypeIsRoad(roadtype)) return _price[PR_CLEAR_ROAD];
+	if (RoadTypeIsRoad(roadtype)) return _price[Price::ClearRoad];
 
 	/* Clearing tram earns a little money, but also incurs the standard clear road cost,
 	 * so no profit can be made. */
-	return _price[PR_CLEAR_ROAD] - RoadBuildCost(roadtype) * 3 / 4;
+	return _price[Price::ClearRoad] - RoadBuildCost(roadtype) * 3 / 4;
 }
 
 /**

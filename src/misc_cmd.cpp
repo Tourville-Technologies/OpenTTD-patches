@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file misc_cmd.cpp Some misc functions that are better fitted in other files, but never got moved there... */
@@ -25,7 +25,7 @@
 #include "cheat_type.h"
 #include "settings_cmd.h"
 #include "misc_cmd.h"
-#include "video/video_driver.hpp"
+#include "video/video_driver_base.hpp"
 
 #include "table/strings.h"
 
@@ -74,7 +74,7 @@ CommandCost CmdIncreaseLoan(DoCommandFlags flags, LoanCommand cmd, Money amount)
 		InvalidateCompanyWindows(c);
 	}
 
-	return CommandCost(EXPENSES_OTHER);
+	return CommandCost(ExpensesType::Other);
 }
 
 /**
@@ -90,7 +90,7 @@ CommandCost CmdDecreaseLoan(DoCommandFlags flags, LoanCommand cmd, Money amount)
 {
 	Company *c = Company::Get(_current_company);
 
-	if (c->current_loan == 0) return CommandCost(STR_ERROR_LOAN_ALREADY_REPAYED);
+	if (c->current_loan == 0) return CommandCost(STR_ERROR_LOAN_ALREADY_REPAID);
 
 	Money loan;
 	switch (cmd) {
@@ -122,6 +122,7 @@ CommandCost CmdDecreaseLoan(DoCommandFlags flags, LoanCommand cmd, Money amount)
 
 /**
  * Sets the max loan amount of your company. Does not respect the global loan setting.
+ * @param flags Flags whether to test or execute this command.
  * @param company the company ID.
  * @param amount the new max loan amount, will be rounded down to the multitude of LOAN_INTERVAL. If set to COMPANY_MAX_LOAN_DEFAULT reset the max loan to default(global) value.
  * @return zero cost or an error
@@ -154,7 +155,7 @@ CommandCost CmdSetCompanyMaxLoan(DoCommandFlags flags, CompanyID company, Money 
 static void AskUnsafeUnpauseCallback(Window *, bool confirmed)
 {
 	if (confirmed) {
-		Command<CMD_PAUSE>::Post(PauseMode::Error, false);
+		Command<Commands::Pause>::Post(PauseMode::Error, false);
 	}
 }
 
@@ -210,11 +211,11 @@ CommandCost CmdPause(DoCommandFlags flags, PauseMode mode, bool pause)
 			NetworkHandlePauseChange(prev_mode, mode);
 
 			/* Screensaver should always be inhibited unless we're paused. */
-			VideoDriver::GetInstance()->SetScreensaverInhibited(_pause_mode.None());
+			VideoDriverBase::GetInstance()->SetScreensaverInhibited(_pause_mode.None());
 		}
 
-		SetWindowDirty(WC_STATUS_BAR, 0);
-		SetWindowDirty(WC_MAIN_TOOLBAR, 0);
+		SetWindowDirty(WindowClass::Statusbar, 0);
+		SetWindowDirty(WindowClass::MainToolbar, 0);
 	}
 	return CommandCost();
 }
@@ -237,9 +238,9 @@ CommandCost CmdMoneyCheat(DoCommandFlags flags, Money amount)
 	if (_networking && !_settings_game.difficulty.money_cheat_in_multiplayer) return CMD_ERROR;
 	if (flags.Test(DoCommandFlag::Execute)) {
 		_cheats.money.been_used = true;
-		SetWindowDirty(WC_CHEATS, 0);
+		SetWindowDirty(WindowClass::Cheat, 0);
 	}
-	return CommandCost(EXPENSES_OTHER, -amount);
+	return CommandCost(ExpensesType::Other, -amount);
 }
 
 /**
@@ -251,9 +252,9 @@ CommandCost CmdMoneyCheatAdmin(DoCommandFlags flags, Money amount)
 {
 	if (flags.Test(DoCommandFlag::Execute)) {
 		_cheats.money.been_used = true;
-		SetWindowDirty(WC_CHEATS, 0);
+		SetWindowDirty(WindowClass::Cheat, 0);
 	}
-	return CommandCost(EXPENSES_OTHER, -amount);
+	return CommandCost(ExpensesType::Other, -amount);
 }
 
 /**
@@ -288,7 +289,7 @@ CommandCost CmdCheatSetting(DoCommandFlags flags, CheatNumbers cheat, uint32_t v
 					_cheats.inflation_cost.been_used = true;
 				}
 				RecomputePrices();
-				SetWindowDirty(WC_CHEATS, 0);
+				SetWindowDirty(WindowClass::Cheat, 0);
 			}
 			return CommandCost();
 
@@ -301,7 +302,7 @@ CommandCost CmdCheatSetting(DoCommandFlags flags, CheatNumbers cheat, uint32_t v
 					_cheats.inflation_income.been_used = true;
 				}
 				RecomputePrices();
-				SetWindowDirty(WC_CHEATS, 0);
+				SetWindowDirty(WindowClass::Cheat, 0);
 			}
 			return CommandCost();
 
@@ -319,7 +320,7 @@ CommandCost CmdCheatSetting(DoCommandFlags flags, CheatNumbers cheat, uint32_t v
 	if (flags.Test(DoCommandFlag::Execute)) {
 		cht->value = value;
 		cht->been_used = true;
-		SetWindowDirty(WC_CHEATS, 0);
+		SetWindowDirty(WindowClass::Cheat, 0);
 
 		if (cheat == CHT_STATION_RATING) {
 			extern void UpdateAllStationRatings();
@@ -345,14 +346,12 @@ CommandCost CmdCheatSetting(DoCommandFlags flags, CheatNumbers cheat, uint32_t v
 CommandCost CmdChangeBankBalance(DoCommandFlags flags, TileIndex tile, Money delta, CompanyID company, ExpensesType expenses_type)
 {
 	if (!Company::IsValidID(company)) return CMD_ERROR;
-	if (expenses_type >= EXPENSES_END) return CMD_ERROR;
+	if (expenses_type >= ExpensesType::End) return CMD_ERROR;
 	if (_current_company != OWNER_DEITY) return CMD_ERROR;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		/* Change company bank balance of company. */
-		Backup<CompanyID> cur_company(_current_company, company, FILE_LINE);
-		SubtractMoneyFromCompany(CommandCost(expenses_type, -delta));
-		cur_company.Restore();
+		SubtractMoneyFromCompany(company, CommandCost(expenses_type, -delta));
 
 		if (tile != 0) {
 			ShowCostOrIncomeAnimation(TileX(tile) * TILE_SIZE, TileY(tile) * TILE_SIZE, GetTilePixelZ(tile), -delta);
@@ -379,7 +378,7 @@ CommandCost CmdGiveMoney(DoCommandFlags flags, Money money, CompanyID dest_compa
 	if (!_settings_game.economy.give_money) return CMD_ERROR;
 
 	const Company *c = Company::Get(_current_company);
-	CommandCost amount(EXPENSES_OTHER, money);
+	CommandCost amount(ExpensesType::Other, money);
 
 	/* You can only transfer funds that is in excess of your loan */
 	if (c->money - c->current_loan < amount.GetCost() || amount.GetCost() < 0) return CommandCost(STR_ERROR_INSUFFICIENT_FUNDS);
@@ -387,9 +386,7 @@ CommandCost CmdGiveMoney(DoCommandFlags flags, Money money, CompanyID dest_compa
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		/* Add money to company */
-		Backup<CompanyID> cur_company(_current_company, dest_company, FILE_LINE);
-		SubtractMoneyFromCompany(CommandCost(EXPENSES_OTHER, -amount.GetCost()));
-		cur_company.Restore();
+		SubtractMoneyFromCompany(dest_company, CommandCost(ExpensesType::Other, -amount.GetCost()));
 	}
 
 	/* Subtract money from local-company */

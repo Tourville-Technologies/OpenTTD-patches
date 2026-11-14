@@ -2,6 +2,182 @@
 
 * * *
 
+### 240-company extension (2026-10-21)
+* Add selectable 24-bit hex company colours for primary and secondary default liveries, with save/load and multiplayer support.
+* Apply RGB colours to OpenGL graph lines, sign and station label frames/text, and company-owned title bars, with readable text contrast.
+* Add scrolling and resizing to company and script league tables.
+* Validate infrastructure-sharing costs, revenue and vehicle profit across all 240 company IDs; ignore public/invalid recipients and preserve debt limits.
+* Support up to 240 companies, including tile, road and tram ownership.
+* Extend company masks, town ratings, engine availability, cargo monitors and vehicle-list identifiers.
+* Support all companies in graphs, multiplayer password updates and saved server passwords.
+* Extend AI performance measurements and the scrolling performance display to all company slots.
+* Add scrolling to company selectors, graph legends, town ratings and minimap legends.
+* Allow companies to share palette colours, choosing the least-used colours for new companies.
+* Mark extended saves and multiplayer revisions to prevent incompatible builds from interpreting the new formats.
+
+### v0.73.4 (2026-10-12)
+* Fix crash which could occur with some extra-zoom and/or 32bpp NewGRFs/basesets.
+* Fix crash editing scheduled dispatch tag conditional orders when no tags were usable.
+* Fix crash which could occur after manually sending ships to a specific depot.
+* Fix reversing at a waypoint or behind a signal being removed if the train was partially in a depot.
+* Fix inconsistent handling of reversing at waypoints when the front of the train had already passed the waypoint.
+* Fix column spacing in departures window when arrival times were enabled.
+* Bulk order list export:
+  * Fix crash exporting from non-group vehicle list windows.
+  * Fix missing or duplicated order lists depending on the number of vehicles in the shared order set.
+* Enable dragging the selected order in order list windows.
+* Bump trunk base from commit af60d6b7cd60c8855febb0847bd66169780dd1ef to commit 12208d12048e747cd5c76bada4c5ddaab573efc4.
+
+### v0.73.3 (2026-09-16)
+* Fix only first 10 items in town action list being clickable.
+* Fix detection of crashed vehicles on signalled tunnels/bridges.
+* Fix width of HH:MM columns in departure board and timetable window with some fonts.
+* Add setting for showing dispatch route ID in departure boards.
+* Add ability to export JSON order lists for all vehicles for each vehicle type.
+* Template-based train replacement: Fix handling of templates longer than the train length limit.
+* Fix save dialog not warning when overwriting order list files.
+* Fix vehicle movement issues after loading some SpringPP savegames.
+* Linux: Fix crash logging version information when SDL IM is present.
+* Bump trunk base from commit 061e5c9cd3373301a9557869144ed767309b3d7a to commit af60d6b7cd60c8855febb0847bd66169780dd1ef.
+
+### v0.73.2 (2026-08-26)
+* Fix crash which could occur when NewGRFs perform an incorrect sprite replacement.
+* Fix crash which could occur with overlapping use of the give money and join buttons in the company window.
+* Scheduled dispatch: Allow schedule last dispatched to be set to a specific time/date instead of just being cleared.
+* Routing restrictions: Add condition for train timetable lateness.
+* Remove scrollbar from town local authority window action pane.
+* Bump trunk base from commit 7e2bcaf792696f68244d657858df263cfe5cb63e to commit 061e5c9cd3373301a9557869144ed767309b3d7a.
+
+### v0.73.1 (2026-08-08)
+* Fix leftover reserved paths which could occur for trains entering and partially in a depot.
+* Fix driving backwards pathfinder penalty when partially in depot.
+* Fix tunnel/bridge signal handling when driving backwards.
+* Fix building bridges over existing depots.
+* Fix NewGRF randomised triggers.
+* Fix NewGRF rail type badge checks with two rail types per tile.
+* Trains drive forwards out of depots when drive through depots is disabled.
+
+### v0.73.0 (2026-07-20)
+* Fix crash which could occur when dropdowns were laid out above the button.
+* Fix crash which could occur when a station listed in a station join window was deleted.
+* Fix incorrect cargo distribution handling of no load orders.
+* From vanilla: Allow overbuilding of depots.
+* From vanilla: Allow bridges over depots.
+* Routing restrictions: Add current order stop location condition.
+* Improve performance of JSON file town placment on large maps.
+* Fix invalid savegames on some very rare machine architectures (big endian).
+* AI/game script: Fix saving of script instances in savegames.
+* Bump trunk base from commit af6868198eae395d8bc1963620d846633ac53eec to commit 7e2bcaf792696f68244d657858df263cfe5cb63e.
+
+### v0.72.4 (2026-06-19)
+* Fix various dialog windows not being closed.
+* Fix text rendering in scheduled dispatch window dropdown.
+* Improve timetable lateness/earliness handling when timetable separation is enabled but not active.
+* Fix crash when running on some very rare machine architectures (big endian).
+* Bump trunk base from commit d68553bbd6b992235d85646552ddf333999db05e to commit af6868198eae395d8bc1963620d846633ac53eec.
+
+### v0.72.3 (2026-06-10)
+* Fix reversing trains by flipping when partially in a depot causing trains to split apart in some cases.
+* Fix crash when using rail type change hotkeys with the polyrail tool.
+* Fix industry accept/wait history when using equal distribution mode.
+* Fix loading of old TTO/TTD savegames.
+* Fix scenario editor random industry generation.
+* Departure boards: Fix vehicle cycle tracking in some cases with conditional orders.
+* Preserve which engines have been hidden when reloading NewGRFs.
+* JSON order list import/export: Fix dispatch first/last slot conditional order export.
+* Linux: Fix dedicated server signal handling for SIGTERM/SIGINT/SIGQUIT.
+* Bump trunk base from commit 4decdedff468b5149cb5357a5d026f2906cd73f6 to commit d68553bbd6b992235d85646552ddf333999db05e.
+
+### v0.72.2 (2026-05-08)
+* Fix multiplayer disconnection when a client attempts to set a company password.
+* Fix not being to find a nearest depot when driving backwards, and multiplayer desyncs that could occur when this is attempted.
+* Fix tropic mode map generation not creating desert tiles.
+* Bump trunk base from commit 8b5c4ae96b75925dc0c04b1adf204373a2e6681a to commit 4decdedff468b5149cb5357a5d026f2906cd73f6.
+
+### v0.72.1 (2026-05-04)
+* Fix crash which could occur when showing vehicle overshot station news items.
+* Fix crash when dragging/sizing drop-down related window.
+* Fix crash closing rename station/waypoint window when move tool active.
+* Fix very fast trains overshooting stations when driving backwards.
+* Fix depot listings for trains driving backwards with an articulated rear unit.
+* Add setting to enable news warning when cargo at station appears to be overflowing.
+* Signals on bridges which are transparent/invisible now default to also being transparent/invisible. Add a setting for these signals to always be shown.
+* Bump trunk base from commit 6dce7fdca30e1fc1fc75b6c9e4fe04de96777619 to commit 8b5c4ae96b75925dc0c04b1adf204373a2e6681a.
+
+### v0.72.0 (2026-04-26)
+* Fix crash which could occur in some cases when a delayed multiplayer command was received for a vehicle which had already been sold/deleted.
+* Fix incorrect waiting average values in graphs for industries using stockpiling.
+* From vanilla: Trains with an engine on the rear can drive backwards when reversing.
+* Routing restrictions: Add status conditions for trains driving backwards.
+* Bump trunk base from commit 0b3c448ea1e0faab3e3eea0049186f4e8ed01ffd to commit 6dce7fdca30e1fc1fc75b6c9e4fe04de96777619.
+
+### v0.71.2 (2026-04-07)
+* Fix incorrect text in station rating tooltip and bridge too low error messages.
+* Fix vehicle viewport rendering issues which could occur in some special cases.
+* Improve industry placement performance for some industry NewGRFs.
+* Bump trunk base from commit b41e23270d5fb4386e44193139d41d5955f866cf to commit 0b3c448ea1e0faab3e3eea0049186f4e8ed01ffd.
+
+### v0.71.1 (2026-03-21)
+* Fix text/colour for vehicle lifetime profit and capcities of multi-cargo ships.
+* Fix not being able to change the else if/or if type of some routing restriction conditionals.
+* Engine dates:
+  * Allow changing engine date/lifetime settings in network games.
+  * Remove need to use reset_engines console command after changing engine date/lifetime settings.
+  * Add setting to disable vehicle introduction date randomisation.
+* Bump trunk base from commit 27c5f9a5cdee5c2586a9688a7eca23975008abf4 to commit b41e23270d5fb4386e44193139d41d5955f866cf.
+
+### v0.71.0 (2026-03-13)
+* Fix undrawn gap between vertical half-tile foundations of different railtypes.
+* Fix map edge selectors not being enabled in the map generation window for some setting values.
+* Show "Delete All" in the order window delete button when this would delete all orders.
+* Follow timetable early/late conditional orders in the timetable window departure/arrival estimates.
+* Departure boards:
+  * Follow timetable early/late conditional orders.
+  * Support schedule mode vehicle cycle tracking when the departure order is separate from (but the same location as) the dispatch order.
+* Routing restrictions:
+  * Show instruction remove count in button when removing a conditional item block.
+  * Maintain per-company backups of recently deleted routing restriction programs. Allow restoring programs from these backups.
+  * Change category of wait at path signal and penalty control to non-advanced.
+* Template-based train replacement:
+  * Fix incorrect cost overlay when template replacement fails.
+  * Disallow replacing to a free wagon chain. Fixes crash when replacing to a free wagon chain with wagons already in depot.
+* Fix various windows not being refreshed on vehicle group changes.
+* Fix multiplayer desync which could occur after a train crash with some combinations of platforms/build types.
+* Fix not being able to clear depot wait times when the lock flag was set and timetable automation enabled.
+* Bump trunk base from commit c1d37d86999ec391d5830f16887024b719f9cd18 to commit 27c5f9a5cdee5c2586a9688a7eca23975008abf4.
+
+### v0.70.2 (2026-02-21)
+* Fix road/tram types for some NewGRFs not being initialised correctly.
+* Fix incorrect transfer credits total in train details window.
+* Fix crash which could occur when an aircraft crashed outside of the map.
+* Add setting for linear infrastructure maintenance costs.
+* Move empty/full performance statistics to a separate tab in the train details window.
+* Remove company settings for other companies buying/renewing vehicles in this company's depots, this is now allowed whenever infrastructure sharing is enabled.
+* Bump trunk base from commit e8ba7d0a08c1f8c7536a828bd0e906c9357bbb7b to commit c1d37d86999ec391d5830f16887024b719f9cd18.
+
+### v0.70.1 (2026-02-14)
+* Fix multiplayer desync when placing single houses.
+* Fix company faces not being shown in ownership error messages.
+* Add setting for whether to show costs in rail/road type menu dropdowns.
+* Add setting to enable trains to collide with other parts of themselves.
+* Show background as water in smallmap window when map infinite water is enabled.
+* Bump trunk base from commit 37f737417cda13011d3a4db5226f83637d22448f to commit e8ba7d0a08c1f8c7536a828bd0e906c9357bbb7b.
+
+### v0.70.0 (2026-02-09)
+* Fix crash when attempting to grow towns with bridges which would lead off the map edge.
+* Fix crash which could occur when using hardware acceleration and certain incorrectly implemented NewGRFs.
+* Fix crash when editing a sign and the first created sign has been removed.
+* Fix newly created no-entry signals being in an incorrect state which incorrectly allowed trains to pass in some circumstances.
+* Fix articulated road vehicles not correctly handling immediately sequential u-turns in some cases.
+* Fix display of rail tiles with two different rail types with NewGRFs using oversized overlay sprites.
+* Fix counter condition dropdown text in orders window.
+* Add randomised placement of houses using saved house type collections in the picker window.
+* Show full and empty power/weight and TE/weight ratios in train details.
+* Timetables:
+  * Improve timetable warnings related to auto-separation.
+  * Disallow setting timetable wait times for non-train waypoint orders.
+* Bump trunk base from commit 821784004d5267c154de133b81cea4d45f801bf5 to commit 37f737417cda13011d3a4db5226f83637d22448f.
+
 ### v0.69.2 (2026-01-18)
 * Fix crash which could occur when merging/deleting companies or after a multiplayer desync.
 * Fix incorrect handling of the wallclock mode minutes per year setting.
@@ -65,7 +241,7 @@
 * Fix crashes which could occur in some debug/console texts for non-English languages.
 * Fix multiplayer desync which could occur with certain industry NewGRFs.
 * Fix error message when removing station part fails due to path reservation.
-* Extend leftover timetible ticks setting to also allow showing leftover timetable times in seconds.
+* Extend leftover timetable ticks setting to also allow showing leftover timetable times in seconds.
 * Add setting to show most recent scheduled dispatch route ID in the vehicle's window title.
 * Only highlight selected pane in single button mode of dual pane train purchase window.
 * Plans:

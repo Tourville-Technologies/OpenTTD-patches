@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_rail.hpp Everything to query and build rails. */
@@ -68,12 +68,12 @@ public:
 	 */
 	enum SignalType {
 		/* Note: these values represent part of the in-game SignalType enum */
-		SIGNALTYPE_NORMAL        = ::SIGTYPE_BLOCK,      ///< Block signal.
-		SIGNALTYPE_ENTRY         = ::SIGTYPE_ENTRY,      ///< Entry presignal.
-		SIGNALTYPE_EXIT          = ::SIGTYPE_EXIT,       ///< Exit signal.
-		SIGNALTYPE_COMBO         = ::SIGTYPE_COMBO,      ///< Combo signal.
-		SIGNALTYPE_PBS           = ::SIGTYPE_PBS,        ///< Normal PBS signal.
-		SIGNALTYPE_PBS_ONEWAY    = ::SIGTYPE_PBS_ONEWAY, ///< No-entry PBS signal.
+		SIGNALTYPE_NORMAL = to_underlying(::SignalType::Block), ///< Block signal.
+		SIGNALTYPE_ENTRY = to_underlying(::SignalType::Entry), ///< Entry presignal.
+		SIGNALTYPE_EXIT = to_underlying(::SignalType::Exit), ///< Exit signal.
+		SIGNALTYPE_COMBO = to_underlying(::SignalType::Combo), ///< Combo signal.
+		SIGNALTYPE_PBS = to_underlying(::SignalType::Path), ///< Normal path signal.
+		SIGNALTYPE_PBS_ONEWAY = to_underlying(::SignalType::PathOneWay), ///< No-entry path signal.
 
 		SIGNALTYPE_TWOWAY        = 8, ///< Bit mask for twoway signal.
 		SIGNALTYPE_NORMAL_TWOWAY = SIGNALTYPE_NORMAL | SIGNALTYPE_TWOWAY, ///< Normal twoway signal.
@@ -241,6 +241,18 @@ public:
 	 * @return Whether the rail depot has been/can be build or not.
 	 */
 	static bool BuildRailDepot(TileIndex tile, TileIndex front);
+
+	/**
+	 * Removes a rail depot.
+	 * @param tile Place to remove the depot from.
+	 * @pre ScriptMap::IsValidTile(tile).
+	 * @pre Tile is a rail depot.
+	 * @game @pre ScriptCompanyMode::IsValid().
+	 * @exception ScriptError::ERR_OWNED_BY_ANOTHER_COMPANY
+	 * @exception ScriptError::ERR_VEHICLE_IN_THE_WAY
+	 * @return Whether the rail depot has been/can be removed or not.
+	 */
+	static bool RemoveRailDepot(TileIndex tile);
 
 	/**
 	 * Build a rail station.

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehicle_gui_base.h Functions/classes shared between the different vehicle list GUIs. */
@@ -11,7 +11,7 @@
 #define VEHICLE_GUI_BASE_H
 
 #include "date_type.h"
-#include "economy_type.h"
+#include "money_type.h"
 #include "sortlist_type.h"
 #include "vehicle_base.h"
 #include "vehiclelist.h"
@@ -129,11 +129,11 @@ public:
 		ADI_CREATE_GROUP,
 		ADI_TRACERESTRICT_SLOT_MGMT,
 		ADI_TRACERESTRICT_COUNTER_MGMT,
+		ADI_EXPORT_ORDERS,
 	};
 
-	static const StringID vehicle_depot_name[];
-	static const StringID vehicle_depot_sell_name[];
-
+	static const VehicleTypeIndexArray<const StringID> vehicle_depot_name;
+	static const VehicleTypeIndexArray<const StringID> vehicle_depot_sell_name;
 	static const std::initializer_list<const StringID> vehicle_group_by_names;
 	static const std::initializer_list<const StringID> vehicle_group_none_sorter_names_calendar;
 	static const std::initializer_list<const StringID> vehicle_group_none_sorter_names_wallclock;
@@ -154,14 +154,14 @@ public:
 	void SortVehicleList();
 	void CountOwnVehicles();
 	void BuildVehicleList();
-	void SetCargoFilter(uint8_t index);
+	void SetCargoFilter(CargoType cargo_type);
 	void SetCargoFilterArray();
 	void FilterVehicleList();
 	StringID GetCargoFilterLabel(CargoType cargo_type) const;
 	DropDownList BuildCargoDropDownList(bool full) const;
-	Dimension GetActionDropdownSize(bool show_autoreplace, bool show_group, bool show_template_replace, StringID change_order_str = 0);
+	Dimension GetActionDropdownSize(bool show_autoreplace, bool show_group, bool show_template_replace, StringID change_order_str = STR_NULL);
 	DropDownList BuildActionDropdownList(bool show_autoreplace, bool show_group, bool show_template_replace,
-			StringID change_order_str = 0, bool show_create_group = false, bool consider_top_level = false);
+			StringID change_order_str = STR_NULL, bool show_create_group = false, bool consider_top_level = false);
 	bool ShouldShowActionDropdownList() const;
 
 	std::span<const StringID> GetVehicleSorterNames() const;

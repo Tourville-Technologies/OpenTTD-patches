@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file settingentry_gui.h Declarations of classes for handling display of individual configuration settings. */
@@ -14,9 +14,6 @@
 #include "settings_internal.h"
 #include "stringfilter_type.h"
 
-extern Dimension _setting_circle_size;
-extern int SETTING_HEIGHT;
-
 /**
  * Flags for #SettingEntry
  * @note The #SEF_BUTTONS_MASK matches expectations of the formal parameter 'state' of #DrawArrowButtons
@@ -27,7 +24,7 @@ enum class SettingEntryFlag : uint8_t {
 	LastField, ///< This entry is the last one in a (sub-)page
 	Filtered, ///< Entry is hidden by the string filter
 };
-using SettingEntryFlags = EnumBitSet<SettingEntryFlag, uint8_t>;
+using SettingEntryFlags = EnumBitSet<SettingEntryFlag, uint8_t>; ///< Bitset of the SettingEntryFlag elements.
 
 static constexpr SettingEntryFlags SEF_BUTTONS_MASK = {SettingEntryFlag::LeftDepressed, SettingEntryFlag::RightDepressed}; ///< Mask for button flags
 
@@ -61,8 +58,11 @@ struct BaseSettingEntry {
 	virtual ~BaseSettingEntry() = default;
 
 	virtual void Init(uint8_t level = 0);
+	/** Recursively close all folds of sub-pages */
 	virtual void FoldAll() {}
+	/** Recursively open all folds of sub-pages */
 	virtual void UnFoldAll() {}
+	/** Resets all settings to their default values */
 	virtual void ResetAll() = 0;
 
 	/**
@@ -71,10 +71,24 @@ struct BaseSettingEntry {
 	 */
 	void SetLastField(bool last_field) { this->flags.Set(SettingEntryFlag::LastField, last_field); }
 
+	/**
+	 * Get the number of rows needed to show this entry.
+	 * @return Number of rows.
+	 */
 	virtual uint Length() const = 0;
+	/**
+	 * Recursively accumulate the folding state of the tree.
+	 * @param[in,out] all_folded Set to false, if one entry is not folded.
+	 * @param[in,out] all_unfolded Set to false, if one entry is folded.
+	 */
 	virtual void GetFoldingState([[maybe_unused]] bool &all_folded, [[maybe_unused]] bool &all_unfolded) const {}
 	virtual bool IsVisible(const BaseSettingEntry *item) const;
 	virtual BaseSettingEntry *FindEntry(uint row, uint *cur_row);
+	/**
+	 * Get the biggest height of the help text(s), if the width is at least \a maxw. Help text gets wrapped if needed.
+	 * @param maxw Maximal width of a line help text.
+	 * @return Biggest height needed to display any help text of this node (and its descendants).
+	 */
 	virtual uint GetMaxHelpHeight([[maybe_unused]] int maxw) { return 0; }
 
 	/**
@@ -83,11 +97,28 @@ struct BaseSettingEntry {
 	 */
 	bool IsFiltered() const { return this->flags.Test(SettingEntryFlag::Filtered); }
 
+	/**
+	 * Update the filter state.
+	 * @param filter Filter
+	 * @param force_visible Whether to force all items visible, no matter what
+	 * @return true if item remains visible
+	 */
 	virtual bool UpdateFilterState(SettingFilter &filter, bool force_visible) = 0;
 
 	virtual uint Draw(GameSettings *settings_ptr, int left, int right, int y, uint first_row, uint max_row, BaseSettingEntry *selected, uint cur_row = 0, uint parent_last = 0) const;
 
+	static inline Dimension circle_size; ///< Dimension of the circle +/- icon.
+	static inline int line_height; ///< Height of a single setting.
+
 protected:
+	/**
+	 * Function to draw setting value (button + text + current value)
+	 * @param settings_ptr Pointer to current values of all settings.
+	 * @param left Left-most position in window/panel to start drawing.
+	 * @param right Right-most position in window/panel to draw.
+	 * @param y Upper-most position in window/panel to start drawing.
+	 * @param highlight Whether to highlight the entry.
+	 */
 	virtual void DrawSetting(GameSettings *settings_ptr, int left, int right, int y, bool highlight) const = 0;
 };
 
@@ -96,6 +127,10 @@ struct SettingEntry : BaseSettingEntry {
 	const char *name = nullptr; ///< Name of the setting
 	const IntSettingDesc *setting = nullptr; ///< Setting description of the setting
 
+	/**
+	 * Create the entry. The view is stored in the static #GetSettingsTree(), so must never be deallocated.
+	 * @param name The name of the setting.
+	 */
 	SettingEntry(const char *name) : name(name) {}
 
 	void Init(uint8_t level = 0) override;
@@ -140,9 +175,14 @@ struct ConditionallyHiddenSettingEntry : SettingEntry {
 
 /** Containers for BaseSettingEntry */
 struct SettingsContainer {
-	typedef std::vector<BaseSettingEntry*> EntryVector;
+	using EntryVector = std::vector<BaseSettingEntry*>; ///< Vector of pointers.
 	EntryVector entries; ///< Settings on this page
 
+	/**
+	 * Add an item to the container.
+	 * @param item The item to add.
+	 * @return The just added item (same pointer).
+	 */
 	template <typename T>
 	T *Add(T *item)
 	{
@@ -170,7 +210,7 @@ struct SettingsContainer {
 struct SettingsPage : BaseSettingEntry, SettingsContainer {
 	StringID title;     ///< Title of the sub-page
 	bool folded;        ///< Sub-page is folded (not visible except for its title)
-	std::function<bool()> hide_callback; ///< optional callback, returns true if this shouldbe hidden
+	std::function<bool()> hide_callback; ///< optional callback, returns true if this should be hidden
 
 	SettingsPage(StringID title);
 

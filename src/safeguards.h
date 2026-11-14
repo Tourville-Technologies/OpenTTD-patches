@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -18,6 +18,9 @@
 
 #ifndef SAFEGUARDS_H
 #define SAFEGUARDS_H
+
+/* Ignore everything in here for doxygen. These should not be used, so also not show up in the documentation. */
+#ifndef DOXYGEN_API
 
 /* Use MallocT instead. */
 #define malloc    SAFEGUARD_DO_NOT_USE_THIS_METHOD
@@ -98,4 +101,5 @@
 #define strerror SAFEGUARD_DO_NOT_USE_THIS_METHOD
 #endif /* defined(NETWORK_CORE_OS_ABSTRACTION_H) && defined(_WIN32) */
 
+#endif /* DOXYGEN_API */
 #endif /* SAFEGUARDS_H */

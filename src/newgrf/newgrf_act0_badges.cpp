@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_badges.cpp NewGRF Action 0x00 handler for badges. */
@@ -18,18 +18,18 @@
 
 static ChangeInfoResult BadgeChangeInfo(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf)
 {
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 
 	if (last >= UINT16_MAX) {
 		GrfMsg(1, "BadgeChangeInfo: Tag {} is invalid, max {}, ignoring", last, UINT16_MAX - 1);
-		return CIR_INVALID_ID;
+		return ChangeInfoResult::InvalidId;
 	}
 
 	for (uint id = first; id < last; ++id) {
 		auto it = _cur_gps.grffile->badge_map.find(id);
 		if (prop != 0x08 && it == std::end(_cur_gps.grffile->badge_map)) {
 			GrfMsg(1, "BadgeChangeInfo: Attempt to modify undefined tag {}, ignoring", id);
-			return CIR_INVALID_ID;
+			return ChangeInfoResult::InvalidId;
 		}
 
 		Badge *badge = nullptr;
@@ -47,7 +47,7 @@ static ChangeInfoResult BadgeChangeInfo(uint first, uint last, int prop, const G
 				break;
 
 			default:
-				ret = CIR_UNKNOWN;
+				ret = ChangeInfoResult::Unknown;
 				break;
 		}
 	}
@@ -55,5 +55,5 @@ static ChangeInfoResult BadgeChangeInfo(uint first, uint last, int prop, const G
 	return ret;
 }
 
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_BADGES>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return CIR_UNHANDLED; }
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_BADGES>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return BadgeChangeInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::Badges>::Reserve(uint, uint, int, const GRFFilePropertyRemapEntry *, ByteReader &) { return ChangeInfoResult::Unhandled; }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::Badges>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return BadgeChangeInfo(first, last, prop, mapping_entry, buf); }

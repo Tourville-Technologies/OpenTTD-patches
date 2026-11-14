@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file dmusic.cpp Playing music via DirectMusic. */
@@ -14,7 +14,7 @@
 #endif
 #include "../debug.h"
 #include "../os/windows/win32.h"
-#include "../core/mem_func.hpp"
+#include "../core/bit_cast.hpp"
 #include "../thread.h"
 #include "../fileio_func.h"
 #include "../base_media_base.h"
@@ -77,39 +77,88 @@ struct DLSFile {
 	std::vector<POOLCUE> pool_cues;
 	std::vector<DLSWave> waves;
 
-	/** Try loading a DLS file into memory. */
+	/**
+	 * Try loading a DLS file into memory.
+	 * @param file The file to load.
+	 * @return \c true iff the file was loaded without issues.
+	 */
 	bool LoadFile(std::string_view file);
 
 private:
-	/** Load an articulation structure from a DLS file. */
+	/**
+	 * Load an articulation structure from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @param out The container to read the DLS articulation into.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSArticulation(FileHandle &f, DWORD list_length, std::vector<CONNECTION> &out);
-	/** Load a list of regions from a DLS file. */
+
+	/**
+	 * Load a list of regions from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @param instrument The instrument to load the region list for.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSRegionList(FileHandle &f, DWORD list_length, DLSInstrument &instrument);
-	/** Load a single region from a DLS file. */
+
+	/**
+	 * Load a single region from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @param out The container to read the DLS region into.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSRegion(FileHandle &f, DWORD list_length, std::vector<DLSRegion> &out);
-	/** Load a list of instruments from a DLS file. */
+
+	/**
+	 * Load a list of instruments from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSInstrumentList(FileHandle &f, DWORD list_length);
-	/** Load a single instrument from a DLS file. */
+
+	/**
+	 * Load a single instrument from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSInstrument(FileHandle &f, DWORD list_length);
-	/** Load a list of waves from a DLS file. */
+
+	/**
+	 * Load a list of waves from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSWaveList(FileHandle &f, DWORD list_length);
-	/** Load a single wave from a DLS file. */
+
+	/**
+	 * Load a single wave from a DLS file.
+	 * @param f The file to read the data from.
+	 * @param list_length The length of the data chunk in the file.
+	 * @param offset The offset within the file.
+	 * @return \c true iff the data was loaded without issues.
+	 */
 	bool ReadDLSWave(FileHandle &f, DWORD list_length, long offset);
 };
 
 /** A RIFF chunk header. */
-PACK_N(struct ChunkHeader {
+struct ChunkHeader {
 	FOURCC type;  ///< Chunk type.
 	DWORD length; ///< Length of the chunk, not including the chunk header itself.
-}, 2);
+};
 
 /** Buffer format for a DLS wave download. */
-PACK_N(struct WAVE_DOWNLOAD {
-	DMUS_DOWNLOADINFO   dlInfo;
-	ULONG               ulOffsetTable[2];
-	DMUS_WAVE           dmWave;
-	DMUS_WAVEDATA       dmWaveData;
-}, 2);
+struct WAVE_DOWNLOAD {
+	DMUS_DOWNLOADINFO dlInfo; ///< Request header for the to be downloaded wave data.
+	ULONG ulOffsetTable[2]; ///< Offsets to the \c dmWave and \c dmWaveData fields.
+	DMUS_WAVE dmWave; ///< Definition of the wave chunk to download.
+	DMUS_WAVEDATA dmWaveData; ///< The buffer the wave chunk data is written to.
+};
 
 struct PlaybackSegment {
 	uint32_t start, end;
@@ -567,7 +616,12 @@ static void TransmitStandardSysex(IDirectMusicBuffer *buffer, REFERENCE_TIME rt,
 	TransmitSysex(buffer, rt, data, length);
 }
 
-/** Transmit 'Note off' messages to all MIDI channels. */
+/**
+ * Transmit 'Note off' messages to all MIDI channels.
+ * @param buffer The buffer used for MIDI music.
+ * @param block_time Timestamp of the last sent block.
+ * @param cur_time Current timestamp.
+ */
 static void TransmitNotesOff(IDirectMusicBuffer *buffer, REFERENCE_TIME block_time, REFERENCE_TIME cur_time)
 {
 	for (int ch = 0; ch < 16; ch++) {
@@ -930,7 +984,7 @@ static const char *LoadDefaultDLSFile(std::optional<std::string_view> user_dls)
 			wave->ulOffsetTable[1] = offsetof(WAVE_DOWNLOAD, dmWaveData);
 			wave->dmWave.ulWaveDataIdx = 1;
 			wave->dmWaveData.cbSize = (DWORD)dls_file.waves[i].data.size();
-			reinterpret_cast<PCMWAVEFORMAT &>(wave->dmWave.WaveformatEx) = dls_file.waves[i].fmt;
+			wave->dmWave.WaveformatEx = bit_cast_to_storage<WAVEFORMATEX>(dls_file.waves[i].fmt);
 			std::copy_n(dls_file.waves[i].data.begin(), dls_file.waves[i].data.size(), wave->dmWaveData.byData);
 
 			_dls_downloads.push_back(dl_wave);

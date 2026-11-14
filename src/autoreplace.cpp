@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file autoreplace.cpp Management of replacement lists. */
@@ -11,7 +11,6 @@
 #include "command_func.h"
 #include "group.h"
 #include "autoreplace_base.h"
-#include "core/bitmath_func.hpp"
 #include "core/pool_func.hpp"
 
 #include "safeguards.h"
@@ -23,6 +22,10 @@ INSTANTIATE_POOL_METHODS(EngineRenew)
 /**
  * Retrieves the EngineRenew that specifies the replacement of the given
  * engine type from the given renewlist
+ * @param erl Linked list of engine renews.
+ * @param engine The engine to look for.
+ * @param group The group to look for.
+ * @return The engine renew configuration for the given engine and group.
  */
 static EngineRenew *GetEngineReplacement(EngineRenewList erl, EngineID engine, GroupID group)
 {
@@ -37,8 +40,7 @@ static EngineRenew *GetEngineReplacement(EngineRenewList erl, EngineID engine, G
 
 /**
  * Remove all engine replacement settings for the company.
- * @param  erl The renewlist for a given company.
- * @return The new renewlist for the company.
+ * @param erl The renewlist for a given company.
  */
 void RemoveAllEngineReplacement(EngineRenewList *erl)
 {
@@ -110,7 +112,7 @@ CommandCost AddEngineReplacement(EngineRenewList *erl, EngineID old_engine, Engi
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		/* Insert before the first element */
-		*erl = new EngineRenew(old_engine, new_engine, group, replace_when_old, *erl);
+		*erl = EngineRenew::Create(old_engine, new_engine, group, replace_when_old, *erl);
 	}
 
 	return CommandCost();

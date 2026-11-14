@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_crypto.cpp Implementation of the network specific cryptography helpers. */
@@ -92,7 +92,7 @@ bool X25519DerivedKeys::Exchange(const X25519PublicKey &peer_public_key, X25519K
 }
 
 /**
- * Encryption handler implementation for monocypther encryption after a X25519 key exchange.
+ * Encryption handler implementation for monocypher encryption after a X25519 key exchange.
  */
 class X25519EncryptionHandler : public NetworkEncryptionHandler {
 private:
@@ -187,6 +187,7 @@ X25519AuthenticationHandler::X25519AuthenticationHandler(const X25519SecretKey &
 {
 }
 
+/** @copydoc NetworkAuthenticationServerHandler::SendRequest */
 /* virtual */ void X25519AuthenticationHandler::SendRequest(Packet &p)
 {
 	p.Send_bytes(this->our_public_key);
@@ -265,11 +266,13 @@ bool X25519AuthenticationHandler::ReceiveEnableEncryption(struct Packet &p)
 	return p.Recv_bytes(this->encryption_nonce) == this->encryption_nonce.size();
 }
 
+/** @copydoc NetworkAuthenticationHandler::CreateClientToServerEncryptionHandler */
 std::unique_ptr<NetworkEncryptionHandler> X25519AuthenticationHandler::CreateClientToServerEncryptionHandler() const
 {
 	return std::make_unique<X25519EncryptionHandler>(this->derived_keys.ClientToServer(), this->encryption_nonce);
 }
 
+/** @copydoc NetworkAuthenticationHandler::CreateServerToClientEncryptionHandler */
 std::unique_ptr<NetworkEncryptionHandler> X25519AuthenticationHandler::CreateServerToClientEncryptionHandler() const
 {
 	return std::make_unique<X25519EncryptionHandler>(this->derived_keys.ServerToClient(), this->encryption_nonce);
@@ -449,6 +452,7 @@ void CombinedAuthenticationServerHandler::Add(CombinedAuthenticationServerHandle
  * @param password_handler The handler for when a request for password needs to be passed on to the user.
  * @param secret_key The location where the secret key is stored; can be overwritten when invalid.
  * @param public_key The location where the public key is stored; can be overwritten when invalid.
+ * @return A new client handler.
  */
 /* static */ std::unique_ptr<NetworkAuthenticationClientHandler> NetworkAuthenticationClientHandler::Create(std::shared_ptr<NetworkAuthenticationPasswordRequestHandler> password_handler, std::string &secret_key, std::string &public_key)
 {
@@ -465,6 +469,7 @@ void CombinedAuthenticationServerHandler::Add(CombinedAuthenticationServerHandle
  * @param password_provider Callback to provide the password handling. Must remain valid until the authentication has succeeded or failed. Can be \c nullptr to skip password checks.
  * @param authorized_key_handler Callback to provide the authorized key handling. Must remain valid until the authentication has succeeded or failed. Can be \c nullptr to skip authorized key checks.
  * @param client_supported_method_mask Bitmask of the methods that are supported by the client. Defaults to support of all methods.
+ * @return A new server handler.
  */
 std::unique_ptr<NetworkAuthenticationServerHandler> NetworkAuthenticationServerHandler::Create(const NetworkAuthenticationPasswordProvider *password_provider, const NetworkAuthenticationAuthorizedKeyHandler *authorized_key_handler, NetworkAuthenticationMethodMask client_supported_method_mask)
 {

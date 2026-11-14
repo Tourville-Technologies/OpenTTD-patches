@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sprite_file.cpp Implementation of logic specific to the SpriteFile class. */
@@ -18,6 +18,7 @@ extern const std::array<uint8_t, 8> _grf_cont_v2_sig = {'G', 'R', 'F', 0x82, 0x0
 
 /**
  * Get the container version of the currently opened GRF file.
+ * @param file The file that is being opened.
  * @return Container version of the GRF file or 0 if the file is corrupt/no GRF file.
  */
 static uint8_t GetGRFContainerVersion(SpriteFile &file)

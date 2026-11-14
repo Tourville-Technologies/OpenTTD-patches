@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_airporttiles.cpp NewGRF handling of airport tiles. */
@@ -15,6 +15,7 @@
 #include "newgrf_spritegroup.h"
 #include "newgrf_sound.h"
 #include "station_base.h"
+#include "tile_cmd.h"
 #include "water.h"
 #include "landscape.h"
 #include "company_base.h"
@@ -87,7 +88,7 @@ void AirportTileOverrideManager::SetEntitySpec(AirportTileSpec &&airpts)
 		overridden_airpts->grf_prop.override_id = airpt_id;
 		overridden_airpts->enabled = false;
 		this->entity_overrides[i] = this->invalid_id;
-		this->grfid_overrides[i] = 0;
+		this->grfid_overrides[i] = {};
 	}
 }
 
@@ -113,7 +114,7 @@ StationGfx GetTranslatedAirportTileID(StationGfx gfx)
 static uint32_t GetNearbyAirportTileInformation(uint8_t parameter, TileIndex tile, StationID index, bool grf_version8, uint32_t mask)
 {
 	if (parameter != 0) tile = GetNearbyTile(parameter, tile); // only perform if it is required
-	bool is_same_airport = (IsTileType(tile, MP_STATION) && IsAirport(tile) && GetStationIndex(tile) == index);
+	bool is_same_airport = (IsTileType(tile, TileType::Station) && IsAirport(tile) && GetStationIndex(tile) == index);
 
 	uint32_t result = (is_same_airport ? 1 : 0) << 8;
 	if (mask & ~0x100) result |= GetNearbyTileInformation(tile, grf_version8, mask);
@@ -129,7 +130,7 @@ static uint32_t GetNearbyAirportTileInformation(uint8_t parameter, TileIndex til
  * @param cur_grfid GRFID of the current callback
  * @return value encoded as per NFO specs
  */
-static uint32_t GetAirportTileIDAtOffset(TileIndex tile, const Station *st, uint32_t cur_grfid)
+static uint32_t GetAirportTileIDAtOffset(TileIndex tile, const Station *st, GrfID cur_grfid)
 {
 	if (!st->TileBelongsToAirport(tile)) {
 		return 0xFFFF;
@@ -236,7 +237,7 @@ AirportTileResolverObject::AirportTileResolverObject(const AirportTileSpec *ats,
 
 GrfSpecFeature AirportTileResolverObject::GetFeature() const
 {
-	return GSF_AIRPORTTILES;
+	return GrfSpecFeature::AirportTiles;
 }
 
 uint32_t AirportTileResolverObject::GetDebugID() const
@@ -266,7 +267,7 @@ static void AirportDrawTileLayout(const TileInfo *ti, const TileLayoutSpriteGrou
 		}
 	}
 
-	DrawNewGRFTileSeq(ti, &dts, TO_BUILDINGS, 0, GetColourPalette(colour));
+	DrawNewGRFTileSeq(ti, &dts, TransparencyOption::Buildings, 0, GetColourPalette(colour));
 }
 
 bool DrawNewAirportTile(TileInfo *ti, Station *st, const AirportTileSpec *airts)
@@ -279,7 +280,7 @@ bool DrawNewAirportTile(TileInfo *ti, Station *st, const AirportTileSpec *airts)
 			if (callback_res != CALLBACK_FAILED) draw_old_one = ConvertBooleanCallback(airts->grf_prop.grffile, CBID_AIRPTILE_DRAW_FOUNDATIONS, callback_res);
 		}
 
-		if (draw_old_one) DrawFoundation(ti, FOUNDATION_LEVELED);
+		if (draw_old_one) DrawFoundation(ti, Foundation::Leveled);
 	}
 
 	AirportTileResolverObject object(airts, ti->tile, st);

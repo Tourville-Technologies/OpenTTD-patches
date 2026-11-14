@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file timetable_cmd.h Command definitions related to timetables. */
@@ -32,11 +32,10 @@ enum ModifyTimetableFlags : uint8_t {
 /**
  * Control flags for #CmdChangeTimetable.
  */
-enum ModifyTimetableCtrlFlags : uint8_t {
-	MTCF_NONE        = 0,      ///< No flags set
-	MTCF_CLEAR_FIELD = 1 << 0, ///< Clear field
+enum class ModifyTimetableCtrlFlag : uint8_t {
+	ClearField, ///< Clear field.
 };
-DECLARE_ENUM_AS_BIT_SET(ModifyTimetableCtrlFlags)
+using ModifyTimetableCtrlFlags = EnumBitSet<ModifyTimetableCtrlFlag, uint8_t>;
 
 struct ScheduledDispatchSlotSet {
 	static constexpr bool command_payload_as_ref = true;
@@ -45,27 +44,8 @@ struct ScheduledDispatchSlotSet {
 
 	std::vector<uint32_t> slots;
 
-	template <typename T>
-	void Serialise(T &&buffer) const
-	{
-		buffer.Send_generic_integer(this->slots.size());
-		for (uint32_t slot : this->slots) {
-			buffer.Send_generic_integer(slot);
-		}
-	}
-
-	template <typename T>
-	bool Deserialise(T &buffer, StringValidationSettings default_string_validation)
-	{
-		size_t size{};
-		buffer.Recv_generic_integer(size);
-		if (size > MAX_SLOTS) return false;
-		this->slots.resize(size);
-		for (uint32_t &slot : this->slots) {
-			buffer.Recv_generic_integer(slot);
-		}
-		return true;
-	}
+	void Serialise(BufferSerialisationRef buffer) const;
+	bool Deserialise(DeserialisationBuffer &buffer, StringValidationSettings default_string_validation);
 
 	bool IsValid() const;
 
@@ -80,34 +60,35 @@ struct ScheduledDispatchAdjustSlotResult : public CommandLargeResultBase {
 	std::vector<Change> changes;
 };
 
-DEF_CMD_TUPLE_NT(CMD_CHANGE_TIMETABLE,                 CmdChangeTimetable,               {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, VehicleOrderID, ModifyTimetableFlags, uint32_t, ModifyTimetableCtrlFlags>)
-DEF_CMD_TUPLE_NT(CMD_BULK_CHANGE_TIMETABLE,            CmdBulkChangeTimetable,           {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, ModifyTimetableFlags, uint32_t, ModifyTimetableCtrlFlags>)
-DEF_CMD_TUPLE_NT(CMD_SET_VEHICLE_ON_TIME,              CmdSetVehicleOnTime,              {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, bool>)
-DEF_CMD_TUPLE_NT(CMD_AUTOFILL_TIMETABLE,               CmdAutofillTimetable,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, bool, bool>)
-DEF_CMD_TUPLE_NT(CMD_AUTOMATE_TIMETABLE,               CmdAutomateTimetable,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, bool>)
-DEF_CMD_TUPLE_NT(CMD_TIMETABLE_SEPARATION,             CmdTimetableSeparation,           {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, bool>)
-DEF_CMD_TUPLE_NT(CMD_SET_TIMETABLE_START,              CmdSetTimetableStart,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, bool, StateTicks>)
+DEF_CMD_TUPLE_NT(Commands::ChangeTimetable,                  CmdChangeTimetable,               {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleOrderID, ModifyTimetableFlags, uint32_t, ModifyTimetableCtrlFlags>)
+DEF_CMD_TUPLE_NT(Commands::BulkChangeTimetable,              CmdBulkChangeTimetable,           {}, CommandType::RouteManagement, CmdDataT<VehicleID, ModifyTimetableFlags, uint32_t, ModifyTimetableCtrlFlags>)
+DEF_CMD_TUPLE_NT(Commands::SetVehicleOnTime,                 CmdSetVehicleOnTime,              {}, CommandType::RouteManagement, CmdDataT<VehicleID, bool>)
+DEF_CMD_TUPLE_NT(Commands::AutofillTimetable,                CmdAutofillTimetable,             {}, CommandType::RouteManagement, CmdDataT<VehicleID, bool, bool>)
+DEF_CMD_TUPLE_NT(Commands::AutomateTimetable,                CmdAutomateTimetable,             {}, CommandType::RouteManagement, CmdDataT<VehicleID, bool>)
+DEF_CMD_TUPLE_NT(Commands::TimetableSeparation,              CmdTimetableSeparation,           {}, CommandType::RouteManagement, CmdDataT<VehicleID, bool>)
+DEF_CMD_TUPLE_NT(Commands::SetTimetableStart,                CmdSetTimetableStart,             {}, CommandType::RouteManagement, CmdDataT<VehicleID, bool, StateTicks>)
 
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH,                     CmdSchDispatch,                   {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, bool>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_ADD,                 CmdSchDispatchAdd,                {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, uint32_t, uint32_t, uint32_t, uint16_t, DispatchSlotRouteID>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_REMOVE,              CmdSchDispatchRemove,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SET_DURATION,        CmdSchDispatchSetDuration,        {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SET_START_DATE,      CmdSchDispatchSetStartDate,       {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, StateTicks>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SET_DELAY,           CmdSchDispatchSetDelay,           {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SET_REUSE_SLOTS,     CmdSchDispatchSetReuseSlots,      {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, bool>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_RESET_LAST_DISPATCH, CmdSchDispatchResetLastDispatch,  {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_CLEAR,               CmdSchDispatchClear,              {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_ADD_NEW_SCHEDULE,    CmdSchDispatchAddNewSchedule,     {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, StateTicks, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_REMOVE_SCHEDULE,     CmdSchDispatchRemoveSchedule,     {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_RENAME_SCHEDULE,     CmdSchDispatchRenameSchedule,     {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, std::string>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_DUPLICATE_SCHEDULE,  CmdSchDispatchDuplicateSchedule,  {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_APPEND_VEH_SCHEDULE, CmdSchDispatchAppendVehSchedules, {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, VehicleID>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_ADJUST,              CmdSchDispatchAdjust,             {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, int32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_ADJUST_SLOT,         CmdSchDispatchAdjustSlot,         {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, ScheduledDispatchSlotSet, int32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SWAP_SCHEDULES,      CmdSchDispatchSwapSchedules,      {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, uint32_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SET_SLOT_FLAGS,      CmdSchDispatchSetSlotFlags,       {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, ScheduledDispatchSlotSet, uint16_t, uint16_t>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_SET_SLOT_ROUTE,      CmdSchDispatchSetSlotRoute,       {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, ScheduledDispatchSlotSet, DispatchSlotRouteID>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_RENAME_TAG,          CmdSchDispatchRenameTag,          {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, uint16_t, std::string>)
-DEF_CMD_TUPLE_NT(CMD_SCH_DISPATCH_EDIT_ROUTE,          CmdSchDispatchEditRoute,          {}, CMDT_ROUTE_MANAGEMENT, CmdDataT<VehicleID, uint32_t, DispatchSlotRouteID, std::string>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetEnabled,            CmdSchDispatchSetEnabled,         {}, CommandType::RouteManagement, CmdDataT<VehicleID, bool>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchAdd,                   CmdSchDispatchAdd,                {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, uint32_t, uint32_t, uint32_t, uint16_t, DispatchSlotRouteID>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchRemove,                CmdSchDispatchRemove,             {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetDuration,           CmdSchDispatchSetDuration,        {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetStartDate,          CmdSchDispatchSetStartDate,       {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, StateTicks>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetDelay,              CmdSchDispatchSetDelay,           {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetReuseSlots,         CmdSchDispatchSetReuseSlots,      {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, bool>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchResetLastDispatch,     CmdSchDispatchResetLastDispatch,  {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetLastDispatch,       CmdSchDispatchSetLastDispatch,    {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, StateTicks>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchClear,                 CmdSchDispatchClear,              {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchAddNewSchedule,        CmdSchDispatchAddNewSchedule,     {}, CommandType::RouteManagement, CmdDataT<VehicleID, StateTicks, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchRemoveSchedule,        CmdSchDispatchRemoveSchedule,     {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchRenameSchedule,        CmdSchDispatchRenameSchedule,     {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, std::string>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchDuplicateSchedule,     CmdSchDispatchDuplicateSchedule,  {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchAppendVehicleSchedule, CmdSchDispatchAppendVehSchedules, {}, CommandType::RouteManagement, CmdDataT<VehicleID, VehicleID>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchAdjust,                CmdSchDispatchAdjust,             {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, int32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchAdjustSlot,            CmdSchDispatchAdjustSlot,         {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, ScheduledDispatchSlotSet, int32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSwapSchedules,         CmdSchDispatchSwapSchedules,      {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, uint32_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetSlotFlags,          CmdSchDispatchSetSlotFlags,       {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, ScheduledDispatchSlotSet, uint16_t, uint16_t>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchSetSlotRoute,          CmdSchDispatchSetSlotRoute,       {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, ScheduledDispatchSlotSet, DispatchSlotRouteID>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchRenameTag,             CmdSchDispatchRenameTag,          {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, uint16_t, std::string>)
+DEF_CMD_TUPLE_NT(Commands::SchDispatchEditRoute,             CmdSchDispatchEditRoute,          {}, CommandType::RouteManagement, CmdDataT<VehicleID, uint32_t, DispatchSlotRouteID, std::string>)
 
 #endif /* TIMETABLE_CMD_H */

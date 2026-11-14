@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file grf.cpp Reading graphics data from (New)GRF files. */
@@ -13,9 +13,6 @@
 #include "../settings_type.h"
 #include "../strings_func.h"
 #include "../error.h"
-#include "../core/math_func.hpp"
-#include "../core/alloc_type.hpp"
-#include "../core/bitmath_func.hpp"
 #include "../spritecache.h"
 #include "grf.hpp"
 
@@ -28,7 +25,7 @@ extern const uint8_t _palmap_w2d[];
 /**
  * We found a corrupted sprite. This means that the sprite itself
  * contains invalid data or is too small for the given dimensions.
- * @param file_slot the file the errored sprite is in
+ * @param file The file the errored sprite is in.
  * @param file_pos the location in the file of the errored sprite
  * @param line the line where the error occurs.
  * @return always false (to tell loading the sprite failed)
@@ -37,7 +34,7 @@ static bool WarnCorruptSprite(const SpriteFile &file, size_t file_pos, int line)
 {
 	static uint8_t warning_level = 0;
 	if (warning_level == 0) {
-		ShowErrorMessage(GetEncodedString(STR_NEWGRF_ERROR_CORRUPT_SPRITE, file.GetSimplifiedFilename()), {}, WL_ERROR);
+		ShowErrorMessage(GetEncodedString(STR_NEWGRF_ERROR_CORRUPT_SPRITE, file.GetSimplifiedFilename()), {}, WarningLevel::Error);
 	}
 	Debug(sprite, warning_level, "[{}] Loading corrupted sprite from {} at position {}", line, file.GetSimplifiedFilename(), file_pos);
 	warning_level = 6;
@@ -379,6 +376,7 @@ SpriteLoaderResult LoadSpriteV2(SpriteLoader::SpriteCollection &sprite, SpriteFi
 					break;
 				}
 
+				if (--count == 0) break;
 				file.SkipBytes(num - 2 - 8);
 				continue;
 			}

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file overflowsafe_type.hpp An overflow safe integer-like type. */
@@ -25,6 +25,7 @@ class OverflowSafeInt
 {
 public:
 	static inline constexpr bool fmt_as_base = true;
+	static inline constexpr bool serialisation_as_base = true;
 	static inline constexpr bool saveload_primitive_type = true;
 	static inline constexpr bool string_parameter_as_base = true;
 	static inline constexpr bool integer_type_hint = true;
@@ -51,6 +52,7 @@ public:
 	/**
 	 * Safe implementation of addition.
 	 * @param other the amount to add
+	 * @return Reference to this instance.
 	 * @note when the addition would yield more than T_MAX (or less than T_MIN),
 	 *       it will be T_MAX (respectively T_MIN).
 	 */
@@ -75,6 +77,7 @@ public:
 	/**
 	 * Safe implementation of subtraction.
 	 * @param other the amount to subtract
+	 * @return Reference to this instance.
 	 * @note when the subtraction would yield less than T_MIN, it will be T_MIN.
 	 */
 	inline constexpr OverflowSafeInt& operator -= (const OverflowSafeInt& other)
@@ -111,6 +114,7 @@ public:
 	/**
 	 * Safe implementation of multiplication.
 	 * @param factor the factor to multiply this with.
+	 * @return Reference to this instance.
 	 * @note when the multiplication would yield more than T_MAX (or less than T_MIN),
 	 *       it will be T_MAX (respectively T_MIN).
 	 */
@@ -177,7 +181,9 @@ public:
 	static inline constexpr OverflowSafeInt<T> max() { return T_MAX; }
 	static inline constexpr OverflowSafeInt<T> min() { return T_MIN; }
 
-	BaseType base() const noexcept { return this->m_value; }
+	constexpr BaseType base() const noexcept { return this->m_value; }
+	constexpr const BaseType &base_ref() const noexcept { return this->m_value; }
+	constexpr BaseType &edit_base() { return this->m_value; }
 };
 
 

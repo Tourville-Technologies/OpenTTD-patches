@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_anim.hpp A 32 bpp blitter with animation support. */
@@ -49,11 +49,13 @@ public:
 	void PaletteAnimate(const Palette &palette) override;
 	Blitter::PaletteAnimation UsePaletteAnimation() override;
 
-	const char *GetName() override { return "32bpp-anim"; }
+	const char *GetName() const override { return "32bpp-anim"; }
 	void PostResize() override;
 
 	/**
 	 * Look up the colour in the current palette.
+	 * @param index The index into the palette.
+	 * @return The colour.
 	 */
 	inline Colour LookupColourInPalette(uint index)
 	{

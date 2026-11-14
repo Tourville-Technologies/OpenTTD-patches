@@ -2,13 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file network_gamelist.cpp This file handles the GameList
- * Also, it handles the request to a server for data about the server
- */
+/** @file network_gamelist.cpp This file handles the GameList and the request to a server for data about the server. */
 
 #include "../stdafx.h"
 
@@ -86,10 +83,10 @@ void NetworkAfterNewGRFScan()
 		for (auto &c : item->info.grfconfig) {
 			assert(c->flags.Test(GRFConfigFlag::Copy));
 
-			const GRFConfig *f = FindGRFConfig(c->ident.grfid, FGCM_EXACT, &c->ident.md5sum);
+			const GRFConfig *f = FindGRFConfig(c->ident.grfid, FindGRFConfigMode::Exact, &c->ident.md5sum);
 			if (f == nullptr) {
 				/* Don't know the GRF (anymore), so mark game incompatible. */
-				c->status = GCS_NOT_FOUND;
+				c->status = GRFStatus::NotFound;
 
 				/* If we miss a file, we're obviously incompatible. */
 				item->info.compatible = false;
@@ -97,10 +94,10 @@ void NetworkAfterNewGRFScan()
 				c->filename = f->filename;
 				c->name = f->name;
 				c->info = f->info;
-				c->status = GCS_UNKNOWN;
+				c->status = GRFStatus::Unknown;
 			}
 		}
 	}
 
-	InvalidateWindowClassesData(WC_NETWORK_WINDOW);
+	InvalidateWindowClassesData(WindowClass::Network);
 }

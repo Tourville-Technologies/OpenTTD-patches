@@ -2,12 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/**
- * @file tcp.cpp Basic functions to receive and send TCP packets.
- */
+/** @file tcp.cpp Basic functions to receive and send TCP packets. */
 
 #include "../../stdafx.h"
 #include "../../debug.h"
@@ -46,7 +44,7 @@ NetworkRecvStatus NetworkTCPSocketHandler::CloseConnection([[maybe_unused]] bool
 	this->packet_queue.clear();
 	this->packet_recv = nullptr;
 
-	return NETWORK_RECV_STATUS_OKAY;
+	return NetworkRecvStatus::Okay;
 }
 
 /**
@@ -116,8 +114,8 @@ void NetworkTCPSocketHandler::ShrinkToFitSendQueue()
 SendPacketsState NetworkTCPSocketHandler::SendPackets(bool closing_down)
 {
 	/* We can not write to this socket!! */
-	if (!this->writable) return SPS_NONE_SENT;
-	if (!this->IsConnected()) return SPS_CLOSED;
+	if (!this->writable) return SendPacketsState::NoneSent;
+	if (!this->IsConnected()) return SendPacketsState::Closed;
 
 	while (!this->packet_queue.empty()) {
 		Packet &p = *this->packet_queue.front();
@@ -131,14 +129,14 @@ SendPacketsState NetworkTCPSocketHandler::SendPackets(bool closing_down)
 					Debug(net, 0, "Send failed: {}", err.AsString());
 					this->CloseConnection();
 				}
-				return SPS_CLOSED;
+				return SendPacketsState::Closed;
 			}
-			return SPS_PARTLY_SENT;
+			return SendPacketsState::PartlySent;
 		}
 		if (res == 0) {
 			/* Client/server has left us :( */
 			if (!closing_down) this->CloseConnection();
-			return SPS_CLOSED;
+			return SendPacketsState::Closed;
 		}
 
 		/* Is this packet sent? */
@@ -147,11 +145,11 @@ SendPacketsState NetworkTCPSocketHandler::SendPackets(bool closing_down)
 			if (GetDebugLevel(DebugLevelID::net) >= 5) this->LogSentPacket(p);
 			this->packet_queue.pop_front();
 		} else {
-			return SPS_PARTLY_SENT;
+			return SendPacketsState::PartlySent;
 		}
 	}
 
-	return SPS_ALL_SENT;
+	return SendPacketsState::AllSent;
 }
 
 /**

@@ -2,13 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_anim.cpp Implementation of the optimized 32 bpp blitter with animation support. */
 
 #include "../stdafx.h"
-#include "../video/video_driver.hpp"
+#include "../video/video_driver_base.hpp"
 #include "../palette_func.h"
 #include "../zoom_func.h"
 #include "32bpp_anim.hpp"
@@ -132,7 +132,7 @@ inline void Blitter_32bppAnim::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 										brightness = Clamp(brightness + bp->brightness_adjust, 0, 255);
 										SB(m, 8, 8, brightness);
 									}
-									*dst = AdjustBrightness(this->LookupColourInPalette(r), brightness);
+									*dst = AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), brightness);
 								}
 								*anim = r | (m & 0xFF00);
 							}
@@ -155,7 +155,7 @@ inline void Blitter_32bppAnim::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 								if (r != 0) {
 									uint8_t brightness = GB(m, 8, 8);
 									if (mode == BlitterMode::ColourRemapWithBrightness) brightness = Clamp(brightness + bp->brightness_adjust, 0, 255);
-									*dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), brightness), src_px->a, *dst);
+									*dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), brightness), src_px->a, *dst);
 								}
 							}
 							anim++;
@@ -177,7 +177,7 @@ inline void Blitter_32bppAnim::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 							} else {
 								uint r = remap[GB(m, 0, 8)];
 								*anim = r | (m & 0xFF00);
-								if (r != 0) *dst = AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8));
+								if (r != 0) *dst = AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8));
 							}
 							anim++;
 							dst++;
@@ -196,7 +196,7 @@ inline void Blitter_32bppAnim::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 							} else {
 								uint r = remap[GB(m, 0, 8)];
 								*anim = 0;
-								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(this->LookupColourInPalette(r), GB(m, 8, 8)), src_px->a, *dst);
+								if (r != 0) *dst = ComposeColourPANoCheck(AdjustBrightness(ResolveRGBRemap(bp, GB(m, 0, 8), this->LookupColourInPalette(r)), GB(m, 8, 8)), src_px->a, *dst);
 							}
 							anim++;
 							dst++;
@@ -402,11 +402,11 @@ void Blitter_32bppAnim::DrawColourMappingRect(void *dst, int width, int height, 
 
 void Blitter_32bppAnim::SetPixel(void *video, int x, int y, PixelColour colour)
 {
-	*((Colour *)video + x + y * _screen.pitch) = LookupColourInPalette(colour.p);
+	*((Colour *)video + x + y * _screen.pitch) = (colour.rgb != 0 ? Colour(colour.rgb) : LookupColourInPalette(colour.p));
 
 	/* Set the colour in the anim-buffer too, if we are rendering to the screen */
 	if (_screen_disable_anim) return;
-	this->anim_buf[this->ScreenToAnimOffset((uint32_t *)video) + x + y * this->anim_buf_pitch] = colour.p | (DEFAULT_BRIGHTNESS << 8);
+	this->anim_buf[this->ScreenToAnimOffset((uint32_t *)video) + x + y * this->anim_buf_pitch] = (colour.rgb != 0 ? 0 : colour.p | (DEFAULT_BRIGHTNESS << 8));
 }
 
 void Blitter_32bppAnim::SetPixel32(void *video, int x, int y, PixelColour colour, uint32_t colour32)
@@ -420,7 +420,7 @@ void Blitter_32bppAnim::SetPixel32(void *video, int x, int y, PixelColour colour
 
 void Blitter_32bppAnim::DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, PixelColour colour, int width, int dash)
 {
-	const Colour c = LookupColourInPalette(colour.p);
+	const Colour c = (colour.rgb != 0 ? Colour(colour.rgb) : LookupColourInPalette(colour.p));
 
 	if (_screen_disable_anim)  {
 		this->DrawLineGeneric(x, y, x2, y2, screen_width, screen_height, width, dash, [&](int x, int y) {
@@ -428,7 +428,7 @@ void Blitter_32bppAnim::DrawLine(void *video, int x, int y, int x2, int y2, int 
 		});
 	} else {
 		uint16_t * const offset_anim_buf = this->anim_buf + this->ScreenToAnimOffset((uint32_t *)video);
-		const uint16_t anim_colour = colour.p | (DEFAULT_BRIGHTNESS << 8);
+		const uint16_t anim_colour = (colour.rgb != 0 ? 0 : colour.p | (DEFAULT_BRIGHTNESS << 8));
 		this->DrawLineGeneric(x, y, x2, y2, screen_width, screen_height, width, dash, [&](int x, int y) {
 			*((Colour *)video + x + y * _screen.pitch) = c;
 			offset_anim_buf[x + y * this->anim_buf_pitch] = anim_colour;
@@ -514,7 +514,7 @@ void Blitter_32bppAnim::DrawRect(void *video, int width, int height, PixelColour
 		return;
 	}
 
-	Colour colour32 = LookupColourInPalette(colour.p);
+	Colour colour32 = (colour.rgb != 0 ? Colour(colour.rgb) : LookupColourInPalette(colour.p));
 	uint16_t *anim_line = this->ScreenToAnimOffset((uint32_t *)video) + this->anim_buf;
 
 	do {
@@ -524,7 +524,7 @@ void Blitter_32bppAnim::DrawRect(void *video, int width, int height, PixelColour
 		for (int i = width; i > 0; i--) {
 			*dst = colour32;
 			/* Set the colour in the anim-buffer too */
-			*anim = colour.p | (DEFAULT_BRIGHTNESS << 8);
+			*anim = (colour.rgb != 0 ? 0 : colour.p | (DEFAULT_BRIGHTNESS << 8));
 			dst++;
 			anim++;
 		}
@@ -689,7 +689,7 @@ void Blitter_32bppAnim::PaletteAnimate(const Palette &palette)
 	}
 
 	/* Make sure the backend redraws the whole screen */
-	VideoDriver::GetInstance()->MakeDirty(0, 0, _screen.width, _screen.height);
+	VideoDriverBase::GetInstance()->MakeDirty(0, 0, _screen.width, _screen.height);
 }
 
 Blitter::PaletteAnimation Blitter_32bppAnim::UsePaletteAnimation()

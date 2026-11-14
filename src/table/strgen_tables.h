@@ -2,18 +2,21 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file table/strgen_tables.h Tables of commands for strgen */
+/** @file strgen_tables.h Tables of commands for strgen. */
 
 #include "../core/enum_type.hpp"
 
+/** Flags describing how to process a string command. */
 enum class CmdFlag : uint8_t {
 	DontCount, ///< These commands aren't counted for comparison
 	Case, ///< These commands support cases
 	Gender, ///< These commands support genders
 };
+
+/** Bitset of \c CmdFlag elements. */
 using CmdFlags = EnumBitSet<CmdFlag, uint8_t>;
 
 class StringBuilder;

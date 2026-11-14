@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_globalvar.cpp NewGRF Action 0x00 handler for global variables. */
@@ -10,7 +10,7 @@
 #include "../stdafx.h"
 #include "../debug.h"
 #include "../date_func.h"
-#include "../currency.h"
+#include "../currency_func.h"
 #include "../landscape.h"
 #include "../language.h"
 #include "../rev.h"
@@ -51,32 +51,32 @@ static ChangeInfoResult LoadTranslationTable(uint first, uint last, ByteReader &
 {
 	if (first != 0) {
 		GrfMsg(1, "LoadTranslationTable: {} translation table must start at zero", name);
-		return CIR_INVALID_ID;
+		return ChangeInfoResult::InvalidId;
 	}
 
 	std::vector<T> &translation_table = gettable(*_cur_gps.grffile);
 	translation_table.clear();
 	translation_table.reserve(last);
 	for (uint id = first; id < last; ++id) {
-		translation_table.push_back(T(std::byteswap(buf.ReadDWord())));
+		translation_table.push_back(buf.ReadLabel<T>());
 	}
 
 	GRFFile *grf_override = GetCurrentGRFOverride();
 	if (grf_override != nullptr) {
 		/* GRF override is present, copy the translation table to the overridden GRF as well. */
-		GrfMsg(1, "LoadTranslationTable: Copying {} translation table to override GRFID {:08X}", name, std::byteswap(grf_override->grfid));
+		GrfMsg(1, "LoadTranslationTable: Copying {} translation table to override GRFID {}", name, FormatArrayAsHex(grf_override->grfid));
 		std::vector<T> &override_table = gettable(*grf_override);
 		override_table = translation_table;
 	}
 
-	return CIR_SUCCESS;
+	return ChangeInfoResult::Success;
 }
 
 static ChangeInfoResult LoadBadgeTranslationTable(uint first, uint last, ByteReader &buf, std::vector<BadgeID> &translation_table, std::string_view name)
 {
 	if (first != 0 && first != std::size(translation_table)) {
 		GrfMsg(1, "LoadBadgeTranslationTable: {} translation table must start at zero or {}", name, std::size(translation_table));
-		return CIR_INVALID_ID;
+		return ChangeInfoResult::InvalidId;
 	}
 
 	if (first == 0) translation_table.clear();
@@ -86,7 +86,7 @@ static ChangeInfoResult LoadBadgeTranslationTable(uint first, uint last, ByteRea
 		translation_table.push_back(GetOrCreateBadge(label).index);
 	}
 
-	return CIR_SUCCESS;
+	return ChangeInfoResult::Success;
 }
 
 /**
@@ -116,6 +116,8 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 	/* Properties which are handled as a whole */
 	switch (prop) {
 		case 0x09: // Cargo Translation Table; loading during both reservation and activation stage (in case it is selected depending on defined cargos)
+			/* Explicitly defined cargo translation table means it's no longer a fallback list. LoadTranslationTable erases any existing list. */
+			_cur_gps.grffile->cargo_list_is_fallback = false;
 			return LoadTranslationTable<CargoLabel>(first, last, buf, [](GRFFile &grf) -> std::vector<CargoLabel> & { return grf.cargo_list; }, "Cargo");
 
 		case 0x12: // Rail type translation table; loading during both reservation and activation stage (in case it is selected depending on defined railtypes)
@@ -135,14 +137,14 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 	}
 
 	/* Properties which are handled per item */
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 	for (uint id = first; id < last; ++id) {
 		switch (prop) {
 			case 0x08: { // Cost base factor
 				int factor = buf.ReadByte();
 
-				if (id < PR_END) {
-					_cur_gps.grffile->price_base_multipliers[id] = std::min<int>(factor - 8, MAX_PRICE_MODIFIER);
+				if (id < to_underlying(Price::End)) {
+					_cur_gps.grffile->price_base_multipliers[static_cast<Price>(id)] = std::min<int>(factor - 8, MAX_PRICE_MODIFIER);
 				} else {
 					GrfMsg(1, "GlobalVarChangeInfo: Price {} out of range, ignoring", id);
 				}
@@ -150,9 +152,9 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 			}
 
 			case 0x0A: { // Currency display names
-				uint curidx = GetNewgrfCurrencyIdConverted(id);
-				if (curidx < CURRENCY_END) {
-					AddStringForMapping(GRFStringID{buf.ReadWord()}, curidx, [](StringID str, uint curidx) {
+				Currency curidx = GetNewgrfCurrencyIdConverted(id);
+				if (curidx < Currency::End) {
+					AddStringForMapping(GRFStringID{buf.ReadWord()}, curidx, [](StringID str, Currency curidx) {
 						_currency_specs[curidx].name = str;
 						_currency_specs[curidx].code.clear();
 					});
@@ -163,69 +165,69 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 			}
 
 			case 0x0B: { // Currency multipliers
-				uint curidx = GetNewgrfCurrencyIdConverted(id);
+				Currency curidx = GetNewgrfCurrencyIdConverted(id);
 				uint32_t rate = buf.ReadDWord();
 
-				if (curidx < CURRENCY_END) {
+				if (curidx < Currency::End) {
 					/* TTDPatch uses a multiple of 1000 for its conversion calculations,
 					 * which OTTD does not. For this reason, divide grf value by 1000,
 					 * to be compatible */
 					_currency_specs[curidx].rate = rate / 1000;
 				} else {
-					GrfMsg(1, "GlobalVarChangeInfo: Currency multipliers {} out of range, ignoring", curidx);
+					GrfMsg(1, "GlobalVarChangeInfo: Currency multipliers {} out of range, ignoring", id);
 				}
 				break;
 			}
 
 			case 0x0C: { // Currency options
-				uint curidx = GetNewgrfCurrencyIdConverted(id);
+				Currency curidx = GetNewgrfCurrencyIdConverted(id);
 				uint16_t options = buf.ReadWord();
 
-				if (curidx < CURRENCY_END) {
+				if (curidx < Currency::End) {
 					_currency_specs[curidx].separator.clear();
 					_currency_specs[curidx].separator.push_back(GB(options, 0, 8));
 					StrMakeValidInPlace(_currency_specs[curidx].separator);
 					/* By specifying only one bit, we prevent errors,
 					 * since newgrf specs said that only 0 and 1 can be set for symbol_pos */
-					_currency_specs[curidx].symbol_pos = GB(options, 8, 1);
+					_currency_specs[curidx].symbol_pos = HasBit(options, 8) ? CurrencySymbolPosition::Suffix : CurrencySymbolPosition::Prefix;
 				} else {
-					GrfMsg(1, "GlobalVarChangeInfo: Currency option {} out of range, ignoring", curidx);
+					GrfMsg(1, "GlobalVarChangeInfo: Currency option {} out of range, ignoring", id);
 				}
 				break;
 			}
 
 			case 0x0D: { // Currency prefix symbol
-				uint curidx = GetNewgrfCurrencyIdConverted(id);
+				Currency curidx = GetNewgrfCurrencyIdConverted(id);
 				std::string prefix = ReadDWordAsString(buf);
 
-				if (curidx < CURRENCY_END) {
+				if (curidx < Currency::End) {
 					_currency_specs[curidx].prefix = std::move(prefix);
 				} else {
-					GrfMsg(1, "GlobalVarChangeInfo: Currency symbol {} out of range, ignoring", curidx);
+					GrfMsg(1, "GlobalVarChangeInfo: Currency symbol {} out of range, ignoring", id);
 				}
 				break;
 			}
 
 			case 0x0E: { // Currency suffix symbol
-				uint curidx = GetNewgrfCurrencyIdConverted(id);
+				Currency curidx = GetNewgrfCurrencyIdConverted(id);
 				std::string suffix = ReadDWordAsString(buf);
 
-				if (curidx < CURRENCY_END) {
+				if (curidx < Currency::End) {
 					_currency_specs[curidx].suffix = std::move(suffix);
 				} else {
-					GrfMsg(1, "GlobalVarChangeInfo: Currency symbol {} out of range, ignoring", curidx);
+					GrfMsg(1, "GlobalVarChangeInfo: Currency symbol {} out of range, ignoring", id);
 				}
 				break;
 			}
 
 			case 0x0F: { //  Euro introduction dates
-				uint curidx = GetNewgrfCurrencyIdConverted(id);
+				Currency curidx = GetNewgrfCurrencyIdConverted(id);
 				CalTime::Year year_euro{buf.ReadWord()};
 
-				if (curidx < CURRENCY_END) {
+				if (curidx < Currency::End) {
 					_currency_specs[curidx].to_euro = year_euro;
 				} else {
-					GrfMsg(1, "GlobalVarChangeInfo: Euro intro date {} out of range, ignoring", curidx);
+					GrfMsg(1, "GlobalVarChangeInfo: Euro intro date {} out of range, ignoring", id);
 				}
 				break;
 			}
@@ -270,10 +272,10 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 			case 0x13:   // Gender translation table
 			case 0x14:   // Case translation table
 			case 0x15: { // Plural form translation
-				uint curidx = id; // The current index, i.e. language.
-				const LanguageMetadata *lang = curidx < MAX_LANG ? GetLanguage(curidx) : nullptr;
+				GRFLanguage langid = static_cast<GRFLanguage>(id); // The current index, i.e. language.
+				const LanguageMetadata *lang = langid < GRFLanguage::End ? GetLanguage(langid) : nullptr;
 				if (lang == nullptr) {
-					GrfMsg(1, "GlobalVarChangeInfo: Language {} is not known, ignoring", curidx);
+					GrfMsg(1, "GlobalVarChangeInfo: Language {} is not known, ignoring", langid);
 					/* Skip over the data. */
 					if (prop == 0x15) {
 						buf.ReadByte();
@@ -290,7 +292,7 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 					if (plural_form >= LANGUAGE_MAX_PLURAL) {
 						GrfMsg(1, "GlobalVarChanceInfo: Plural form {} is out of range, ignoring", plural_form);
 					} else {
-						_cur_gps.grffile->language_map[curidx].plural_form = plural_form;
+						_cur_gps.grffile->language_map[langid].plural_form = plural_form;
 					}
 					break;
 				}
@@ -313,14 +315,14 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 						if (map.openttd_id >= MAX_NUM_GENDERS) {
 							GrfMsg(1, "GlobalVarChangeInfo: Gender name {} is not known, ignoring", StrMakeValid(name));
 						} else {
-							_cur_gps.grffile->language_map[curidx].gender_map.push_back(map);
+							_cur_gps.grffile->language_map[langid].gender_map.push_back(map);
 						}
 					} else {
 						map.openttd_id = lang->GetCaseIndex(name);
 						if (map.openttd_id >= MAX_NUM_CASES) {
 							GrfMsg(1, "GlobalVarChangeInfo: Case name {} is not known, ignoring", StrMakeValid(name));
 						} else {
-							_cur_gps.grffile->language_map[curidx].case_map.push_back(map);
+							_cur_gps.grffile->language_map[langid].case_map.push_back(map);
 						}
 					}
 					newgrf_id = buf.ReadByte();
@@ -356,13 +358,6 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, con
 				break;
 			}
 
-			case A0RPI_GLOBALVAR_ALLOW_ROCKS_DESERT: {
-				if (MappedPropertyLengthMismatch(buf, 1, mapping_entry)) break;
-				extern bool _allow_rocks_desert;
-				_allow_rocks_desert = (buf.ReadByte() != 0);
-				break;
-			}
-
 			default:
 				ret = HandleAction0PropertyDefault(buf, prop);
 				break;
@@ -377,6 +372,8 @@ static ChangeInfoResult GlobalVarReserveInfo(uint first, uint last, int prop, co
 	/* Properties which are handled as a whole */
 	switch (prop) {
 		case 0x09: // Cargo Translation Table; loading during both reservation and activation stage (in case it is selected depending on defined cargos)
+			/* Explicitly defined cargo translation table means it's no longer a fallback list. LoadTranslationTable erases any existing list. */
+			_cur_gps.grffile->cargo_list_is_fallback = false;
 			return LoadTranslationTable<CargoLabel>(first, last, buf, [](GRFFile &grf) -> std::vector<CargoLabel> & { return grf.cargo_list; }, "Cargo");
 
 		case 0x12: // Rail type translation table; loading during both reservation and activation stage (in case it is selected depending on defined railtypes)
@@ -396,7 +393,7 @@ static ChangeInfoResult GlobalVarReserveInfo(uint first, uint last, int prop, co
 	}
 
 	/* Properties which are handled per item */
-	ChangeInfoResult ret = CIR_SUCCESS;
+	ChangeInfoResult ret = ChangeInfoResult::Success;
 
 	for (uint id = first; id < last; ++id) {
 		switch (prop) {
@@ -422,8 +419,8 @@ static ChangeInfoResult GlobalVarReserveInfo(uint first, uint last, int prop, co
 				break;
 
 			case 0x11: { // GRF match for engine allocation
-				uint32_t s = buf.ReadDWord();
-				uint32_t t = buf.ReadDWord();
+				GrfID s = buf.ReadLabel<GrfID>();
+				GrfID t = buf.ReadLabel<GrfID>();
 				SetNewGRFOverride(s, t);
 				break;
 			}
@@ -439,7 +436,6 @@ static ChangeInfoResult GlobalVarReserveInfo(uint first, uint last, int prop, co
 			case A0RPI_GLOBALVAR_EXTRA_STATION_NAMES_PROBABILITY:
 			case A0RPI_GLOBALVAR_LIGHTHOUSE_GENERATE_AMOUNT:
 			case A0RPI_GLOBALVAR_TRANSMITTER_GENERATE_AMOUNT:
-			case A0RPI_GLOBALVAR_ALLOW_ROCKS_DESERT:
 				buf.Skip(buf.ReadExtendedByte());
 				break;
 
@@ -499,7 +495,7 @@ bool GetGlobalVariable(uint8_t param, uint32_t *value, const GRFFile *grffile)
 			return true;
 
 		case 0x06: // road traffic side, bit 4 clear=left, set=right
-			*value = _settings_game.vehicle.road_side << 4;
+			*value = to_underlying(_settings_game.vehicle.road_side) << 4;
 			return true;
 
 		case 0x09: // date fraction
@@ -534,7 +530,7 @@ bool GetGlobalVariable(uint8_t param, uint32_t *value, const GRFFile *grffile)
 				/* skip elrail multiplier - disabled */
 				SB(*value, 8, 8, GetRailTypeInfo(RAILTYPE_MONO)->cost_multiplier); // monorail
 			} else {
-				SB(*value, 8, 8, GetRailTypeInfo(RAILTYPE_ELECTRIC)->cost_multiplier); // electified railway
+				SB(*value, 8, 8, GetRailTypeInfo(RAILTYPE_ELECTRIC)->cost_multiplier); // electrified railway
 				/* Skip monorail multiplier - no space in result */
 			}
 			SB(*value, 16, 8, GetRailTypeInfo(RAILTYPE_MAGLEV)->cost_multiplier); // maglev
@@ -545,7 +541,7 @@ bool GetGlobalVariable(uint8_t param, uint32_t *value, const GRFFile *grffile)
 			return true;
 
 		case 0x12: // Game mode
-			*value = _game_mode;
+			*value = to_underlying(_game_mode);
 			return true;
 
 		/* case 0x13: // Tile refresh offset to left    not implemented */
@@ -610,5 +606,5 @@ bool GetGlobalVariable(uint8_t param, uint32_t *value, const GRFFile *grffile)
 	}
 }
 
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_GLOBALVAR>::Reserve(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return GlobalVarReserveInfo(first, last, prop, mapping_entry, buf); }
-template <> ChangeInfoResult GrfChangeInfoHandler<GSF_GLOBALVAR>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return GlobalVarChangeInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::GlobalVar>::Reserve(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return GlobalVarReserveInfo(first, last, prop, mapping_entry, buf); }
+template <> ChangeInfoResult GrfChangeInfoHandler<GrfSpecFeature::GlobalVar>::Activation(uint first, uint last, int prop, const GRFFilePropertyRemapEntry *mapping_entry, ByteReader &buf) { return GlobalVarChangeInfo(first, last, prop, mapping_entry, buf); }

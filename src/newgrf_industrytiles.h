@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_industrytiles.h NewGRF handling of industry tiles. */
@@ -12,7 +12,6 @@
 
 #include "newgrf_animation_type.h"
 #include "newgrf_industries.h"
-#include "core/random_func.hpp"
 
 /** Resolver for the industry tiles scope. */
 struct IndustryTileScopeResolver : public ScopeResolver {
@@ -44,11 +43,11 @@ struct IndustryTileResolverObject : public SpecializedResolverObject<IndustryRan
 	IndustryTileResolverObject(IndustryGfx gfx, TileIndex tile, Industry *indus,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t callback_param1 = 0, uint32_t callback_param2 = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &indtile_scope;
-			case VSG_SCOPE_PARENT: return &ind_scope;
+			case VarSpriteGroupScope::Self: return &indtile_scope;
+			case VarSpriteGroupScope::Parent: return &ind_scope;
 			default: return ResolverObject::GetScope(scope, relative);
 		}
 	}

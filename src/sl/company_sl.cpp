@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file company_sl.cpp Code handling saving and loading of company data */
@@ -45,7 +45,7 @@ void AfterLoadCompanyStats()
 	Company *c;
 	for (TileIndex tile(0); tile < Map::Size(); ++tile) {
 		switch (GetTileType(tile)) {
-			case MP_RAILWAY:
+			case TileType::Railway:
 				c = Company::GetIfValid(GetTileOwner(tile));
 				if (c != nullptr) {
 					uint pieces = 1;
@@ -64,14 +64,14 @@ void AfterLoadCompanyStats()
 				}
 				break;
 
-			case MP_ROAD: {
+			case TileType::Road: {
 				if (IsLevelCrossing(tile)) {
 					c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) c->infrastructure.rail[GetRailType(tile)] += LEVELCROSSING_TRACKBIT_FACTOR;
 				}
 
 				/* Iterate all present road types as each can have a different owner. */
-				for (RoadTramType rtt : _roadtramtypes) {
+				for (RoadTramType rtt : ROADTRAMTYPES_ALL) {
 					RoadType rt = GetRoadType(tile, rtt);
 					if (rt == INVALID_ROADTYPE) continue;
 					c = Company::GetIfValid(IsRoadDepot(tile) ? GetTileOwner(tile) : GetRoadOwner(tile, rtt));
@@ -81,7 +81,7 @@ void AfterLoadCompanyStats()
 				break;
 			}
 
-			case MP_STATION:
+			case TileType::Station:
 				c = Company::GetIfValid(GetTileOwner(tile));
 				if (c != nullptr && GetStationType(tile) != StationType::Airport && !IsBuoy(tile)) c->infrastructure.station++;
 
@@ -95,7 +95,7 @@ void AfterLoadCompanyStats()
 					case StationType::Truck:
 					case StationType::RoadWaypoint: {
 						/* Iterate all present road types as each can have a different owner. */
-						for (RoadTramType rtt : _roadtramtypes) {
+						for (RoadTramType rtt : ROADTRAMTYPES_ALL) {
 							RoadType rt = GetRoadType(tile, rtt);
 							if (rt == INVALID_ROADTYPE) continue;
 							c = Company::GetIfValid(GetRoadOwner(tile, rtt));
@@ -106,7 +106,7 @@ void AfterLoadCompanyStats()
 
 					case StationType::Dock:
 					case StationType::Buoy:
-						if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
+						if (GetWaterClass(tile) == WaterClass::Canal) {
 							if (c != nullptr) c->infrastructure.water++;
 						}
 						break;
@@ -116,12 +116,12 @@ void AfterLoadCompanyStats()
 				}
 				break;
 
-			case MP_WATER:
+			case TileType::Water:
 				if (IsShipDepot(tile) || IsLock(tile)) {
 					c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) {
 						if (IsShipDepot(tile)) c->infrastructure.water += LOCK_DEPOT_TILE_FACTOR;
-						if (IsLock(tile) && GetLockPart(tile) == LOCK_PART_MIDDLE) {
+						if (IsLock(tile) && GetLockPart(tile) == LockPart::Middle) {
 							/* The middle tile specifies the owner of the lock. */
 							c->infrastructure.water += 3 * LOCK_DEPOT_TILE_FACTOR; // the middle tile specifies the owner of the
 							break; // do not count the middle tile as canal
@@ -130,16 +130,16 @@ void AfterLoadCompanyStats()
 				}
 				[[fallthrough]];
 
-			case MP_OBJECT:
-				if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
+			case TileType::Object:
+				if (GetWaterClass(tile) == WaterClass::Canal) {
 					c = Company::GetIfValid(GetTileOwner(tile));
 					if (c != nullptr) c->infrastructure.water++;
 				}
 				break;
 
-			case MP_TUNNELBRIDGE: {
+			case TileType::TunnelBridge: {
 				/* Only count the tunnel/bridge if we're on the western end tile. */
-				if (GetTunnelBridgeDirection(tile) < DIAGDIR_SW) {
+				if (GetTunnelBridgeDirection(tile) < DiagDirection::SW) {
 					TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
 
 					/* Count each tunnel/bridge TUNNELBRIDGE_TRACKBIT_FACTOR times to simulate
@@ -147,16 +147,16 @@ void AfterLoadCompanyStats()
 					const uint middle_len = GetTunnelBridgeLength(tile, other_end) * TUNNELBRIDGE_TRACKBIT_FACTOR;
 
 					switch (GetTunnelBridgeTransportType(tile)) {
-						case TRANSPORT_RAIL:
+						case TransportType::Rail:
 							AddRailTunnelBridgeInfrastructure(tile, other_end);
 							break;
 
-						case TRANSPORT_ROAD: {
+						case TransportType::Road: {
 							AddRoadTunnelBridgeInfrastructure(tile, other_end);
 							break;
 						}
 
-						case TRANSPORT_WATER:
+						case TransportType::Water:
 							c = Company::GetIfValid(GetTileOwner(tile));
 							if (c != nullptr) c->infrastructure.water += middle_len + (2 * TUNNELBRIDGE_TRACKBIT_FACTOR);
 							break;
@@ -263,28 +263,29 @@ static void LoadLiveries(CompanyProperties *c, uint num_liveries, const SaveLoad
 	bool update_in_use = IsSavegameVersionBefore(SLV_GROUP_LIVERIES);
 
 	for (uint i = 0; i < num_liveries; i++) {
-		SlObjectLoadFiltered(&c->livery[i], slt);
-		if (update_in_use && i != LS_DEFAULT) {
-			if (c->livery[i].in_use == 0) {
-				c->livery[i].colour1 = c->livery[LS_DEFAULT].colour1;
-				c->livery[i].colour2 = c->livery[LS_DEFAULT].colour2;
+		Livery &livery = c->livery[static_cast<LiveryScheme>(i)];
+		SlObjectLoadFiltered(&livery, slt);
+		if (update_in_use && i != to_underlying(LiveryScheme::Default)) {
+			if (livery.in_use.base() == 0) {
+				livery.colour1 = c->livery[LiveryScheme::Default].colour1;
+				livery.colour2 = c->livery[LiveryScheme::Default].colour2;
 			} else {
-				c->livery[i].in_use = 3;
+				livery.in_use = {Livery::Flag::Primary, Livery::Flag::Secondary};
 			}
 		}
 	}
 
-	if (num_liveries < LS_END) {
+	if (num_liveries < to_underlying(LiveryScheme::End)) {
 		/* We want to insert some liveries somewhere in between. This means some have to be moved. */
-		memmove(&c->livery[LS_FREIGHT_WAGON], &c->livery[LS_PASSENGER_WAGON_MONORAIL], (LS_END - LS_FREIGHT_WAGON) * sizeof(c->livery[0]));
-		c->livery[LS_PASSENGER_WAGON_MONORAIL] = c->livery[LS_MONORAIL];
-		c->livery[LS_PASSENGER_WAGON_MAGLEV]   = c->livery[LS_MAGLEV];
+		memmove(&c->livery[LiveryScheme::FreightWagon], &c->livery[LiveryScheme::PassengerWagonMonorail], (to_underlying(LiveryScheme::End) - to_underlying(LiveryScheme::FreightWagon)) * sizeof(c->livery[LiveryScheme::Begin]));
+		c->livery[LiveryScheme::PassengerWagonMonorail] = c->livery[LiveryScheme::Monorail];
+		c->livery[LiveryScheme::PassengerWagonMaglev]   = c->livery[LiveryScheme::Maglev];
 	}
 
-	if (num_liveries == LS_END - 4) {
+	if (num_liveries == to_underlying(LiveryScheme::End) - 4) {
 		/* Copy bus/truck liveries over to trams */
-		c->livery[LS_PASSENGER_TRAM] = c->livery[LS_BUS];
-		c->livery[LS_FREIGHT_TRAM]   = c->livery[LS_TRUCK];
+		c->livery[LiveryScheme::PassengerTram] = c->livery[LiveryScheme::Bus];
+		c->livery[LiveryScheme::FreightTram] = c->livery[LiveryScheme::Truck];
 	}
 }
 
@@ -392,15 +393,15 @@ struct CompanyLiveriesStructHandler final : public TypedSaveLoadStructHandler<Co
 
 	void Save(CompanyProperties *cprops) const override
 	{
-		SlSetStructListLength(LS_END);
-		for (int i = 0; i < LS_END; i++) {
-			SlObjectSaveFiltered(&cprops->livery[i], this->GetLoadDescription());
+		SlSetStructListLength(to_underlying(LiveryScheme::End));
+		for (int i = 0; i < to_underlying(LiveryScheme::End); i++) {
+			SlObjectSaveFiltered(&cprops->livery[static_cast<LiveryScheme>(i)], this->GetLoadDescription());
 		}
 	}
 
 	void Load(CompanyProperties *cprops) const override
 	{
-		uint num_liveries = static_cast<uint>(SlGetStructListLength(LS_END));
+		uint num_liveries = static_cast<uint>(SlGetStructListLength(to_underlying(LiveryScheme::End)));
 		LoadLiveries(cprops, num_liveries, this->GetLoadDescription());
 	}
 
@@ -462,6 +463,8 @@ static const NamedSaveLoad _company_desc[] = {
 	NSL("current_loan",                 SLE_CONDVAR(CompanyProperties, current_loan,          SLE_VAR_I64 | SLE_FILE_I32,  SL_MIN_VERSION, SLV_65)),
 	NSL("current_loan",                 SLE_CONDVAR(CompanyProperties, current_loan,          SLE_INT64,                   SLV_65, SL_MAX_VERSION)),
 
+	NSL("colour_rgb", SLE_CONDVAR_X(CompanyProperties, colour_rgb, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANY_RGB24))),
+	NSL("colour2_rgb", SLE_CONDVAR_X(CompanyProperties, colour2_rgb, SLE_UINT32, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANY_RGB24))),
 	NSL("colour",                           SLE_VAR(CompanyProperties, colour,                SLE_UINT8)),
 	NSL("money_fraction",                   SLE_VAR(CompanyProperties, money_fraction,        SLE_UINT8)),
 	NSL("",                            SLE_CONDNULL(1,  SL_MIN_VERSION,  SLV_58)), ///< avail_railtypes
@@ -485,9 +488,9 @@ static const NamedSaveLoad _company_desc[] = {
 	NSL("months_of_bankruptcy",             SLE_VAR(CompanyProperties, months_of_bankruptcy,  SLE_UINT8)),
 	NSL("bankrupt_last_asked",        SLE_CONDVAR_X(CompanyProperties, bankrupt_last_asked,   SLE_UINT8,        SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_BANKRUPTCY_EXTRA))),
 	NSL("bankrupt_flags",             SLE_CONDVAR_X(CompanyProperties, bankrupt_flags,        SLE_UINT8,        SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_BANKRUPTCY_EXTRA, 2))),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_FILE_U8 | SLE_VAR_U32,  SL_MIN_VERSION, SLV_104)),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_FILE_U16 | SLE_VAR_U32,                  SLV_104, SLV_15_COMPANY)),
-	NSL("bankrupt_asked",               SLE_CONDVAR(CompanyProperties, bankrupt_asked,        SLE_UINT32 | SLE_UINT32,                  SLV_15_COMPANY, SL_MAX_VERSION)),
+	NSL("bankrupt_asked",               SLE_CONDVAR_X(CompanyProperties, bankrupt_asked.bits[0],        SLE_FILE_U8  | SLE_VAR_U16,  SL_MIN_VERSION, SLV_104, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("bankrupt_asked",               SLE_CONDVAR_X(CompanyProperties, bankrupt_asked.bits[0],        SLE_UINT16,                  SLV_104, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240, 0, 0))),
+	NSL("bankrupt_asked", SLE_CONDARR_X(CompanyProperties, bankrupt_asked.bits, SLE_UINT16, CompanyMask::WORD_COUNT, SL_MIN_VERSION, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_COMPANIES_240))),
 	NSL("bankrupt_timeout",                 SLE_VAR(CompanyProperties, bankrupt_timeout,      SLE_INT16)),
 	NSL("bankrupt_value",               SLE_CONDVAR(CompanyProperties, bankrupt_value,        SLE_VAR_I64 | SLE_FILE_I32,  SL_MIN_VERSION, SLV_65)),
 	NSL("bankrupt_value",               SLE_CONDVAR(CompanyProperties, bankrupt_value,        SLE_INT64,                   SLV_65, SL_MAX_VERSION)),
@@ -513,6 +516,7 @@ static const NamedSaveLoad _company_desc[] = {
 	NSLT_STRUCTLIST<CompanyOldEconomyStructHandler>("old_economy"),
 	NSLT_STRUCTLIST<CompanyLiveriesStructHandler>("liveries"),
 	NSLT_STRUCTLIST<CompanyAllowListStructHandler>("allow_list"),
+	NSLT("allow_any", SLE_VAR(CompanyProperties, allow_any, SLE_BOOL)),
 };
 
 struct PLYRNonTableHelper {
@@ -555,7 +559,8 @@ void PLYRNonTableHelper::Load_PLYR_common(Company *c, CompanyProperties *cprops)
 	}
 
 	/* Write each livery entry. */
-	uint num_liveries = IsSavegameVersionBefore(SLV_63) ? LS_END - 4 : (IsSavegameVersionBefore(SLV_85) ? LS_END - 2: LS_END);
+	static_assert(to_underlying(LiveryScheme::End) == 23);
+	uint num_liveries = IsSavegameVersionBefore(SLV_63) ? to_underlying(LiveryScheme::End) - 4 : (IsSavegameVersionBefore(SLV_85) ? to_underlying(LiveryScheme::End) - 2 : to_underlying(LiveryScheme::End));
 
 	if (c != nullptr) {
 		LoadLiveries(cprops, num_liveries, this->liveries_desc);
@@ -588,7 +593,7 @@ static void Load_PLYR()
 
 	int index;
 	while ((index = SlIterateArray()) != -1) {
-		Company *c = new (CompanyID(index)) Company();
+		Company *c = Company::CreateAtIndex(CompanyID(index));
 		CompanyProperties *cprops = c;
 		SetDefaultCompanySettings(c->index);
 		SlObjectLoadFiltered(cprops, slt);
@@ -610,6 +615,7 @@ static void Load_PLYR()
 static void Check_PLYR()
 {
 	SaveLoadTableData slt = SlTableHeaderOrRiff(_company_desc);
+
 	PLYRNonTableHelper helper;
 	if (!SlIsTableChunk()) helper.Setup();
 
@@ -672,9 +678,11 @@ static void Load_PLYP()
 	size_t size = SlGetFieldLength();
 	CompanyMask invalid_mask = {};
 	if (SlXvIsFeaturePresent(XSLFI_COMPANY_PW, 2)) {
-		if (size <= 2) return;
-		invalid_mask.edit_base() = SlReadUint16();
-		size -= 2;
+		const size_t words = SlXvIsFeaturePresent(XSLFI_COMPANY_PW, 3) ? CompanyMask::WORD_COUNT : 1;
+		if (size == 0) return;
+		if (size < words * 2) SlErrorCorrupt("Truncated company password mask");
+		for (size_t i = 0; i < words; ++i) invalid_mask.bits[i] = SlReadUint16();
+		size -= words * 2;
 	}
 	if (size <= 16 + 24 + 16 || (_networking && !_network_server)) {
 		SlSkipBytes(size);
@@ -717,7 +725,7 @@ static void Load_PLYP()
 				std::string password;
 				password.resize(SlReadUint32LengthField());
 				ReadBuffer::GetCurrent()->CopyBytes((uint8_t *)password.data(), password.size());
-				if (!HasBit(invalid_mask.base(), cid)) {
+				if (!invalid_mask.Test(CompanyID(cid))) {
 					NetworkServerSetCompanyPassword((CompanyID)cid, password, true);
 				}
 			}
@@ -743,8 +751,8 @@ static void Save_PLYP()
 		if (_saved_PLYP_data.empty()) {
 			SlSetLength(0);
 		} else {
-			SlSetLength(2 + _saved_PLYP_data.size());
-			SlWriteUint32(_saved_PLYP_invalid_mask);
+			SlSetLength(CompanyMask::WORD_COUNT * 2 + _saved_PLYP_data.size());
+			for (uint16_t word : _saved_PLYP_invalid_mask.bits) SlWriteUint16(word);
 			MemoryDumper::GetCurrent()->CopyBytes((const uint8_t *)_saved_PLYP_data.data(), _saved_PLYP_data.size());
 		}
 		return;
@@ -782,8 +790,8 @@ static void Save_PLYP()
 	/* Encrypt in place */
 	crypto_aead_lock(buffer.data(), mac.data(), _network_company_password_storage_key.data(), nonce.data(), nullptr, 0, buffer.data(), buffer.size());
 
-	SlSetLength(2 + 16 + 24 + 16 + buffer.size());
-	SlWriteUint16(0); // Invalid mask
+	SlSetLength(CompanyMask::WORD_COUNT * 2 + 16 + 24 + 16 + buffer.size());
+	for (size_t i = 0; i < CompanyMask::WORD_COUNT; ++i) SlWriteUint16(0); // Invalid mask
 	static_assert(_network_company_password_storage_token.size() == 16);
 	MemoryDumper::GetCurrent()->CopyBytes(_network_company_password_storage_token.data(), 16);
 	MemoryDumper::GetCurrent()->CopyBytes(nonce);
@@ -792,9 +800,9 @@ static void Save_PLYP()
 }
 
 static const ChunkHandler company_chunk_handlers[] = {
-	{ 'PLYR', Save_PLYR, Load_PLYR, Ptrs_PLYR, Check_PLYR, CH_TABLE },
-	{ 'PLYX', nullptr,   Load_PLYX, nullptr,   Check_PLYX, CH_READONLY },
-	{ 'PLYP', Save_PLYP, Load_PLYP, nullptr,      nullptr, CH_RIFF  },
+	{ 'PLYR', Save_PLYR, Load_PLYR, Ptrs_PLYR, Check_PLYR, ChunkType::Table },
+	{ 'PLYX', nullptr,   Load_PLYX, nullptr,   Check_PLYX, ChunkType::ReadOnly },
+	{ 'PLYP', Save_PLYP, Load_PLYP, nullptr,      nullptr, ChunkType::Riff  },
 };
 
 extern const ChunkHandlerTable _company_chunk_handlers(company_chunk_handlers);

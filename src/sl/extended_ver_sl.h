@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file extended_ver_sl.h Functions/types related to handling save/load extended version info. */
@@ -23,6 +23,8 @@ enum SaveLoadVersion : uint16_t;
  */
 enum SlXvFeatureIndex {
 	XSLFI_NULL                          = 0,      ///< Unused value, to indicate that no extended feature test is in use
+	XSLFI_COMPANY_RGB24,                          ///< True-colour company liveries
+	XSLFI_COMPANIES_240,                          ///< 240 companies, owner bits and company masks
 	XSLFI_VERSION_LABEL,                          ///< Version label
 	XSLFI_UPSTREAM_VERSION,                       ///< Corresponding upstream savegame version
 	XSLFI_TRACE_RESTRICT,                         ///< Trace restrict
@@ -175,6 +177,8 @@ enum SlXvFeatureIndex {
 	XSLFI_FACE_STYLES,                            ///< See: SLV_FACE_STYLES (PR #14319)
 	XSLFI_ENGINE_MULTI_RAILTYPE,                  ///< See: SLV_ENGINE_MULTI_RAILTYPE (PR #14357)
 	XSLFI_TOWN_SUPPLY_HISTORY,                    ///< See: SLV_TOWN_SUPPLY_HISTORY (PR #14461)
+	XSLFI_DRIVE_BACKWARDS,                        ///< See: SLV_DRIVE_BACKWARDS (PR#15379)
+	XSLFI_DOUBLE_ENDED_SHIPS,                     ///< See: SLV_DOUBLE_ENDED_SHIPS (PR#16002)
 
 	XSLFI_PR_13745_APPLIED,                       ///< Tag to indicate that the fix in PR #13745 has been already applied
 	XSLFI_SIGNAL_STATE_FIX,                       ///< Tag for signal state fixes

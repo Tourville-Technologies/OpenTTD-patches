@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file news_type.h Types related to news. */
@@ -44,6 +44,7 @@ enum class NewsType : uint8_t {
 	Advice, ///< Bits of news about vehicles of the company
 	NewVehicles, ///< New vehicle has become available
 	Acceptance, ///< A type of cargo is (no longer) accepted
+	CargoFlow, ///< Cargo flow warnings (overflowing cargo)
 	Subsidies, ///< News about subsidies (announcements, expirations, acceptance)
 	General, ///< General news (from towns)
 
@@ -62,7 +63,7 @@ enum class AdviceType : uint8_t {
 	VehicleUnprofitable, ///< The vehicle is costing you money.
 	VehicleWaiting, ///< The vehicle is waiting in the depot.
 
-	Invalid
+	Invalid, ///< Invalid marker.
 };
 
 /**
@@ -95,6 +96,8 @@ enum class NewsFlag : uint8_t {
 	Shaded, ///< News item uses shaded colours.
 	VehicleParam0, ///< String param 0 contains a vehicle ID. (special autoreplace behaviour)
 };
+
+/** Bitset of \c NewsFlag elements. */
 using NewsFlags = EnumBitSet<NewsFlag, uint8_t>;
 
 /**
@@ -120,7 +123,7 @@ struct NewsTypeData {
 	 * @param age The maximum age for these messages.
 	 * @param sound The sound to play.
 	 */
-	NewsTypeData(std::string_view name, uint8_t age, SoundFx sound) :
+	constexpr NewsTypeData(std::string_view name, uint8_t age, SoundFx sound) :
 		name(name),
 		age(age),
 		sound(sound)

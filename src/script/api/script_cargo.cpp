@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_cargo.cpp Implementation of ScriptCargo. */
@@ -25,28 +25,22 @@
 
 /* static */ bool ScriptCargo::IsValidTownEffect(TownEffect towneffect_type)
 {
-	return (towneffect_type >= (TownEffect)TAE_BEGIN && towneffect_type < (TownEffect)TAE_END);
+	return (towneffect_type >= (TownEffect)TownAcceptanceEffect::Begin && towneffect_type < (TownEffect)TownAcceptanceEffect::End);
 }
 
 /* static */ std::optional<std::string> ScriptCargo::GetName(CargoType cargo_type)
 {
 	if (!IsValidCargo(cargo_type)) return std::nullopt;
 
-	return ::StrMakeValid(::GetString(STR_JUST_CARGO_LIST, 1ULL << cargo_type), {});
+	CargoTypes cargotypes{cargo_type};
+	return ::StrMakeValid(::GetString(STR_JUST_CARGO_LIST, cargotypes), {});
 }
 
 /* static */ std::optional<std::string> ScriptCargo::GetCargoLabel(CargoType cargo_type)
 {
 	if (!IsValidCargo(cargo_type)) return std::nullopt;
 	const CargoSpec *cargo = ::CargoSpec::Get(cargo_type);
-
-	/* cargo->label is a uint32_t packing a 4 character non-terminated string,
-	 * like "PASS", "COAL", "OIL_". New ones can be defined by NewGRFs */
-	std::string cargo_label;
-	for (uint i = 0; i < sizeof(cargo->label); i++) {
-		cargo_label.push_back(GB(cargo->label.base(), (uint8_t)(sizeof(cargo->label) - i - 1) * 8, 8));
-	}
-	return cargo_label;
+	return cargo->label.AsString();
 }
 
 /* static */ bool ScriptCargo::IsFreight(CargoType cargo_type)

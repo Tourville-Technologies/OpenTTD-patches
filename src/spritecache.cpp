@@ -2,12 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spritecache.cpp Caching of sprites. */
 
 #include "stdafx.h"
+#include "company_colour.h"
 #include "core/alloc_func.hpp"
 #include "random_access_file_type.h"
 #include "spriteloader/grf.hpp"
@@ -39,7 +40,7 @@
 
 #include "safeguards.h"
 
-/* Default of 4MB spritecache */
+/** Default of 4MB spritecache. */
 uint _sprite_cache_size = 4;
 
 size_t _spritecache_bytes_used = 0;
@@ -110,6 +111,7 @@ SpriteFile &OpenCachedSpriteFile(const std::string &filename, Subdirectory subdi
 
 /**
  * Skip the given amount of sprite graphics data.
+ * @param file The file to read from.
  * @param type the type of sprite (compressed etc)
  * @param num the amount of sprites to skip
  * @return true if the data could be correctly skipped.
@@ -181,7 +183,7 @@ uint32_t GetSpriteLocalID(SpriteID sprite)
 
 /**
  * Count the sprites which originate from a specific file in a range of SpriteIDs.
- * @param file The loaded SpriteFile.
+ * @param filename The loaded SpriteFile.
  * @param begin First sprite in range.
  * @param end First sprite not in range.
  * @return Number of sprites.
@@ -437,7 +439,7 @@ static bool ResizeSprites(SpriteLoader::SpriteCollection &sprite, LowZoomLevels 
 	if (!PadSprites(sprite, sprite_avail, encoder)) return false;
 
 	/* Create other missing zoom levels */
-	for (ZoomLevel zoom = ZoomLevel::In2x; zoom != ZoomLevel::SpriteEnd; zoom++) {
+	for (ZoomLevel zoom : EnumRange(ZoomLevel::In2x, ZoomLevel::SpriteEnd)) {
 		if (sprite_avail.Test(zoom)) {
 			/* Check that size and offsets match the fully zoomed image. */
 			[[maybe_unused]] const auto &root_sprite = sprite[ZoomLevel::Min];
@@ -635,7 +637,7 @@ size_t GetGRFSpriteOffset(uint32_t id)
 
 /**
  * Parse the sprite section of GRFs.
- * @param container_version Container version of the GRF we're currently processing.
+ * @param file The file to read the sprite offsets for.
  */
 void ReadGRFSpriteOffsets(SpriteFile &file)
 {
@@ -689,7 +691,6 @@ void ReadGRFSpriteOffsets(SpriteFile &file)
  * @param load_index Global sprite index.
  * @param file GRF to load from.
  * @param file_sprite_id Sprite number in the GRF.
- * @param container_version Container version of the GRF.
  * @return True if a valid sprite was loaded, false on any error.
  */
 bool LoadNextSprite(SpriteID load_index, SpriteFile &file, uint file_sprite_id)
@@ -786,12 +787,17 @@ void DupSprite(SpriteID old_spr, SpriteID new_spr)
 	SpriteCache *scnew = AllocateSpriteCache(new_spr); // may reallocate: so put it first
 	SpriteCache *scold = GetSpriteCache(old_spr);
 
+	scnew->Clear();
 	scnew->file = scold->file;
 	scnew->file_pos = scold->file_pos;
 	scnew->id = scold->id;
 	scnew->SetType(scold->GetType());
+	scnew->count = scold->count;
 	scnew->flags = scold->flags;
 	scnew->SetWarned(false);
+	if (scold->GetType() == SpriteType::Recolour) {
+		scnew->AssignRecolourSpriteData(scold->GetPtr());
+	}
 }
 
 static size_t GetSpriteCacheUsage()
@@ -937,15 +943,17 @@ void *UniquePtrSpriteAllocator::AllocatePtr(size_t size)
  * @param sprite ID of loaded sprite
  * @param requested requested sprite type
  * @param sc the currently known sprite cache for the requested sprite
+ * @param allocator Callback that provides the memory when loading sprites.
+ * @param encoder Sprite encoder to use. Set to nullptr to use the currently active blitter.
  * @return fallback sprite
  * @note this function will do UserError() in the case the fallback sprite isn't available
  */
-static void *HandleInvalidSpriteRequest(SpriteID sprite, SpriteType requested, SpriteCache *sc, SpriteAllocator *allocator)
+static void *HandleInvalidSpriteRequest(SpriteID sprite, SpriteType requested, SpriteCache *sc, SpriteAllocator *allocator, SpriteEncoder *encoder)
 {
 	SpriteType available = sc->GetType();
 	if (requested == SpriteType::Font && available == SpriteType::Normal) {
 		if (sc->GetPtr() == nullptr) sc->SetType(SpriteType::Font);
-		return GetRawSprite(sprite, sc->GetType(), LOW_ZOOM_ALL_BITS, allocator);
+		return GetRawSprite(sprite, sc->GetType(), LOW_ZOOM_ALL_BITS, allocator, encoder);
 	}
 
 	uint8_t warning_level = sc->GetWarned() ? 6 : 0;
@@ -957,10 +965,10 @@ static void *HandleInvalidSpriteRequest(SpriteID sprite, SpriteType requested, S
 			if (sprite == SPR_IMG_QUERY) UserError("Uhm, would you be so kind not to load a NewGRF that makes the 'query' sprite a non-normal sprite?");
 			[[fallthrough]];
 		case SpriteType::Font:
-			return GetRawSprite(SPR_IMG_QUERY, SpriteType::Normal, LOW_ZOOM_ALL_BITS, allocator);
+			return GetRawSprite(SPR_IMG_QUERY, SpriteType::Normal, LOW_ZOOM_ALL_BITS, allocator, encoder);
 		case SpriteType::Recolour:
 			if (sprite == PALETTE_TO_DARK_BLUE) UserError("Uhm, would you be so kind not to load a NewGRF that makes the 'PALETTE_TO_DARK_BLUE' sprite a non-remap sprite?");
-			return GetRawSprite(PALETTE_TO_DARK_BLUE, SpriteType::Recolour, LOW_ZOOM_ALL_BITS, allocator);
+			return GetRawSprite(PALETTE_TO_DARK_BLUE, SpriteType::Recolour, LOW_ZOOM_ALL_BITS, allocator, encoder);
 		case SpriteType::MapGen:
 			/* this shouldn't happen, overriding of SpriteType::MapGen sprites is checked in LoadNextSprite()
 			 * (the only case the check fails is when these sprites weren't even loaded...) */
@@ -992,7 +1000,7 @@ void *GetRawSprite(SpriteID sprite, SpriteType type, LowZoomLevels zoom_levels, 
 
 	SpriteCache *sc = GetSpriteCache(sprite);
 
-	if (sc->GetType() != type) return HandleInvalidSpriteRequest(sprite, type, sc, allocator);
+	if (sc->GetType() != type) return HandleInvalidSpriteRequest(sprite, type, sc, allocator, encoder);
 
 	if (allocator == nullptr && encoder == nullptr) {
 		/* Load sprite into/from spritecache */
@@ -1046,7 +1054,12 @@ uint32_t GetSpriteMainColour(SpriteID sprite_id, PaletteID palette_id)
 	SpriteCache *sc = GetSpriteCache(sprite_id);
 	if (sc->GetType() != SpriteType::Normal) return 0;
 
-	const uint8_t * const remap = (palette_id == PAL_NONE ? nullptr : GetNonSprite(GB(palette_id, 0, PALETTE_WIDTH), SpriteType::Recolour));
+	PaletteID base_palette = GetCompanyRGBBasePalette(palette_id);
+	const uint8_t *remap = (base_palette == PAL_NONE ? nullptr : GetNonSprite(GB(base_palette, 0, PALETTE_WIDTH), SpriteType::Recolour));
+	std::array<uint8_t, 256> fallback;
+	std::array<Colour, 256> rgb;
+	bool custom_rgb = BuildCompanyRGBRemap(palette_id, remap, fallback, rgb);
+	if (custom_rgb) remap = fallback.data();
 
 	SpriteFile &file = *sc->file;
 	size_t file_pos = sc->file_pos;
@@ -1079,7 +1092,7 @@ uint32_t GetSpriteMainColour(SpriteID sprite_id, PaletteID palette_id)
 						if (rgb_max == 0) rgb_max = DEFAULT_BRIGHTNESS;
 
 						/* Convert the mapping channel to a RGB value */
-						const Colour c = AdjustBrightness(_cur_palette.palette[m], rgb_max);
+						const Colour c = AdjustBrightness(custom_rgb && rgb[pixel->m].a != 0 ? rgb[pixel->m] : _cur_palette.palette[m], rgb_max);
 
 						if (c.a != 0) {
 							r += c.r;
@@ -1118,7 +1131,7 @@ uint32_t GetSpriteMainColour(SpriteID sprite_id, PaletteID palette_id)
 			for (uint x = sprite->width * sprite->height; x != 0; x--) {
 				if (pixel->a != 0) {
 					const uint col_index = remap != nullptr ? remap[pixel->m] : pixel->m;
-					const Colour c = _cur_palette.palette[col_index];
+					const Colour c = custom_rgb && rgb[pixel->m].a != 0 ? rgb[pixel->m] : _cur_palette.palette[col_index];
 					r += c.r;
 					g += c.g;
 					b += c.b;

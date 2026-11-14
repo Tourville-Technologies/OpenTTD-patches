@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cocoa_v.h The Cocoa video driver. */
@@ -28,9 +28,9 @@ private:
 public:
 	bool setup; ///< Window is currently being created.
 
-	OTTD_CocoaWindow *window;    ///< Pointer to window object
-	OTTD_CocoaView *cocoaview;   ///< Pointer to view object
-	CGColorSpaceRef color_space; ///< Window color space
+	OTTD_CocoaWindow *window;     ///< Pointer to window object
+	OTTD_CocoaView *cocoaview;    ///< Pointer to view object
+	CGColorSpaceRef colour_space; ///< Window colour space
 
 	OTTD_CocoaWindowDelegate *delegate; //!< Window delegate object
 
@@ -57,6 +57,10 @@ public:
 
 	void MainLoopReal();
 
+	/**
+	 * Resize the window.
+	 * @param force If true window resizing will be forced.
+	 */
 	virtual void AllocateBackingStore(bool force = false) = 0;
 
 protected:
@@ -64,7 +68,6 @@ protected:
 	bool buffer_locked; ///< Video buffer was locked by the main thread.
 
 	Dimension GetScreenSize() const override;
-	float GetDPIScale() override;
 	void InputLoop() override;
 	bool LockVideoBuffer() override;
 	void UnlockVideoBuffer() override;
@@ -78,9 +81,16 @@ protected:
 
 	bool MakeWindow(int width, int height);
 
+	/**
+	 * Allocate the view to show the game on.
+	 * @return The allocated view.
+	 */
 	virtual NSView *AllocateDrawView() = 0;
 
-	/** Get a pointer to the video buffer. */
+	/**
+	 * Get a pointer to the video buffer.
+	 * @return The pointer.
+	 */
 	virtual void *GetVideoPointer() = 0;
 	/** Hand video buffer back to the drawing backend. */
 	virtual void ReleaseVideoPointer() {}
@@ -102,7 +112,7 @@ private:
 	uint32_t palette[256];  ///< Colour Palette
 
 	void BlitIndexedToView32(int left, int top, int right, int bottom);
-	void UpdatePalette(uint first_color, uint num_colors);
+	void UpdatePalette(uint first_colour, uint num_colours);
 
 public:
 	CGContextRef cgcontext;      ///< Context reference for Quartz subdriver
@@ -112,7 +122,6 @@ public:
 	const char *Start(const StringList &param) override;
 	void Stop() override;
 
-	/** Return driver name */
 	const char *GetName() const override { return "cocoa"; }
 
 	void AllocateBackingStore(bool force = false) override;
@@ -128,7 +137,7 @@ protected:
 
 class FVideoDriver_CocoaQuartz : public DriverFactoryBase {
 public:
-	FVideoDriver_CocoaQuartz() : DriverFactoryBase(Driver::DT_VIDEO, 8, "cocoa", "Cocoa Video Driver") {}
+	FVideoDriver_CocoaQuartz() : DriverFactoryBase(Driver::Type::Video, 8, "cocoa", "Cocoa Video Driver") {}
 	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_CocoaQuartz>(); }
 };
 

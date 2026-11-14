@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_badge.cpp Functionality for NewGRF badges. */
@@ -133,9 +133,9 @@ Badge *GetBadgeByLabel(std::string_view label)
 }
 
 /**
- * Get the badge class of a badge label.
- * @param label Label to get class of.
- * @returns Badge class index of label.
+ * Get the badge for a badge class index.
+ * @param class_index Index of the badge class.
+ * @return Class badge for the class index, or nullptr if not present.
  */
 Badge *GetClassBadge(BadgeClassID class_index)
 {
@@ -180,10 +180,10 @@ struct BadgeResolverObject : public ResolverObject {
 
 	BadgeResolverObject(const Badge &badge, GrfSpecFeature feature, std::optional<CalTime::Date> introduction_date, CallbackID callback = CBID_NO_CALLBACK, uint32_t callback_param1 = 0, uint32_t callback_param2 = 0);
 
-	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, VarSpriteGroupScopeOffset relative = 0) override
+	ScopeResolver *GetScope(VarSpriteGroupScope scope = VarSpriteGroupScope::Self, VarSpriteGroupScopeOffset relative = 0) override
 	{
 		switch (scope) {
-			case VSG_SCOPE_SELF: return &this->self_scope;
+			case VarSpriteGroupScope::Self: return &this->self_scope;
 			default: return ResolverObject::GetScope(scope, relative);
 		}
 	}
@@ -194,7 +194,7 @@ struct BadgeResolverObject : public ResolverObject {
 
 GrfSpecFeature BadgeResolverObject::GetFeature() const
 {
-	return GSF_BADGES;
+	return GrfSpecFeature::Badges;
 }
 
 uint32_t BadgeResolverObject::GetDebugID() const
@@ -214,8 +214,8 @@ uint32_t BadgeResolverObject::GetDebugID() const
 BadgeResolverObject::BadgeResolverObject(const Badge &badge, GrfSpecFeature feature, std::optional<CalTime::Date> introduction_date, CallbackID callback, uint32_t callback_param1, uint32_t callback_param2)
 		: ResolverObject(badge.grf_prop.grffile, callback, callback_param1, callback_param2), self_scope(*this, badge, introduction_date)
 {
-	assert(feature <= GSF_END);
-	this->root_spritegroup = this->self_scope.badge.grf_prop.GetFirstSpriteGroupOf({feature, GSF_DEFAULT});
+	assert(feature <= GrfSpecFeature::End);
+	this->root_spritegroup = this->self_scope.badge.grf_prop.GetFirstSpriteGroupOf({feature, GrfSpecFeature::Default});
 }
 
 /**
@@ -235,6 +235,8 @@ uint32_t GetBadgeVariableResult(const GRFFile &grffile, std::span<const BadgeID>
 
 /**
  * Mark a badge a seen (used) by a feature.
+ * @param index The badge's identifier.
+ * @param feature The feature the badge is used for.
  */
 void MarkBadgeSeen(BadgeID index, GrfSpecFeature feature)
 {

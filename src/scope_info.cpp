@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file scope_info.cpp Scope info debug functions. */
@@ -58,8 +58,8 @@ void GeneralFmtDumper<Vehicle, const Vehicle *>::fmt_format_value(format_target 
 		u->DumpVehicleFlags(buf, true);
 	};
 	auto dump_name = [&](const Vehicle *u) {
-		if (u->type < VEH_COMPANY_END) {
-			const char *veh_type[] = {
+		if (u->type < VehicleType::CompanyEnd) {
+			static const VehicleTypeIndexArray<const char *> veh_type = {
 				"Train",
 				"Road Vehicle",
 				"Ship",
@@ -74,9 +74,9 @@ void GeneralFmtDumper<Vehicle, const Vehicle *>::fmt_format_value(format_target 
 			if (!u->name.empty()) {
 				buf.format(" ({})", u->name.c_str());
 			}
-		} else if (u->type == VEH_EFFECT) {
+		} else if (u->type == VehicleType::Effect) {
 			buf.format("Effect Vehicle: subtype: {}", u->subtype);
-		} else if (u->type == VEH_DISASTER) {
+		} else if (u->type == VehicleType::Disaster) {
 			buf.format("Disaster Vehicle: subtype: {}", u->subtype);
 		}
 	};

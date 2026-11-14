@@ -2,23 +2,23 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
- * @file sprites.h
- * This file contains all sprite-related enums and defines. These consist mainly of
- * the sprite numbers and a bunch of masks and macros to handle sprites and to get
- * rid of all the magic numbers in the code.
+ * @file sprites.h This file contains all sprite-related enums and defines.
+ *
+ * These consist mainly of the sprite numbers and a bunch of masks and macros
+ * to handle sprites and to get rid of all the magic numbers in the code.
  *
  * @note
- * ALL SPRITE NUMBERS BELOW 5126 are in the main files
+ * ALL SPRITE NUMBERS BELOW 5126 are in the main files.
  *
  * All elements which consist of two elements should
- * have the same name and then suffixes
+ * have the same name and then suffixes:
  *   _GROUND and _BUILD for building-type sprites
  *   _REAR and _FRONT for transport-type sprites (tiles where vehicles are on)
- * These sprites are split because of the Z order of the elements
+ * These sprites are split because of the Z order of the elements.
  *  (like some parts of a bridge are behind the vehicle, while others are before)
  *
  *
@@ -32,13 +32,14 @@
  * get a proper editor. If your Operating Systems don't have any decent editors,
  * get a proper Operating System.
  *
- * @todo Split the "Sprites" enum into smaller chunks and document them
+ * @todo Split the "Sprites" enum into smaller chunks and document them.
  */
 
 #ifndef SPRITES_H
 #define SPRITES_H
 
-#include "../gfx_type.h"
+#include "../slope_constants.h"
+#include "../sprite_id_type.h"
 
 static const SpriteID SPR_SELECT_TILE  = 752;
 static const SpriteID SPR_DOT          = 774; // corner marker for lower/raise land
@@ -153,7 +154,7 @@ static const SpriteID SPR_GROUP_LIVERY_SHIP          = SPR_OPENTTD_BASE + 177;
 static const SpriteID SPR_GROUP_LIVERY_AIRCRAFT      = SPR_OPENTTD_BASE + 178;
 
 static const SpriteID SPR_TOWN_RATING_NA             = SPR_OPENTTD_BASE + 162;
-static const SpriteID SPR_TOWN_RATING_APALLING       = SPR_OPENTTD_BASE + 163;
+static const SpriteID SPR_TOWN_RATING_APPALLING      = SPR_OPENTTD_BASE + 163;
 static const SpriteID SPR_TOWN_RATING_MEDIOCRE       = SPR_OPENTTD_BASE + 164;
 static const SpriteID SPR_TOWN_RATING_GOOD           = SPR_OPENTTD_BASE + 165;
 
@@ -317,9 +318,16 @@ static const SpriteID SPR_ROAD_WAYPOINT_X_W   = SPR_ROAD_WAYPOINTS_BASE + 2;
 static const SpriteID SPR_ROAD_WAYPOINT_X_E   = SPR_ROAD_WAYPOINTS_BASE + 3;
 static const uint16_t ROAD_WAYPOINTS_SPRITE_COUNT = 4;
 
-/** Overlay rocks sprites. */
-static constexpr SpriteID SPR_OVERLAY_ROCKS_BASE = SPR_ROAD_WAYPOINTS_BASE + ROAD_WAYPOINTS_SPRITE_COUNT;
-static constexpr uint16_t OVERLAY_ROCKS_SPRITE_COUNT = 19 * 5; /* Rock overlays: plain, snow 1, snow 2, snow 3 and full snow. */
+/** @{
+ * Overlay rocks sprites. */
+static constexpr SpriteID SPR_OVERLAY_ROCKS_BASE = SPR_ROAD_WAYPOINTS_BASE + ROAD_WAYPOINTS_SPRITE_COUNT; ///< Rocks overlay with no snow.
+static constexpr SpriteID SPR_OVERLAY_ROCKS_1_QUART_SNOW = SPR_OVERLAY_ROCKS_BASE + NUM_SLOPES * 1; ///< Rocks with 1/4 snow.
+static constexpr SpriteID SPR_OVERLAY_ROCKS_2_QUART_SNOW = SPR_OVERLAY_ROCKS_BASE + NUM_SLOPES * 2; ///< Rocks with half snow density.
+static constexpr SpriteID SPR_OVERLAY_ROCKS_3_QUART_SNOW = SPR_OVERLAY_ROCKS_BASE + NUM_SLOPES * 3; ///< Rocks with 3/4 snow density.
+static constexpr SpriteID SPR_OVERLAY_ROCKS_FULL_SNOW = SPR_OVERLAY_ROCKS_BASE + NUM_SLOPES * 4; ///< Rocks with full snow density.
+static constexpr SpriteID SPR_OVERLAY_ROCKS_WATER_COAST = SPR_OVERLAY_ROCKS_BASE + NUM_SLOPES * 5; ///< Rocks on water and coast.
+static constexpr uint16_t OVERLAY_ROCKS_SPRITE_COUNT = NUM_SLOPES * 6; ///< Total number of rock overlays.
+/** @} */
 
 /** Bridge deck sprites. */
 static constexpr SpriteID SPR_BRIDGE_DECKS_BASE = SPR_OVERLAY_ROCKS_BASE + OVERLAY_ROCKS_SPRITE_COUNT;
@@ -1676,7 +1684,7 @@ static const PaletteID PALETTE_CRASH               = 804;  ///< Recolour sprite 
 static const PaletteID PALETTE_CHURCH_RED          = 1438; ///< Recolour sprite for reddish churches
 static const PaletteID PALETTE_CHURCH_CREAM        = 1439; ///< Recolour sprite for white churches
 
-static const PaletteID PALETTE_ALL_BLACK           = SPR_PALETTE_BASE; ///< Exchange any color by black, needed for painting fictive tiles outside map
+static const PaletteID PALETTE_ALL_BLACK           = SPR_PALETTE_BASE; ///< Exchange any colour by black, needed for painting fictive tiles outside map
 
 static const PaletteID PALETTE_WHITE_TINT          = SPR_MISC_GUI_BASE + 1;
 

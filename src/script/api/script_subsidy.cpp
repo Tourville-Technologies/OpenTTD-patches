@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_subsidy.cpp Implementation of ScriptSubsidy. */
@@ -43,7 +43,7 @@
 	Source from{static_cast<SourceID>(from_id), static_cast<SourceType>(from_type)};
 	Source to{static_cast<SourceID>(to_id), static_cast<SourceType>(to_type)};
 
-	return ScriptObject::Command<CMD_CREATE_SUBSIDY>::Do(cargo_type, from, to);
+	return ScriptObject::Command<Commands::CreateSubsidy>::Do(cargo_type, from, to);
 }
 
 /* static */ ScriptCompany::CompanyID ScriptSubsidy::GetAwardedTo(SubsidyID subsidy_id)

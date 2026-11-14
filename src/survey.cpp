@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file survey.cpp Functions to survey the current game / system, for crashlog and network-survey. */
@@ -18,8 +18,9 @@
 #include "timer/timer_game_tick.h"
 #include "sl/saveload.h"
 #include "date_func.h"
+#include "session_stats.h"
 
-#include "currency.h"
+#include "currency_func.h"
 #include "fontcache.h"
 #include "language.h"
 
@@ -29,7 +30,7 @@
 
 #include "music/music_driver.hpp"
 #include "sound/sound_driver.hpp"
-#include "video/video_driver.hpp"
+#include "video/video_driver_base.hpp"
 
 #include "base_media_base.h"
 #include "base_media_graphics.h"
@@ -85,12 +86,14 @@
 
 #include "safeguards.h"
 
+#ifndef DOXYGEN_API
+
 NLOHMANN_JSON_SERIALIZE_ENUM(GRFStatus, {
-	{GRFStatus::GCS_UNKNOWN, "unknown"},
-	{GRFStatus::GCS_DISABLED, "disabled"},
-	{GRFStatus::GCS_NOT_FOUND, "not found"},
-	{GRFStatus::GCS_INITIALISED, "initialised"},
-	{GRFStatus::GCS_ACTIVATED, "activated"},
+	{GRFStatus::Unknown, "unknown"},
+	{GRFStatus::Disabled, "disabled"},
+	{GRFStatus::NotFound, "not found"},
+	{GRFStatus::Initialised, "initialised"},
+	{GRFStatus::Activated, "activated"},
 })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(SocialIntegrationPlugin::State, {
@@ -103,9 +106,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SocialIntegrationPlugin::State, {
 	{SocialIntegrationPlugin::State::INVALID_SIGNATURE, "invalid_signature"},
 })
 
+#endif /* DOXYGEN_API */
 
 /** Lookup table to convert a VehicleType to a string. */
-static const std::string _vehicle_type_to_string[] = {
+static constexpr VehicleTypeIndexArray<std::string_view> _vehicle_type_to_string = {
 	"train",
 	"roadveh",
 	"ship",
@@ -138,6 +142,7 @@ static void SurveySettingsTable(nlohmann::json &survey, const SettingTable &tabl
  * Convert settings to JSON.
  *
  * @param survey The JSON object.
+ * @param skip_if_default If true, skip any settings that are on their default value.
  */
 void SurveySettings(nlohmann::json &survey, bool skip_if_default)
 {
@@ -159,12 +164,6 @@ void SurveyCompiler(nlohmann::json &survey)
 #elif defined(__clang__)
 	survey["name"] = "clang";
 	survey["version"] = __clang_version__;
-#elif defined(__ICC) && defined(__GNUC__)
-	survey["name"] = "ICC";
-	survey["version"] = __ICC;
-#	if defined(__GNUC__)
-		survey["extra"] = fmt::format("GCC {}.{}.{} mode", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#	endif
 #elif defined(__GNUC__)
 	survey["name"] = "GCC";
 	survey["version"] = fmt::format("{}.{}.{}", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
@@ -218,7 +217,7 @@ void SurveyGameSession(nlohmann::json &survey)
 {
 	survey["id"] = _game_session_stats.savegame_id;
 	if (_game_session_stats.start_time.has_value()) {
-		survey["seconds"] = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - _game_session_stats.start_time.value()).count();
+		survey["seconds"] = _game_session_stats.start_time.value().SecondsBeforeNow();
 	} else {
 		survey["seconds"] = 0;
 	}
@@ -249,9 +248,9 @@ void SurveyConfiguration(nlohmann::json &survey)
 	if (SoundDriver::GetInstance() != nullptr) {
 		survey["sound_driver"] = SoundDriver::GetInstance()->GetName();
 	}
-	if (VideoDriver::GetInstance() != nullptr) {
-		survey["video_driver"] = VideoDriver::GetInstance()->GetName();
-		survey["video_info"] = VideoDriver::GetInstance()->GetInfoString();
+	if (VideoDriverBase::GetInstance() != nullptr) {
+		survey["video_driver"] = VideoDriverBase::GetInstance()->GetName();
+		survey["video_info"] = VideoDriverBase::GetInstance()->GetInfoString();
 	}
 	if (BaseGraphics::GetUsedSet() != nullptr) {
 		survey["graphics_set"] = fmt::format("{}.{}", BaseGraphics::GetUsedSet()->name, BaseGraphics::GetUsedSet()->FormatVersion());
@@ -277,10 +276,10 @@ void SurveyConfiguration(nlohmann::json &survey)
  */
 void SurveyFont(nlohmann::json &survey)
 {
-	survey["small"] = FontCache::Get(FS_SMALL)->GetFontName();
-	survey["medium"] = FontCache::Get(FS_NORMAL)->GetFontName();
-	survey["large"] = FontCache::Get(FS_LARGE)->GetFontName();
-	survey["mono"] = FontCache::Get(FS_MONO)->GetFontName();
+	survey["small"] = FontCache::Get(FontSize::Small)->GetFontName();
+	survey["medium"] = FontCache::Get(FontSize::Normal)->GetFontName();
+	survey["large"] = FontCache::Get(FontSize::Large)->GetFontName();
+	survey["mono"] = FontCache::Get(FontSize::Monospace)->GetFontName();
 }
 
 /**
@@ -299,7 +298,7 @@ void SurveyCompanies(nlohmann::json &survey)
 			company["script"] = fmt::format("{}.{}", c->ai_info->GetName(), c->ai_info->GetVersion());
 		}
 
-		for (VehicleType type = VEH_BEGIN; type < VEH_COMPANY_END; type++) {
+		for (VehicleType type : EnumRange(VehicleType::CompanyEnd)) {
 			uint amount = c->group_all[type].num_vehicle;
 			company["vehicles"][_vehicle_type_to_string[type]] = amount;
 		}
@@ -335,8 +334,7 @@ void SurveyTimers(nlohmann::json &survey)
 void SurveyGrfs(nlohmann::json &survey)
 {
 	for (const auto &c : _grfconfig) {
-		auto grfid = fmt::format("{:08x}", std::byteswap(c->ident.grfid));
-		auto &grf = survey[std::move(grfid)];
+		auto &grf = survey[c->ident.grfid.AsString()];
 
 		grf["md5sum"] = FormatArrayAsHex(c->ident.md5sum, true);
 		grf["status"] = c->status;

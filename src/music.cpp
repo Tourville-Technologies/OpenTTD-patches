@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file music.cpp The songs that OpenTTD knows. */
@@ -25,9 +25,9 @@
  */
 std::optional<std::string> GetMusicCatEntryName(const std::string &filename, size_t entrynum)
 {
-	if (!FioCheckFileExists(filename, BASESET_DIR)) return std::nullopt;
+	if (!FioCheckFileExists(filename, Subdirectory::Baseset)) return std::nullopt;
 
-	RandomAccessFile file(filename, BASESET_DIR);
+	RandomAccessFile file(filename, Subdirectory::Baseset);
 	uint32_t ofs = file.ReadDword();
 	size_t entry_count = ofs / 8;
 	if (entrynum >= entry_count) return std::nullopt;
@@ -49,9 +49,9 @@ std::optional<std::string> GetMusicCatEntryName(const std::string &filename, siz
  */
 std::optional<std::vector<uint8_t>> GetMusicCatEntryData(const std::string &filename, size_t entrynum)
 {
-	if (!FioCheckFileExists(filename, BASESET_DIR)) return std::nullopt;
+	if (!FioCheckFileExists(filename, Subdirectory::Baseset)) return std::nullopt;
 
-	RandomAccessFile file(filename, BASESET_DIR);
+	RandomAccessFile file(filename, Subdirectory::Baseset);
 	uint32_t ofs = file.ReadDword();
 	size_t entry_count = ofs / 8;
 	if (entrynum >= entry_count) return std::nullopt;
@@ -77,18 +77,21 @@ static const std::string_view _music_file_names[] = {
 /** Make sure we aren't messing things up. */
 static_assert(lengthof(_music_file_names) == NUM_SONGS_AVAILABLE);
 
+/** @copydoc BaseSet::GetFilenames */
 template <>
 /* static */ std::span<const std::string_view> BaseSet<MusicSet>::GetFilenames()
 {
 	return _music_file_names;
 }
 
+/** @copydoc BaseMedia::GetExtension */
 template <>
 /* static */ std::string_view BaseMedia<MusicSet>::GetExtension()
 {
 	return ".obm"; // OpenTTD Base Music
 }
 
+/** @copydoc BaseMedia::DetermineBestSet */
 template <>
 /* static */ bool BaseMedia<MusicSet>::DetermineBestSet()
 {
@@ -124,7 +127,7 @@ bool MusicSet::FillSetDetails(const IniFile &ini, const std::string &path, const
 		uint tracknr = 1;
 		for (uint i = 0; i < lengthof(this->songinfo); i++) {
 			const std::string &filename = this->files[i].filename;
-			if (filename.empty() || this->files[i].check_result == MD5File::CR_NO_FILE) {
+			if (filename.empty() || this->files[i].check_result == MD5File::ChecksumResult::NoFile) {
 				continue;
 			}
 

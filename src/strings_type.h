@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file strings_type.h Types related to strings. */
@@ -11,18 +11,14 @@
 #define STRINGS_TYPE_H
 
 #include "string_type.h"
+#include "strings_id_type.h"
+#include "strings_type_trait.h"
+#include "core/enum_type.hpp"
 #include "core/strong_typedef_type.hpp"
 #include <optional>
 #include <variant>
 
-/**
- * Numeric value that represents a string, independent of the selected language.
- */
-typedef uint32_t StringID;
-static const StringID STR_NULL          = 0x0;
-static const StringID INVALID_STRING_ID = 0xFFFF; ///< Constant representing an invalid string (16bit in case it is used in savegames)
 static const int MAX_CHAR_LENGTH        = 4;      ///< Max. length of UTF-8 encoded unicode character
-static const uint MAX_LANG              = 0x7F;   ///< Maximum number of languages supported by the game, and the NewGRF specs
 
 /** Directions a text can go to */
 enum TextDirection : uint8_t {
@@ -64,24 +60,45 @@ static const uint TAB_SIZE_NEWGRF     = TAB_SIZE * 256;
 extern std::string _temp_special_strings[16];
 
 /** The number of builtin generators for town names. */
-static constexpr uint32_t BUILTIN_TOWNNAME_GENERATOR_COUNT = 21;
+static constexpr uint16_t BUILTIN_TOWNNAME_GENERATOR_COUNT = 21;
 
 /** Special strings for town names. The town name is generated dynamically on request. */
-static constexpr StringID SPECSTR_TOWNNAME_START = 0x20C0;
-static constexpr StringID SPECSTR_TOWNNAME_END = SPECSTR_TOWNNAME_START + BUILTIN_TOWNNAME_GENERATOR_COUNT;
+static constexpr uint16_t SPECSTR_TOWNNAME_START = 0x20C0;
+static constexpr uint16_t SPECSTR_TOWNNAME_END = SPECSTR_TOWNNAME_START + BUILTIN_TOWNNAME_GENERATOR_COUNT;
 
 /** Special strings for company names on the form "TownName transport". */
-static constexpr StringID SPECSTR_COMPANY_NAME_START = 0x70EA;
-static constexpr StringID SPECSTR_COMPANY_NAME_END = SPECSTR_COMPANY_NAME_START + BUILTIN_TOWNNAME_GENERATOR_COUNT;
+static constexpr StringID SPECSTR_COMPANY_NAME_START{0x70EA};
+static constexpr StringID SPECSTR_COMPANY_NAME_END{SPECSTR_COMPANY_NAME_START + BUILTIN_TOWNNAME_GENERATOR_COUNT};
 
-static constexpr StringID SPECSTR_SILLY_NAME = 0x70E5; ///< Special string for silly company names.
-static constexpr StringID SPECSTR_ANDCO_NAME = 0x70E6; ///< Special string for Surname & Co company names.
-static constexpr StringID SPECSTR_PRESIDENT_NAME = 0x70E7; ///< Special string for the president's name.
+static constexpr StringID SPECSTR_SILLY_NAME{0x70E5}; ///< Special string for silly company names.
+static constexpr StringID SPECSTR_ANDCO_NAME{0x70E6}; ///< Special string for Surname & Co company names.
+static constexpr StringID SPECSTR_PRESIDENT_NAME{0x70E7}; ///< Special string for the president's name.
 
-static constexpr StringID SPECSTR_TEMP_START = 0x7000; ///< First string ID for _temp_special_strings
+static constexpr StringID SPECSTR_TEMP_START{0x7000}; ///< First string ID for _temp_special_strings
 
 template <typename T>
 concept StringParameterAsBase = T::string_parameter_as_base || false;
+
+/** Integer-only string parameter data type. */
+struct IntegerStringParameter {
+	static inline constexpr bool string_parameter_as_base = true;
+
+	uint64_t data{};
+
+	constexpr IntegerStringParameter() = default;
+	constexpr IntegerStringParameter(uint64_t v) : data(v) {};
+
+	template <typename T, std::enable_if_t<StringParameterAsBase<T>, int> = 0>
+	constexpr IntegerStringParameter(const T &v) : data(v.base()) {}
+
+	template <typename T> requires is_scoped_enum_v<T>
+	constexpr IntegerStringParameter(const T &v) : data(static_cast<uint64_t>(to_underlying(v)))
+	{
+		static_assert(is_scoped_enum_convertible_to_string_parameter_v<T>);
+	}
+
+	constexpr uint64_t base() const { return this->data; }
+};
 
 /** This is a separate type instead of just string_view to ensure that it cannot be created by accident. */
 struct StringParameterDataStringView {
@@ -138,6 +155,13 @@ private:
 		{
 			return Init(v.base());
 		}
+
+		template <typename T> requires is_scoped_enum_v<T>
+		static inline StringParameterData Init(const T &v)
+		{
+			static_assert(is_scoped_enum_convertible_to_string_parameter_v<T>);
+			return Init(static_cast<uint64_t>(to_underlying(v)));
+		}
 	};
 
 public:
@@ -171,7 +195,9 @@ public:
 
 	std::string GetDecodedString() const;
 	EncodedString ReplaceParam(size_t param, StringParameter &&value) const;
-	void AppendDecodedStringInPlace(struct format_buffer &result) const;
+	void AppendDecodedStringInPlace(struct format_target &result) const;
+
+	std::string_view GetDecodedStringView(struct format_buffer_base &buffer) const;
 
 	inline void clear() { this->string.clear(); }
 	inline bool empty() const { return this->string.empty(); }
@@ -191,6 +217,7 @@ private:
 	explicit EncodedString(std::string &&string) : string(std::move(string)) {}
 
 	friend EncodedString GetEncodedStringWithArgs(StringID str, std::span<const StringParameter> params);
+	friend EncodedString GetEncodedRawString(std::string_view str);
 
 	friend class ScriptText;
 };

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_station.hpp Everything to query and build stations. */
@@ -99,7 +99,7 @@ public:
 	 * @pre IsValidStation(via_station_id) || via_station_id == STATION_INVALID.
 	 * @pre IsValidCargo(cargo_type).
 	 * @return The amount of units waiting at the station with via_station_id as next hop.
-	 * @note if ScriptCargo.GetCargoDistributionType(cargo_type) == ScriptCargo.DT_MANUAL, then all waiting cargo will have STATION_INVALID as next hop.
+	 * @note if ScriptCargo.GetCargoDistributionType(cargo_type) == ScriptCargo.DistributionType::Manual, then all waiting cargo will have STATION_INVALID as next hop.
 	 */
 	static SQInteger GetCargoWaitingVia(StationID station_id, StationID via_station_id, CargoType cargo_type);
 
@@ -114,7 +114,7 @@ public:
 	 * @pre IsValidStation(via_station_id) || via_station_id == STATION_INVALID.
 	 * @pre IsValidCargo(cargo_type).
 	 * @return The amount of units waiting at the station with from_station_id as source and via_station_id as next hop.
-	 * @note if ScriptCargo.GetCargoDistributionType(cargo_type) == ScriptCargo.DT_MANUAL, then all waiting cargo will have STATION_INVALID as next hop.
+	 * @note if ScriptCargo.GetCargoDistributionType(cargo_type) == ScriptCargo.DistributionType::Manual, then all waiting cargo will have STATION_INVALID as next hop.
 	 */
 	static SQInteger GetCargoWaitingFromVia(StationID station_id, StationID from_station_id, StationID via_station_id, CargoType cargo_type);
 

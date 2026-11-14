@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file date_type.h Types related to the dates in OpenTTD. */
@@ -389,6 +389,10 @@ namespace DateDetail {
 struct ClockFaceMinutesTag : public StrongType::TypedefTraits<int, StrongType::Compare, StrongType::Integer, DateDetail::MinuteOperations<false>, DateDetail::ClockFaceMinuteOperations> {};
 using ClockFaceMinutes = StrongType::Typedef<ClockFaceMinutesTag>;
 
+/* The type to store the absolute day number for tick minutes */
+struct TickMinutesDayNumberTag : public StrongType::TypedefTraits<int64_t, StrongType::Compare, StrongType::Integer> {};
+using TickMinutesDayNumber = StrongType::Typedef<TickMinutesDayNumberTag>;
+
 namespace DateDetail {
 	/* Mixin for TickMinutes */
 	struct TickMinuteOperations {
@@ -409,6 +413,21 @@ namespace DateDetail {
 				TBaseType minutes = this->GetBase() % 1440;
 				if (minutes < 0) minutes += 1440;
 				return ClockFaceMinutes{static_cast<int>(minutes)};
+			}
+
+			TickMinutesDayNumber DayNumber() const
+			{
+				return TickMinutesDayNumber{DivTowardsNegativeInf<TBaseType>(this->GetBase(), 1440)};
+			}
+
+			static constexpr TType FromAbsolute(TickMinutesDayNumber day_number, int hour, int minute)
+			{
+				return TType{(day_number.base() * 1440) + (hour * 60) + minute};
+			}
+
+			static constexpr TType FromAbsolute(TickMinutesDayNumber day_number, ClockFaceMinutes clock_face)
+			{
+				return TType{(day_number.base() * 1440) + clock_face.base()};
 			}
 		};
 	};

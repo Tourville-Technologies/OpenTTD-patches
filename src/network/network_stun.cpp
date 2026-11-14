@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_stun.cpp STUN sending/receiving part of the network protocol. */
@@ -18,15 +18,17 @@
 /** Connect to the STUN server. */
 class NetworkStunConnecter : public TCPConnecter {
 private:
-	ClientNetworkStunSocketHandler *stun_handler;
-	std::string token;
-	uint8_t family;
+	ClientNetworkStunSocketHandler *stun_handler; ///< The STUN handler for callbacks.
+	std::string token; ///< The (server) token for this action.
+	uint8_t family; ///< The IP-family to connect with.
 
 public:
 	/**
 	 * Initiate the connecting.
 	 * @param stun_handler The handler for this request.
 	 * @param connection_string The address of the server.
+	 * @param token The (server) token for the STUN action.
+	 * @param family The IP-family to connect with.
 	 */
 	NetworkStunConnecter(ClientNetworkStunSocketHandler *stun_handler, std::string_view connection_string, std::string_view token, uint8_t family) :
 		TCPConnecter(connection_string, NETWORK_STUN_SERVER_PORT, NetworkAddress(), family),
@@ -86,7 +88,7 @@ std::unique_ptr<ClientNetworkStunSocketHandler> ClientNetworkStunSocketHandler::
 
 	stun_handler->Connect(token, family);
 
-	auto p = std::make_unique<Packet>(stun_handler.get(), PACKET_STUN_SERCLI_STUN);
+	auto p = std::make_unique<Packet>(stun_handler.get(), PacketStunType::ClientStun);
 	p->Send_uint8(NETWORK_COORDINATOR_VERSION);
 	p->Send_string(token);
 	p->Send_uint8(family);
@@ -106,7 +108,7 @@ NetworkRecvStatus ClientNetworkStunSocketHandler::CloseConnection(bool error)
 		this->connecter = nullptr;
 	}
 
-	return NETWORK_RECV_STATUS_OKAY;
+	return NetworkRecvStatus::Okay;
 }
 
 ClientNetworkStunSocketHandler::~ClientNetworkStunSocketHandler()
@@ -135,7 +137,7 @@ void ClientNetworkStunSocketHandler::SendReceive()
 	 * Protocol-wise, the STUN server will never send any packet back anyway. */
 
 	this->CanSendReceive();
-	if (this->SendPackets() == SPS_ALL_SENT && !this->sent_result) {
+	if (this->SendPackets() == SendPacketsState::AllSent && !this->sent_result) {
 		/* We delay giving the GC the result this long, as to make sure we
 		 * have sent the STUN packet first. This means the GC is more likely
 		 * to have the result ready by the time our StunResult() packet

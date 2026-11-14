@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_controller.cpp Implementation of ScriptControler. */
@@ -14,6 +14,7 @@
 
 #include "script_controller.hpp"
 #include "script_error.hpp"
+#include "script_execmode.hpp"
 #include "../script_fatalerror.hpp"
 #include "../script_info.hpp"
 #include "../script_instance.hpp"
@@ -59,7 +60,9 @@
 	ShowScriptDebugWindow(ScriptObject::GetRootCompany());
 
 	if (!_pause_mode.Test(PauseMode::Normal)) {
-		ScriptObject::Command<CMD_PAUSE>::Do(PauseMode::Normal, true);
+		/* Force ExecMode so pause always happens. */
+		auto exec = ScriptExecMode();
+		ScriptObject::Command<Commands::Pause>::Do(PauseMode::Normal, true);
 	}
 }
 
@@ -122,7 +125,7 @@ ScriptController::ScriptController(::CompanyID company) :
 
 	LoadedLibraryList::iterator it = controller.loaded_library.find(library_name);
 	if (it != controller.loaded_library.end()) {
-		fake_class = (*it).second;
+		fake_class = it->second;
 	} else {
 		int next_number = ++controller.loaded_library_count;
 

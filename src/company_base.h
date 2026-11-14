@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file company_base.h Definition of stuff that is very close to a company, like the company struct itself. */
@@ -39,14 +39,19 @@ struct CompanyInfrastructure {
 	uint32_t station = 0;                      ///< Count of company owned station tiles.
 	uint32_t airport = 0;                      ///< Count of company owned airports.
 
-	/** Get total sum of all owned track bits. */
+	/**
+	 * Get total sum of all owned track bits.
+	 * @return The number of owned track bits.
+	 */
 	uint32_t GetRailTotal() const
 	{
 		return std::accumulate(std::begin(this->rail), std::end(this->rail), 0U);
 	}
 
-	uint32_t GetRoadTotal() const;
-	uint32_t GetTramTotal() const;
+	uint32_t GetRoadTramTotal(RoadTramType rtt) const;
+
+	inline uint32_t GetRoadTotal() const { return this->GetRoadTramTotal(RoadTramType::Road); }
+	inline uint32_t GetTramTotal() const { return this->GetRoadTramTotal(RoadTramType::Tram); }
 
 	void Dump(struct format_target &buffer) const;
 
@@ -87,6 +92,7 @@ struct CompanyProperties {
 	std::string president_name{};            ///< Name of the president if the user changed it.
 
 	NetworkAuthorizedKeys allow_list{};      ///< Public keys of clients that are allowed to join this company.
+	bool allow_any = false;                  ///< Set if anyone is allowed to join this company.
 
 	CompanyManagerFace face{};               ///< Face description of the president.
 
@@ -95,7 +101,9 @@ struct CompanyProperties {
 	Money current_loan = 0;                  ///< Amount of money borrowed from the bank.
 	Money max_loan = COMPANY_MAX_LOAN_DEFAULT; ///< Max allowed amount of the loan or COMPANY_MAX_LOAN_DEFAULT.
 
-	Colours colour = COLOUR_BEGIN;           ///< Company colour.
+	uint32_t colour_rgb = UINT32_MAX;         ///< Optional primary RGB; UINT32_MAX uses the standard palette.
+	uint32_t colour2_rgb = UINT32_MAX;        ///< Optional secondary RGB.
+	Colours colour = Colours::Begin;         ///< Company colour.
 
 	uint8_t block_preview = 0;               ///< Number of quarters that the company is not allowed to get new exclusive engine previews (see CompaniesGenStatistics).
 
@@ -133,7 +141,7 @@ struct CompanyProperties {
 	std::array<CompanyEconomyEntry, MAX_HISTORY_QUARTERS> old_economy{}; ///< Economic data of the company of the last #MAX_HISTORY_QUARTERS quarters.
 	uint8_t num_valid_stat_ent = 0;                                      ///< Number of valid statistical entries in #old_economy.
 
-	std::array<Livery, LS_END> livery{};
+	EnumIndexArray<Livery, LiveryScheme, LiveryScheme::End> livery{};
 
 	EngineRenewList engine_renew_list = nullptr; ///< Engine renewals of this company.
 	CompanySettings settings{};                  ///< settings specific for each company
@@ -145,7 +153,7 @@ struct CompanyProperties {
 };
 
 struct Company : CompanyPool::PoolItem<&_company_pool>, CompanyProperties {
-	Company(StringID name_1 = StringID{0}, bool is_ai = false);
+	Company(CompanyID index, StringID name_1 = StringID{0}, bool is_ai = false);
 	~Company();
 
 	RailTypes avail_railtypes{}; ///< Rail types available to this company.
@@ -155,12 +163,12 @@ struct Company : CompanyPool::PoolItem<&_company_pool>, CompanyProperties {
 	class AIInfo *ai_info = nullptr;
 	std::unique_ptr<class AIConfig> ai_config{};
 
-	std::array<GroupStatistics, VEH_COMPANY_END> group_all{}; ///< NOSAVE: Statistics for the ALL_GROUP group.
-	std::array<GroupStatistics, VEH_COMPANY_END> group_default{};  ///< NOSAVE: Statistics for the DEFAULT_GROUP group.
+	VehicleTypeIndexArray<GroupStatistics> group_all{}; ///< NOSAVE: Statistics for the ALL_GROUP group.
+	VehicleTypeIndexArray<GroupStatistics> group_default{};  ///< NOSAVE: Statistics for the DEFAULT_GROUP group.
 
 	CompanyInfrastructure infrastructure{}; ///< NOSAVE: Counts of company owned infrastructure.
 
-	std::array<FreeUnitIDGenerator, VEH_COMPANY_END> freeunits{};
+	VehicleTypeIndexArray<FreeUnitIDGenerator> freeunits{};
 	FreeUnitIDGenerator freegroups{};
 
 	Money GetMaxLoan() const;
@@ -198,6 +206,17 @@ struct Company : CompanyPool::PoolItem<&_company_pool>, CompanyProperties {
 	static inline bool IsHumanID(auto index)
 	{
 		return !Company::Get(index)->is_ai;
+	}
+
+	/**
+	 * Get offset for recolour palette of specific company.
+	 * @param livery_scheme Scheme to use for recolour.
+	 * @param use_secondary Specify whether to add secondary colour offset to the result.
+	 * @return palette offset.
+	 */
+	inline uint8_t GetCompanyRecolourOffset(LiveryScheme livery_scheme, bool use_secondary = true) const
+	{
+		return this->livery[livery_scheme].GetRecolourOffset(use_secondary);
 	}
 
 	static void PostDestructor(size_t index);

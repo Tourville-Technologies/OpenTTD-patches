@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file map_sl.cpp Code handling saving and loading of map */
@@ -194,136 +194,53 @@ static void Load_MAP8()
 	});
 }
 
-static void Load_MAP9()
-{
-	TileExtended *me = _me.tile_data;
-	ReadBuffer::GetCurrent()->ReadBytesToHandler(Map::Size(), [&](uint8_t val) {
-		me->m9 = val;
-		me++;
-	});
-}
-static void Load_MAPX()
-{
-	TileExtended *me = _me.tile_data;
-	ReadBuffer::GetCurrent()->ReadBytesToHandler(Map::Size(), [&](uint8_t val) {
-		me->m10 = val;
-		me++;
-	});
-}
-
 static void Load_WMAP()
 {
-	if (IsSavegameVersionBefore(SLV_15_COMPANY)) {
-		Debug(sl, 0, "Using BEFORE SLV_15_COMPANY LOADER");
-		assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
+	static_assert(sizeof(Tile) == 8);
+	static_assert(sizeof(TileExtended) == 6);
+	assert(IsInsideMM(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK], 1, 4));
 
-		ReadBuffer *reader = ReadBuffer::GetCurrent();
-		const uint32_t size = Map::Size();
+	ReadBuffer *reader = ReadBuffer::GetCurrent();
+	const uint32_t size = Map::Size();
 
-		if constexpr (std::endian::native == std::endian::little) {
-			reader->CopyBytes((uint8_t *)_m.tile_data, size * 8);
-		} else {
-			Tile *m_start = _m.tile_data;
-			Tile *m_end = _m.tile_data + size;
-			for (Tile *m = m_start; m != m_end; m++) {
-				RawReadBuffer buf = reader->ReadRawBytes(8);
-				m->type = buf.RawReadByte();
-				m->height = buf.RawReadByte();
-				uint16_t m2 = buf.RawReadByte();
-				m2 |= ((uint16_t)buf.RawReadByte()) << 8;
-				m->m2 = m2;
-				m->m1 = buf.RawReadByte();
-				m->m3 = buf.RawReadByte();
-				m->m4 = buf.RawReadByte();
-				m->m5 = buf.RawReadByte();
-			}
+	if constexpr (std::endian::native == std::endian::little) {
+		reader->CopyBytes((uint8_t *) _m.tile_data, size * 8);
+	} else {
+		Tile *m_start = _m.tile_data;
+		Tile *m_end = _m.tile_data + size;
+		for (Tile *m = m_start; m != m_end; m++) {
+			RawReadBuffer buf = reader->ReadRawBytes(8);
+			m->type = buf.RawReadByte();
+			m->height = buf.RawReadByte();
+			uint16_t m2 = buf.RawReadByte();
+			m2 |= ((uint16_t) buf.RawReadByte()) << 8;
+			m->m2 = m2;
+			m->m1 = buf.RawReadByte();
+			m->m3 = buf.RawReadByte();
+			m->m4 = buf.RawReadByte();
+			m->m5 = buf.RawReadByte();
 		}
+	}
 
-		TileExtended *me_start = _me.tile_data;
-		TileExtended *me_end = _me.tile_data + size;
-		if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
-			for (TileExtended *me = me_start; me != me_end; me++) {
-				RawReadBuffer buf = reader->ReadRawBytes(3);
-				me->m6 = buf.RawReadByte();
-				me->m7 = buf.RawReadByte();
-				me->m8 = buf.RawReadByte();
-				me->m9 = 0;
-				me->m10 = 0;
-			}
-		} else if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2) {
-			if constexpr (std::endian::native == std::endian::little) {
-				reader->CopyBytes((uint8_t *)_me.tile_data, size * 4);
-			} else {
-				for (TileExtended *me = me_start; me != me_end; me++) {
-					RawReadBuffer buf = reader->ReadRawBytes(4);
-					me->m6 = buf.RawReadByte();
-					me->m7 = buf.RawReadByte();
-					uint16_t m8 = buf.RawReadByte();
-					m8 |= ((uint16_t)buf.RawReadByte()) << 8;
-					me->m8 = m8;
-					me->m9 = 0;
-					me->m10 = 0;
-				}
-			}
-		} else {
-			NOT_REACHED();
+	TileExtended *me_start = _me.tile_data;
+	TileExtended *me_end = _me.tile_data + size;
+	if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
+		for (TileExtended *me = me_start; me != me_end; me++) {
+			RawReadBuffer buf = reader->ReadRawBytes(2);
+			me->m6 = buf.RawReadByte();
+			me->m7 = buf.RawReadByte();
 		}
 	} else {
-		Debug(sl, 0, "Using AFTER SLV_15_COMPANY LOADER");
-		static_assert(sizeof(Tile) == 8);
-		static_assert(sizeof(TileExtended) == 6);
-		assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1 || _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
-
-		ReadBuffer *reader = ReadBuffer::GetCurrent();
-		const uint32_t size = Map::Size();
-
-		if constexpr (std::endian::native == std::endian::little) {
-			reader->CopyBytes((uint8_t *)_m.tile_data, size * 8);
-		} else {
-			Tile *m_start = _m.tile_data;
-			Tile *m_end = _m.tile_data + size;
-			for (Tile *m = m_start; m != m_end; m++) {
-				RawReadBuffer buf = reader->ReadRawBytes(8);
-				m->type = buf.RawReadByte();
-				m->height = buf.RawReadByte();
-				uint16_t m2 = buf.RawReadByte();
-				m2 |= ((uint16_t)buf.RawReadByte()) << 8;
-				m->m2 = m2;
-				m->m1 = buf.RawReadByte();
-				m->m3 = buf.RawReadByte();
-				m->m4 = buf.RawReadByte();
-				m->m5 = buf.RawReadByte();
-			}
-		}
-
-		TileExtended *me_start = _me.tile_data;
-		TileExtended *me_end = _me.tile_data + size;
-		if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 1) {
-			for (TileExtended *me = me_start; me != me_end; me++) {
-				RawReadBuffer buf = reader->ReadRawBytes(5);
-				me->m6 = buf.RawReadByte();
-				me->m7 = buf.RawReadByte();
-				me->m8 = buf.RawReadByte();
-				me->m9 = buf.RawReadByte();
-				me->m10 = buf.RawReadByte();
-			}
-		} else if (_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2) {
-			if constexpr (std::endian::native == std::endian::little) {
-				reader->CopyBytes((uint8_t *)_me.tile_data, size * 6);
-			} else {
-				for (TileExtended *me = me_start; me != me_end; me++) {
-					RawReadBuffer buf = reader->ReadRawBytes(6);
-					me->m6 = buf.RawReadByte();
-					me->m7 = buf.RawReadByte();
-					uint16_t m8 = buf.RawReadByte();
-					m8 |= ((uint16_t)buf.RawReadByte()) << 8;
-					me->m8 = m8;
-					me->m9 = buf.RawReadByte();
-					me->m10 = buf.RawReadByte();
-				}
-			}
-		} else {
-			NOT_REACHED();
+		const bool extended = _sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] >= 3;
+		for (TileExtended *me = me_start; me != me_end; me++) {
+			RawReadBuffer buf = reader->ReadRawBytes(extended ? 6 : 4);
+			me->m6 = buf.RawReadByte();
+			me->m7 = buf.RawReadByte();
+			uint16_t m8 = buf.RawReadByte();
+			m8 |= uint16_t(buf.RawReadByte()) << 8;
+			me->m8 = m8;
+			me->m9 = extended ? buf.RawReadByte() : 0;
+			me->m10 = extended ? buf.RawReadByte() : 0;
 		}
 	}
 }
@@ -332,7 +249,7 @@ static void Save_WMAP()
 {
 	static_assert(sizeof(Tile) == 8);
 	static_assert(sizeof(TileExtended) == 6);
-	assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 2);
+	assert(_sl_xv_feature_versions[XSLFI_WHOLE_MAP_CHUNK] == 3);
 
 	MemoryDumper *dumper = MemoryDumper::GetCurrent();
 	const uint32_t size = Map::Size();
@@ -433,21 +350,6 @@ struct MAP8 : MapTileExtendedReader {
 	FieldT GetNextField() { return this->Next()->m8; }
 };
 
-struct MAP9 : MapTileExtendedReader {
-	typedef uint8_t FieldT;
-	FieldT GetNextField()
-	{
-		return this->Next()->m9;
-	}
-};
-struct MAPX : MapTileExtendedReader {
-	typedef uint8_t FieldT;
-	FieldT GetNextField()
-	{
-		return this->Next()->m10;
-	}
-};
-
 template <typename T>
 static void Save_MAP()
 {
@@ -469,6 +371,17 @@ static void Save_MAP()
 		});
 	}
 }
+
+struct MAP9 : MapTileExtendedReader {
+	using FieldT = uint8_t;
+	FieldT GetNextField() { return this->Next()->m9; }
+};
+struct MAPX : MapTileExtendedReader {
+	using FieldT = uint8_t;
+	FieldT GetNextField() { return this->Next()->m10; }
+};
+static void Load_MAP9() { TileExtended *me = _me.tile_data; ReadBuffer::GetCurrent()->ReadBytesToHandler(Map::Size(), [&](uint8_t val) { (me++)->m9 = val; }); }
+static void Load_MAPX() { TileExtended *me = _me.tile_data; ReadBuffer::GetCurrent()->ReadBytesToHandler(Map::Size(), [&](uint8_t val) { (me++)->m10 = val; }); }
 
 static ChunkSaveLoadSpecialOpResult Special_WMAP(uint32_t chunk_id, ChunkSaveLoadSpecialOp op)
 {
@@ -497,20 +410,20 @@ static ChunkSaveLoadSpecialOpResult Special_MAP_Chunks(uint32_t chunk_id, ChunkS
 }
 
 static const ChunkHandler map_chunk_handlers[] = {
-	{ 'MAPS', Save_MAPS,      Load_MAPS, nullptr, Check_MAPS, CH_TABLE },
-	{ 'MAPT', Save_MAP<MAPT>, Load_MAPT, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAPH', Save_MAP<MAPH>, Load_MAPH, nullptr, Check_MAPH, CH_RIFF, Special_MAP_Chunks },
-	{ 'MAPO', Save_MAP<MAP1>, Load_MAP1, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAP2', Save_MAP<MAP2>, Load_MAP2, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'M3LO', Save_MAP<MAP3>, Load_MAP3, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'M3HI', Save_MAP<MAP4>, Load_MAP4, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAP5', Save_MAP<MAP5>, Load_MAP5, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAPE', Save_MAP<MAP6>, Load_MAP6, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAP7', Save_MAP<MAP7>, Load_MAP7, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAP8', Save_MAP<MAP8>, Load_MAP8, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAP9', Save_MAP<MAP9>, Load_MAP9, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'MAPX', Save_MAP<MAPX>, Load_MAPX, nullptr, nullptr,    CH_RIFF, Special_MAP_Chunks },
-	{ 'WMAP', Save_WMAP,      Load_WMAP, nullptr, nullptr,    CH_RIFF, Special_WMAP },
+	{ 'MAPS', Save_MAPS,      Load_MAPS, nullptr, Check_MAPS, ChunkType::Table },
+	{ 'MAPT', Save_MAP<MAPT>, Load_MAPT, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAPH', Save_MAP<MAPH>, Load_MAPH, nullptr, Check_MAPH, ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAPO', Save_MAP<MAP1>, Load_MAP1, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAP2', Save_MAP<MAP2>, Load_MAP2, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'M3LO', Save_MAP<MAP3>, Load_MAP3, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'M3HI', Save_MAP<MAP4>, Load_MAP4, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAP5', Save_MAP<MAP5>, Load_MAP5, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAPE', Save_MAP<MAP6>, Load_MAP6, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAP7', Save_MAP<MAP7>, Load_MAP7, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAP8', Save_MAP<MAP8>, Load_MAP8, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAP9', Save_MAP<MAP9>, Load_MAP9, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'MAPX', Save_MAP<MAPX>, Load_MAPX, nullptr, nullptr,    ChunkType::Riff, Special_MAP_Chunks },
+	{ 'WMAP', Save_WMAP,      Load_WMAP, nullptr, nullptr,    ChunkType::Riff, Special_WMAP },
 };
 
 extern const ChunkHandlerTable _map_chunk_handlers(map_chunk_handlers);

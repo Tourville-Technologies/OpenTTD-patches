@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -33,14 +33,20 @@ struct UDPSocket {
 	const std::string name;                     ///< The name of the socket.
 	std::unique_ptr<NetworkUDPSocketHandler> socket = nullptr; ///< The actual socket, which may be nullptr when not initialized yet.
 
+	/**
+	 * Create this socket.
+	 * @param name The name of the socket for logging purposes.
+	 */
 	UDPSocket(const std::string &name) : name(name) {}
 
+	/** @copydoc NetworkUDPSocketHandler::CloseSocket */
 	void CloseSocket()
 	{
 		this->socket->CloseSocket();
 		this->socket = nullptr;
 	}
 
+	/** @copydoc NetworkUDPSocketHandler::ReceivePackets */
 	void ReceivePackets()
 	{
 		this->socket->ReceivePackets();
@@ -52,7 +58,7 @@ static UDPSocket _udp_server("Server"); ///< udp server socket
 
 static Packet PrepareUdpClientFindServerPacket(NetworkUDPSocketHandler &socket)
 {
-	Packet p(&socket, PACKET_UDP_CLIENT_FIND_SERVER);
+	Packet p(&socket, PacketUDPType::ClientFindServer);
 	p.Send_uint32(FIND_SERVER_EXTENDED_TOKEN);
 	p.Send_uint16(0); // flags
 	p.Send_uint16(0); // version
@@ -64,36 +70,36 @@ static Packet PrepareUdpClientFindServerPacket(NetworkUDPSocketHandler &socket)
 /** Helper class for handling all server side communication. */
 class ServerNetworkUDPSocketHandler : public NetworkUDPSocketHandler {
 protected:
-	void Receive_CLIENT_FIND_SERVER(Packet &p, NetworkAddress &client_addr) override;
-	void Reply_CLIENT_FIND_SERVER_extended(Packet &p, NetworkAddress &client_addr);
+	void ReceiveClientFindServer(Packet &p, NetworkAddress &client_addr) override;
+	void ReplyClientFindServerExtended(Packet &p, NetworkAddress &client_addr);
 public:
 	/**
 	 * Create the socket.
 	 * @param addresses The addresses to bind on.
 	 */
 	ServerNetworkUDPSocketHandler(NetworkAddressList *addresses) : NetworkUDPSocketHandler(addresses) {}
-	virtual ~ServerNetworkUDPSocketHandler() = default;
+	~ServerNetworkUDPSocketHandler() override = default;
 };
 
-void ServerNetworkUDPSocketHandler::Receive_CLIENT_FIND_SERVER(Packet &p, NetworkAddress &client_addr)
+void ServerNetworkUDPSocketHandler::ReceiveClientFindServer(Packet &p, NetworkAddress &client_addr)
 {
 	if (p.CanReadFromPacket(8) && p.Recv_uint32() == FIND_SERVER_EXTENDED_TOKEN) {
-		this->Reply_CLIENT_FIND_SERVER_extended(p, client_addr);
+		this->ReplyClientFindServerExtended(p, client_addr);
 		return;
 	}
 
-	Packet packet(this, PACKET_UDP_SERVER_RESPONSE);
+	Packet packet(this, PacketUDPType::ServerResponse);
 	this->SendPacket(packet, client_addr);
 
 	Debug(net, 7, "Queried from {}", client_addr.GetHostname());
 }
 
-void ServerNetworkUDPSocketHandler::Reply_CLIENT_FIND_SERVER_extended(Packet &p, NetworkAddress &client_addr)
+void ServerNetworkUDPSocketHandler::ReplyClientFindServerExtended(Packet &p, NetworkAddress &client_addr)
 {
 	[[maybe_unused]] uint16_t flags = p.Recv_uint16();
 	uint16_t version = p.Recv_uint16();
 
-	Packet packet(this, PACKET_UDP_EX_SERVER_RESPONSE);
+	Packet packet(this, PacketUDPType::ExtendedServerResponse);
 	this->SendPacket(packet, client_addr);
 
 	Debug(net, 7, "Queried (extended: {}) from {}", version, client_addr.GetHostname());
@@ -104,27 +110,30 @@ void ServerNetworkUDPSocketHandler::Reply_CLIENT_FIND_SERVER_extended(Packet &p,
 /** Helper class for handling all client side communication. */
 class ClientNetworkUDPSocketHandler : public NetworkUDPSocketHandler {
 protected:
-	void Receive_SERVER_RESPONSE(Packet &p, NetworkAddress &client_addr) override;
-	void Receive_EX_SERVER_RESPONSE(Packet &p, NetworkAddress &client_addr) override;
+	void ReceiveServerResponse(Packet &p, NetworkAddress &client_addr) override;
+	void ReceiveExtendedServerResponse(Packet &p, NetworkAddress &client_addr) override;
 public:
-	virtual ~ClientNetworkUDPSocketHandler() = default;
+	~ClientNetworkUDPSocketHandler() override = default;
 };
 
-void ClientNetworkUDPSocketHandler::Receive_SERVER_RESPONSE(Packet &, NetworkAddress &client_addr)
+void ClientNetworkUDPSocketHandler::ReceiveServerResponse(Packet &, NetworkAddress &client_addr)
 {
 	Debug(net, 3, "Server response from {}", FormatNetworkAddress(client_addr));
 
 	NetworkAddServer(client_addr.GetAddressAsString(false), false, true);
 }
 
-void ClientNetworkUDPSocketHandler::Receive_EX_SERVER_RESPONSE(Packet &, NetworkAddress &client_addr)
+void ClientNetworkUDPSocketHandler::ReceiveExtendedServerResponse(Packet &, NetworkAddress &client_addr)
 {
 	Debug(net, 3, "Extended server response from {}", FormatNetworkAddress(client_addr));
 
 	NetworkAddServer(client_addr.GetAddressAsString(false), false, true); // TODO, mark as extended
 }
 
-/** Broadcast to all ips */
+/**
+ * Broadcast to all IPs.
+ * @param socket The socket to broadcast on.
+ */
 static void NetworkUDPBroadCast(NetworkUDPSocketHandler &socket)
 {
 	for (NetworkAddress &addr : _broadcast_list) {

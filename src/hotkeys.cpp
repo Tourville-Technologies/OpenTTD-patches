@@ -2,10 +2,10 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
-/** @file hotkeys.cpp Implementation of hotkey related functions */
+/** @file hotkeys.cpp Implementation of hotkey related functions. */
 
 #include "stdafx.h"
 #include "openttd.h"
@@ -225,24 +225,20 @@ Hotkey::Hotkey(uint16_t default_keycode, const char *name, int num) :
 	name(name),
 	num(num)
 {
-	if (default_keycode != 0) this->AddKeycode(default_keycode);
+	if (default_keycode != 0) this->keycodes.push_back(default_keycode);
 }
 
 /**
  * Create a new Hotkey object with multiple default keycodes.
- * @param default_keycodes An array of default keycodes terminated with 0.
+ * @param default_keycodes An array of default keycodes.
  * @param name The name of this hotkey.
  * @param num Number of this hotkey, should be unique within the hotkey list.
  */
-Hotkey::Hotkey(const uint16_t *default_keycodes, const char *name, int num) :
+Hotkey::Hotkey(std::initializer_list<uint16_t> default_keycodes, const char *name, int num) :
 	name(name),
 	num(num)
 {
-	const uint16_t *keycode = default_keycodes;
-	while (*keycode != 0) {
-		this->AddKeycode(*keycode);
-		keycode++;
-	}
+	this->keycodes = default_keycodes;
 }
 
 /**
@@ -252,7 +248,10 @@ Hotkey::Hotkey(const uint16_t *default_keycodes, const char *name, int num) :
  */
 void Hotkey::AddKeycode(uint16_t keycode)
 {
-	this->keycodes.insert(keycode);
+	for (uint16_t k : this->keycodes) {
+		if (k == keycode) return; // already present
+	}
+	this->keycodes.push_back(keycode);
 }
 
 HotkeyList::HotkeyList(const char *ini_group, std::vector<Hotkey> items, GlobalHotkeyHandlerFunc global_hotkey_handler) :
@@ -327,7 +326,7 @@ int HotkeyList::CheckMatch(uint16_t keycode, bool global_only) const
 static void SaveLoadHotkeys(bool save)
 {
 	IniFile ini{};
-	ini.LoadFromDisk(_hotkeys_file, NO_DIRECTORY);
+	ini.LoadFromDisk(_hotkeys_file, Subdirectory::None);
 
 	for (HotkeyList *list : *_hotkey_lists) {
 		if (save) {
@@ -359,7 +358,7 @@ void HandleGlobalHotkeys(char32_t key, uint16_t keycode)
 		if (list->global_hotkey_handler == nullptr) continue;
 
 		int hotkey = list->CheckMatch(keycode, true);
-		if (hotkey >= 0 && (list->global_hotkey_handler(hotkey) == ES_HANDLED)) return;
+		if (hotkey >= 0 && (list->global_hotkey_handler(hotkey) == EventState::Handled)) return;
 	}
 }
 

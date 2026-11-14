@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act1.cpp NewGRF Action 0x01 handler. */
@@ -45,7 +45,7 @@ static void NewSpriteSet(ByteReader &buf)
 	}
 	uint16_t num_ents = buf.ReadExtendedByte();
 
-	if (feature >= GSF_END) {
+	if (feature >= GrfSpecFeature::End) {
 		_cur_gps.skip_sprites = num_sets * num_ents;
 		GrfMsg(1, "NewSpriteSet: Unsupported feature {}, skipping {} sprites", GetFeatureString(feature_ref), _cur_gps.skip_sprites);
 		return;
@@ -82,9 +82,15 @@ static void SkipAct1(ByteReader &buf)
 	GrfMsg(3, "SkipAct1: Skipping {} sprites", _cur_gps.skip_sprites);
 }
 
+/** @copydoc GrfActionHandler::FileScan */
 template <> void GrfActionHandler<0x01>::FileScan(ByteReader &buf) { SkipAct1(buf); }
+/** @copydoc GrfActionHandler::SafetyScan */
 template <> void GrfActionHandler<0x01>::SafetyScan(ByteReader &buf) { SkipAct1(buf); }
+/** @copydoc GrfActionHandler::LabelScan */
 template <> void GrfActionHandler<0x01>::LabelScan(ByteReader &buf) { SkipAct1(buf); }
+/** @copydoc GrfActionHandler::Init */
 template <> void GrfActionHandler<0x01>::Init(ByteReader &buf) { SkipAct1(buf); }
+/** @copydoc GrfActionHandler::Reserve */
 template <> void GrfActionHandler<0x01>::Reserve(ByteReader &buf) { SkipAct1(buf); }
+/** @copydoc GrfActionHandler::Activation */
 template <> void GrfActionHandler<0x01>::Activation(ByteReader &buf) { NewSpriteSet(buf); }
