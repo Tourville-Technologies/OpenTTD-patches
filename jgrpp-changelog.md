@@ -2,6 +2,10 @@
 
 * * *
 
+### more-companies 1.0.2
+* Fix a crash rendering NewGRF custom palettes caused by a flag collision with company RGB palettes (std::terminate called: exception: deque).
+* Preserve company RGB default colours while stripping resolved NewGRF layout flags before rendering.
+
 ### more-companies 1.0.1
 * Fix a crash when opening the map of the world caused by incorrectly nested legend widgets.
 * Prevent division by zero when calculating legend rows in narrow world-map windows, including the cargo-flow view.

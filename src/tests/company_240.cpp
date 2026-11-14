@@ -21,6 +21,7 @@
 #include "../framerate_type.h"
 #include "../company_base.h"
 #include "../company_colour.h"
+#include "../sprite.h"
 #include "../company_cmd.h"
 #include "../company_gui.h"
 #include "../infrastructure_func.h"
@@ -220,6 +221,24 @@ TEST_CASE("240 companies - AI performance tracking", "[company240]")
 		}
 		PerformanceMeasurer::SetInactive(element);
 	}
+}
+
+TEST_CASE("NewGRF layout palettes do not alias company RGB palettes", "[company240][rgb]")
+{
+	const SpriteID image = 1U << PALETTE_MODIFIER_COLOUR;
+	const PaletteID custom_palette = (1U << SPRITE_MODIFIER_CUSTOM_SPRITE) | 12345;
+	CHECK(SpriteLayoutPaletteTransform(image, custom_palette, PAL_NONE) == 12345);
+	CHECK(GroundSpritePaletteTransform(image, custom_palette, PAL_NONE) == 12345);
+	CHECK(GetCompanyRGBBasePalette(SpriteLayoutPaletteTransform(image, custom_palette, PAL_NONE)) == 12345);
+	CHECK(GetCompanyRGBBasePalette(GroundSpritePaletteTransform(image, custom_palette, PAL_NONE)) == 12345);
+	/* Only layout flags are stripped: the default may be a real RGB palette. */
+	const PaletteID rgb_palette = COMPANY_RGB_PALETTE | 42;
+	CHECK(SpriteLayoutPaletteTransform(image, PAL_NONE, rgb_palette) == rgb_palette);
+	CHECK(GroundSpritePaletteTransform(image, PAL_NONE, rgb_palette) == rgb_palette);
+	CHECK(SpriteLayoutPaletteTransform(image, 775, rgb_palette) == 775);
+	CHECK(GroundSpritePaletteTransform(image, 775, rgb_palette) == 775);
+	CHECK(SpriteLayoutPaletteTransform(0, custom_palette, rgb_palette) == PAL_NONE);
+	CHECK(GroundSpritePaletteTransform(0, custom_palette, rgb_palette) == PAL_NONE);
 }
 
 TEST_CASE("Company RGB hex parsing and exact rendering", "[company240][rgb]")

@@ -187,7 +187,9 @@ inline void DrawNewGRFTileSeqInGUI(int x, int y, const DrawTileSprites *dts, uin
 inline PaletteID SpriteLayoutPaletteTransform(SpriteID image, PaletteID pal, PaletteID default_pal)
 {
 	if (HasBit(image, PALETTE_MODIFIER_TRANSPARENT) || HasBit(image, PALETTE_MODIFIER_COLOUR)) {
-		return (pal != 0 ? pal : default_pal);
+		/* The custom-sprite flag is only needed while resolving the layout.
+		 * Bit 29 identifies company RGB palettes in the renderer. */
+		return (pal != 0 ? pal & ~(1U << SPRITE_MODIFIER_CUSTOM_SPRITE) : default_pal);
 	} else {
 		return PAL_NONE;
 	}
@@ -206,7 +208,8 @@ inline PaletteID SpriteLayoutPaletteTransform(SpriteID image, PaletteID pal, Pal
 inline PaletteID GroundSpritePaletteTransform(SpriteID image, PaletteID pal, PaletteID default_pal)
 {
 	if (HasBit(image, PALETTE_MODIFIER_COLOUR)) {
-		return (pal != 0 ? pal : default_pal);
+		/* Strip the layout flag before passing the resolved palette to the renderer. */
+		return (pal != 0 ? pal & ~(1U << SPRITE_MODIFIER_CUSTOM_SPRITE) : default_pal);
 	} else {
 		return PAL_NONE;
 	}
