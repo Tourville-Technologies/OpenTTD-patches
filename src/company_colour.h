@@ -20,7 +20,7 @@ static constexpr uint32_t COMPANY_RGB_PALETTE = 1U << 29;
 std::optional<uint32_t> ParseCompanyRGBColour(std::string_view text);
 Colour GetCompanyRGBShade(uint32_t rgb, Shade shade);
 PixelColour GetCompanyPixelColour(CompanyID company, Shade shade);
-PaletteID GetCompanyRGBPalette(PaletteID palette, CompanyID company, bool primary = true, bool secondary = false);
+PaletteID GetCompanyRGBPalette(PaletteID palette, CompanyID company, bool primary = true, bool secondary = false, bool repair_unused = false);
 PaletteID GetCompanyRGBBasePalette(PaletteID palette);
 /** Build optional RGB entries and the corresponding non-animated 8bpp fallback. */
 bool BuildCompanyRGBRemap(PaletteID palette, const uint8_t *base, std::array<uint8_t, 256> &fallback, std::array<Colour, 256> &rgb);

@@ -288,6 +288,49 @@ TEST_CASE("Company RGB hex parsing and exact rendering", "[company240][rgb]")
 	CHECK_FALSE(CmdSetCompanyRGBColour({}, true, 0xFFFFFF).Failed());
 }
 
+TEST_CASE("Vehicle liveries repair unused magenta without changing legitimate pink", "[company240][rgb][livery]")
+{
+	MockEnvironment::Instance();
+	Company *c = Company::CreateAtIndex(CompanyID(239));
+	auto cleanup = scope_guard([] { _company_pool.CleanPool(); });
+	c->colour_rgb = c->colour2_rgb = COMPANY_RGB_DEFAULT;
+	std::array<uint8_t, 256> base{}, fallback;
+	std::array<Colour, 256> rgb;
+	for (uint i = 0; i < base.size(); ++i) base[i] = i;
+	base[42] = 0xDD; // A custom vehicle palette also maps an ordinary source pixel to an unused entry.
+	PaletteID palette = GetCompanyRGBPalette(775, c->index, true, true, true);
+	REQUIRE(BuildCompanyRGBRemap(palette, base.data(), fallback, rgb));
+	CHECK(GetCompanyRGBBasePalette(palette) == 775);
+	CHECK(fallback[0] == 0);
+	CHECK(fallback[42] == base[0xC9]);
+	for (uint i = 0xD7; i <= 0xE2; ++i) CHECK(fallback[i] == base[0xC9]);
+	for (uint i = 0x50; i <= 0x57; ++i) CHECK(fallback[i] == base[i]);
+	/* Render the actual bad palette index with and without the livery guard. */
+	AutoRestoreBackup restore_palette(_cur_palette, _cur_palette);
+	_cur_palette.palette[0xD7] = Colour(212, 0, 212);
+	_cur_palette.palette[0xC9] = Colour(20, 60, 180);
+	Blitter_32bppSimple blitter;
+	struct TestPixel { uint8_t r, g, b, a, m, v; } source{0, 0, 0, 255, 0xD7, 128};
+	Colour destination;
+	Blitter::BlitterParams bp{};
+	bp.sprite = &source; bp.dst = &destination; bp.remap = base.data();
+	bp.width = bp.height = bp.sprite_width = bp.sprite_height = bp.pitch = 1;
+	blitter.Draw(&bp, BlitterMode::ColourRemap, ZoomLevel::Min);
+	CHECK(destination.data == Colour(212, 0, 212).data);
+	bp.remap = fallback.data(); bp.remap_rgb = rgb.data();
+	blitter.Draw(&bp, BlitterMode::ColourRemap, ZoomLevel::Min);
+	CHECK(destination.data == Colour(20, 60, 180).data);
+	c->colour_rgb = 0x123ABC;
+	palette = GetCompanyRGBPalette(775, c->index, true, false, true);
+	REQUIRE(BuildCompanyRGBRemap(palette, base.data(), fallback, rgb));
+	CHECK(rgb[0xD7].data == Colour(0x12, 0x3A, 0xBC).data);
+	/* A NewGRF that deliberately recolours an unused input to a valid colour is preserved. */
+	base[0xD7] = 0x50;
+	REQUIRE(BuildCompanyRGBRemap(palette, base.data(), fallback, rgb));
+	CHECK(fallback[0xD7] == 0x50);
+	CHECK(rgb[0xD7].a == 0);
+}
+
 TEST_CASE("RGB company sprites across 32bpp blitters", "[company240][rgb]")
 {
 	MockEnvironment::Instance();

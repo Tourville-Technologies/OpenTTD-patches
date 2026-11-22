@@ -49,6 +49,7 @@ struct CompanyRGBPalette {
 	CompanyID company;
 	bool primary;
 	bool secondary;
+	bool repair_unused;
 };
 static std::mutex _company_rgb_mutex;
 static std::deque<CompanyRGBPalette> _company_rgb_palettes;
@@ -60,17 +61,17 @@ static CompanyRGBPalette LookupCompanyRGBPalette(PaletteID palette)
 	return _company_rgb_palettes.at(palette & PALETTE_MASK);
 }
 
-PaletteID GetCompanyRGBPalette(PaletteID palette, CompanyID company, bool primary, bool secondary)
+PaletteID GetCompanyRGBPalette(PaletteID palette, CompanyID company, bool primary, bool secondary, bool repair_unused)
 {
 	const Company *c = Company::GetIfValid(company);
-	if (c == nullptr) return palette;
-	primary &= c->colour_rgb != COMPANY_RGB_DEFAULT;
-	secondary &= c->colour2_rgb != COMPANY_RGB_DEFAULT;
-	if (!primary && !secondary) return palette;
-	uint64_t key = uint64_t(palette) | (uint64_t(company.base()) << 32) | (uint64_t(primary) << 40) | (uint64_t(secondary) << 41);
+	if (palette == PAL_NONE) return palette;
+	primary &= c != nullptr && c->colour_rgb != COMPANY_RGB_DEFAULT;
+	secondary &= c != nullptr && c->colour2_rgb != COMPANY_RGB_DEFAULT;
+	if (!primary && !secondary && !repair_unused) return palette;
+	uint64_t key = uint64_t(palette) | (uint64_t(company.base()) << 32) | (uint64_t(primary) << 40) | (uint64_t(secondary) << 41) | (uint64_t(repair_unused) << 42);
 	std::lock_guard lock(_company_rgb_mutex);
 	auto [it, added] = _company_rgb_ids.try_emplace(key, static_cast<PaletteID>(_company_rgb_palettes.size()));
-	if (added) _company_rgb_palettes.push_back({palette, company, primary, secondary});
+	if (added) _company_rgb_palettes.push_back({palette, company, primary, secondary, repair_unused});
 	return COMPANY_RGB_PALETTE | it->second;
 }
 
@@ -94,7 +95,7 @@ bool BuildCompanyRGBRemap(PaletteID palette, const uint8_t *base, std::array<uin
 	if ((palette & COMPANY_RGB_PALETTE) == 0 || base == nullptr) return false;
 	auto entry = LookupCompanyRGBPalette(palette);
 	const Company *c = Company::GetIfValid(entry.company);
-	if (c == nullptr) return false;
+	if (c == nullptr && !entry.repair_unused) return false;
 	std::copy_n(base, 256, fallback.begin());
 	rgb.fill(Colour(0, 0, 0, 0));
 	auto set_ramp = [&](uint start, uint32_t colour) {
@@ -106,7 +107,18 @@ bool BuildCompanyRGBRemap(PaletteID palette, const uint8_t *base, std::array<uin
 			if (fallback[start + i] == 0 || fallback[start + i] >= PALETTE_ANIM_START) fallback[start + i] = 1;
 		}
 	};
-	if (entry.primary) set_ramp(0xC6, c->colour_rgb);
-	if (entry.secondary) set_ramp(0x50, c->colour2_rgb);
+	if (entry.primary && c != nullptr) set_ramp(0xC6, c->colour_rgb);
+	if (entry.secondary && c != nullptr) set_ramp(0x50, c->colour2_rgb);
+	if (entry.repair_unused) {
+		/* Guard vehicle draws against unused D7..E2 magenta placeholders left in the remap.
+		 * The valid pink company-colour ramp and deliberate NewGRF recolouring are preserved. */
+		uint8_t replacement = base[0xC9];
+		if (replacement == 0 || (replacement >= 0xD7 && replacement <= 0xE2) || replacement >= PALETTE_ANIM_START) replacement = 1;
+		for (uint i = 1; i < 256; ++i) {
+			if (fallback[i] < 0xD7 || fallback[i] > 0xE2 || rgb[i].a != 0) continue;
+			fallback[i] = replacement;
+			if (entry.primary && c != nullptr) rgb[i] = GetCompanyRGBShade(c->colour_rgb, Shade::Normal);
+		}
+	}
 	return true;
 }

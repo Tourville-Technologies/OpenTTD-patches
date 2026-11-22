@@ -2,6 +2,13 @@
 
 * * *
 
+### more-companies 1.0.3
+* Add an optional minimum cargo fare, retaining a speed premium while protecting long-distance deliveries from excessive age decay. The default is zero, preserving standard payment rules.
+* Base feeder credits on the protected minimum when enabled, reserving the speed premium for final delivery and avoiding age-related negative payments on forward-moving routes.
+* Fix overflow in cargo income calculations for large maps, large cargo packets, inflated payment rates, and signed NewGRF profit callbacks.
+* Guard vehicle recolour maps against unused magenta palette entries while preserving legitimate pink company colours and custom NewGRF mappings.
+* Add cargo-aging, minimum-fare, wide-payment, and livery regression coverage. See docs/more-companies-1.0.3.md for settings and validation.
+
 ### more-companies 1.0.2
 * Fix a crash rendering NewGRF custom palettes caused by a flag collision with company RGB palettes (std::terminate called: exception: deque).
 * Preserve company RGB default colours while stripping resolved NewGRF layout flags before rendering.

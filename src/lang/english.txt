@@ -1577,6 +1577,12 @@ STR_CONFIG_SETTING_CARGO_AGING_RATE_VALUE                       :{NUM}%
 ###setting-zero-is-special
 STR_CONFIG_SETTING_CARGO_AGING_RATE_ZERO                        :No decay
 
+STR_CONFIG_SETTING_CARGO_PAYMENT_FLOOR                          :Minimum cargo fare: {STRING2}
+STR_CONFIG_SETTING_CARGO_PAYMENT_FLOOR_HELPTEXT                  :Keep ordinary cargo fares above this percentage of their fresh value. Faster service still earns more. Transfer credits use the guaranteed minimum fare, leaving the speed bonus for final delivery. NewGRF profit callbacks retain their own rules.
+STR_CONFIG_SETTING_CARGO_PAYMENT_FLOOR_VALUE                     :{NUM}% of fresh fare
+###setting-zero-is-special
+STR_CONFIG_SETTING_CARGO_PAYMENT_FLOOR_ZERO                      :Standard payment rules
+
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :Autorenew vehicle when it gets old: {STRING2}
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE_HELPTEXT                   :When enabled, a vehicle nearing its end of life gets automatically replaced when the renew conditions are fulfilled
 

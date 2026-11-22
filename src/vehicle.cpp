@@ -3272,6 +3272,7 @@ static PaletteID GetEngineColourMap(EngineID engine_type, CompanyID company, Eng
 			/* If bit 14 is set, then the company colours are applied to the
 			 * map else it's returned as-is. */
 			if (!HasBit(callback, 14)) {
+				map = GetCompanyRGBPalette(map, company, false, false, true);
 				/* Update cache */
 				if (v != nullptr) const_cast<Vehicle *>(v)->colourmap = map;
 				return map;
@@ -3284,13 +3285,13 @@ static PaletteID GetEngineColourMap(EngineID engine_type, CompanyID company, Eng
 	if (map == PAL_NONE) map = twocc ? (PaletteID)SPR_2CCMAP_BASE : (PaletteID)PALETTE_RECOLOUR_START;
 
 	/* Spectator has news shown too, but has invalid company ID - as well as dedicated server */
-	if (!Company::IsValidID(company)) return map;
+	if (!Company::IsValidID(company)) return GetCompanyRGBPalette(map, company, false, false, true);
 
 	const Livery *livery = GetEngineLivery(engine_type, company, parent_engine_type, v, _settings_client.gui.liveries, ignore_group);
 
 	map += livery->GetRecolourOffset(twocc);
 	const Livery &defaults = Company::Get(company)->livery[LiveryScheme::Default];
-	map = GetCompanyRGBPalette(map, company, livery->colour1 == defaults.colour1, twocc && livery->colour2 == defaults.colour2);
+	map = GetCompanyRGBPalette(map, company, livery->colour1 == defaults.colour1, twocc && livery->colour2 == defaults.colour2, true);
 
 	/* Update cache */
 	if (v != nullptr && !ignore_group) const_cast<Vehicle *>(v)->colourmap = map;

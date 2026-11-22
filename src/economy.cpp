@@ -8,6 +8,7 @@
 /** @file economy.cpp Handling of the economy. */
 
 #include "stdafx.h"
+#include "cargo_income_func.h"
 #include "company_cmd.h"
 #include "company_func.h"
 #include "command_func.h"
@@ -77,22 +78,6 @@
 /* Initialize the cargo payment-pool */
 CargoPaymentPool _cargo_payment_pool("CargoPayment");
 INSTANTIATE_POOL_METHODS(CargoPayment)
-
-/**
- * Multiply two integer values and shift the results to right.
- *
- * This function multiplies two integer values. The result is
- * shifted by the amount of shift to right.
- *
- * @param a The first integer
- * @param b The second integer
- * @param shift The amount to shift the value to right.
- * @return The shifted result
- */
-static inline int32_t BigMulS(const int32_t a, const int32_t b, const uint8_t shift)
-{
-	return (int32_t)((int64_t)a * (int64_t)b >> shift);
-}
 
 typedef std::vector<Industry *> SmallIndustryList;
 
@@ -1102,46 +1087,25 @@ Money GetTransportedGoodsIncome(uint num_pieces, uint dist, uint16_t transit_per
 			/* "The result should be a signed multiplier that gets multiplied
 			 * by the amount of cargo moved and the price factor, then gets
 			 * divided by 8192." */
-			return result * num_pieces * cs->current_payment / 8192;
+			Money payment = ScaleCargoIncome(static_cast<uint64_t>(std::abs(result)) * num_pieces, cs->current_payment, 13);
+			return result < 0 ? -payment : payment;
 		}
 	}
 
-	static const int MIN_TIME_FACTOR = 31;
-	static const int MAX_TIME_FACTOR = 255;
-	static const int TIME_FACTOR_FRAC_BITS = 4;
-	static const int TIME_FACTOR_FRAC = 1 << TIME_FACTOR_FRAC_BITS;
-
 	if (_settings_game.economy.payment_algorithm == CPA_TRADITIONAL) transit_periods = std::min<uint16_t>(transit_periods, 0xFFu);
+	const uint factor = CargoIncomeTimeFactor(transit_periods, cs->transit_periods[0], cs->transit_periods[1], _settings_game.economy.cargo_payment_floor);
+	return ScaleCargoIncome(static_cast<uint64_t>(dist) * factor * num_pieces, cs->current_payment, 25);
+}
 
-	const int periods1 = cs->transit_periods[0];
-	const int periods2 = cs->transit_periods[1];
-	const int periods_over_periods1 = std::max(transit_periods - periods1, 0);
-	const int periods_over_periods2 = std::max(periods_over_periods1 - periods2, 0);
-	int periods_over_max = MIN_TIME_FACTOR - MAX_TIME_FACTOR;
-	if (periods2 > -periods_over_max) {
-		periods_over_max += transit_periods - periods1;
-	} else {
-		periods_over_max += 2 * (transit_periods - periods1) - periods2;
+/** Reserve the optional speed bonus for final delivery so aging cannot over-credit forward feeders. */
+Money GetCargoTransferIncome(uint num_pieces, uint dist, uint16_t transit_periods, CargoType cargo_type)
+{
+	const CargoSpec *cs = CargoSpec::Get(cargo_type);
+	if (_settings_game.economy.cargo_payment_floor != 0 && cs->IsValid() && !cs->callback_mask.Test(CargoCallbackMask::ProfitCalc)) {
+		const uint factor = ((255 * _settings_game.economy.cargo_payment_floor + 99) / 100) * 16;
+		return ScaleCargoIncome(static_cast<uint64_t>(dist) * factor * num_pieces, cs->current_payment, 25);
 	}
-
-	/*
-	 * The time factor is calculated based on the time it took
-	 * (transit_periods) compared two cargo-depending values. The
-	 * range is divided into four parts:
-	 *
-	 *  - constant for fast transits
-	 *  - linear decreasing with time with a slope of -1 for medium transports
-	 *  - linear decreasing with time with a slope of -2 for slow transports
-	 *  - after hitting MIN_TIME_FACTOR, the time factor will be asymptotically decreased to a limit of 1 with a scaled 1/(x+1) function.
-	 *
-	 */
-	if (periods_over_max > 0) {
-		const int time_factor = std::max(2 * MIN_TIME_FACTOR * TIME_FACTOR_FRAC * TIME_FACTOR_FRAC / (periods_over_max + 2 * TIME_FACTOR_FRAC), 1); // MIN_TIME_FACTOR / (x/(2 * TIME_FACTOR_FRAC) + 1) + 1, expressed as fixed point with TIME_FACTOR_FRAC_BITS.
-		return BigMulS(dist * time_factor * num_pieces, cs->current_payment, 21 + TIME_FACTOR_FRAC_BITS);
-	} else {
-		const int time_factor = std::max(MAX_TIME_FACTOR - periods_over_periods1 - periods_over_periods2, MIN_TIME_FACTOR);
-		return BigMulS(dist * time_factor * num_pieces, cs->current_payment, 21);
-	}
+	return GetTransportedGoodsIncome(num_pieces, dist, transit_periods, cargo_type);
 }
 
 /** The industries we've currently brought cargo to. */
@@ -1481,7 +1445,7 @@ Money CargoPayment::PayTransfer(CargoType cargo, CargoPacket *cp, uint count, Ti
 {
 	/* Pay transfer vehicle the difference between the payment for the journey from
 	 * the source to the current point, and the sum of the previous transfer payments */
-	Money profit = -cp->GetFeederShare(count) + GetTransportedGoodsIncome(
+	Money profit = -cp->GetFeederShare(count) + GetCargoTransferIncome(
 			count,
 			cp->GetDistance(current_tile),
 			cp->GetPeriodsInTransit(),

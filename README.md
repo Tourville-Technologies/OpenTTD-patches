@@ -1,4 +1,6 @@
-## JGR's Patchpack version 0.73.5
+## More Companies 1.0.3 - JGR's Patchpack 0.73.5
+
+This fork supports up to 240 companies and custom RGB company colours. Version 1.0.3 adds optional long-distance cargo fare protection, safer cargo-payment arithmetic, and a vehicle palette guard. Download builds from the [More Companies releases](https://github.com/Tourville-Technologies/OpenTTD-patches/releases). See the [1.0.3 notes](docs/more-companies-1.0.3.md) for cargo-aging and transfer settings.
 
 This is a collection of features and other modifications applied to [OpenTTD](http://www.openttd.org/).  
 It's a separate version of the game which can be installed and played alongside the standard game, not a loadable mod (NewGRF, script, or so on).
