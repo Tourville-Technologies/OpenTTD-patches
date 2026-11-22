@@ -181,6 +181,6 @@ uint32_t MaskCompanyManagerFaceBits(const CompanyManagerFace &cmf, FaceVars vars
 std::string FormatCompanyManagerFaceCode(const CompanyManagerFace &cmf);
 std::optional<CompanyManagerFace> ParseCompanyManagerFaceCode(std::string_view str);
 
-void DrawCompanyManagerFace(const CompanyManagerFace &cmf, Colours colour, const Rect &r);
+void DrawCompanyManagerFace(const CompanyManagerFace &cmf, Colours colour, const Rect &r, CompanyID company = CompanyID::Invalid());
 
 #endif /* COMPANY_MANAGER_FACE_H */

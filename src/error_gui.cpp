@@ -182,7 +182,7 @@ public:
 		switch (widget) {
 			case WID_EM_FACE: {
 				const Company *c = Company::GetIfValid(this->company);
-				if (c != nullptr) DrawCompanyManagerFace(c->face, c->colour, r);
+				if (c != nullptr) DrawCompanyManagerFace(c->face, c->colour, r, c->index);
 				break;
 			}
 

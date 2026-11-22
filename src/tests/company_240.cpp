@@ -24,6 +24,8 @@
 #include "../sprite.h"
 #include "../company_cmd.h"
 #include "../company_gui.h"
+#include "../smallmap_gui.h"
+#include "../viewport_func.h"
 #include "../infrastructure_func.h"
 #include "../train.h"
 #include "../roadveh.h"
@@ -473,6 +475,52 @@ TEST_CASE("Company RGB graph lines label frames title bars and text", "[company2
 	CHECK(GetContrastColour(background) == TextColour::Black);
 	background.rgb = Colour(0, 0, 0).data;
 	CHECK(GetContrastColour(background) == TextColour::White);
+}
+
+TEST_CASE("Ownership viewport retains RGB colours through terrain and station rendering", "[company240][rgb][ownership]")
+{
+	MockEnvironment::Instance();
+	AllocateMap(64, 64);
+	AutoRestoreBackup palette(_cur_palette, _cur_palette);
+	PixelColour old_gradient = GetColourGradient(Colours::Red, Shade::Light);
+	SetColourGradient(Colours::Red, Shade::Light, PC_RED);
+	_cur_palette.palette[PC_RED.p] = Colour(255, 0, 0);
+	_cur_palette.palette[PC_BLACK.p] = Colour(0, 0, 0);
+	Company *c = Company::CreateAtIndex(CompanyID(239));
+	c->colour = Colours::Red;
+	auto cleanup = scope_guard([&] {
+		SetColourGradient(Colours::Red, Shade::Light, old_gradient);
+		_company_pool.CleanPool();
+		BuildOwnerLegend();
+		DeallocateMap();
+	});
+	TileIndex tile = TileXY(20, 20);
+	Viewport vp{};
+	vp.zoom = ZoomLevel::DrawMap;
+	vp.map_type = VPMT_OWNER;
+	auto sample = [&](uint8_t index = 1) { return ViewportMapGetColour<true, false>(&vp, 20 * TILE_SIZE, 20 * TILE_SIZE, index); };
+	for (uint32_t rgb : {0x744821u, 0x332211u, 0u, 0xFFFFFFu}) {
+		CAPTURE(rgb);
+		c->colour_rgb = rgb;
+		BuildOwnerLegend();
+		Colour expected = GetCompanyRGBShade(rgb, Shade::Light);
+		MakeRailNormal(tile, c->index, TRACK_BIT_X, RailType(0));
+		CHECK(sample() == expected.data);
+		CHECK((ViewportMapGetColour<false, false>(&vp, 20 * TILE_SIZE, 20 * TILE_SIZE, 1) == PC_RED.p));
+		/* A raised corner must shade the selected RGB colour, rather than reverting to red. */
+		SetTileHeight(tile + TileDiffXY(1, 0), 1);
+		uint32_t shaded = ViewportMapGetColour<true, true>(&vp, 20 * TILE_SIZE, 20 * TILE_SIZE, 1);
+		CHECK((shaded == AdjustBrightness(expected, 160).data || shaded == AdjustBrightness(expected, 96).data));
+		SetTileHeight(tile + TileDiffXY(1, 0), 0);
+		MakeRailStation(tile, c->index, StationID(0), Axis::X, 0, RailType(0));
+		CHECK(sample(1) == expected.data);
+		CHECK(sample(0) == Colour(0, 0, 0).data);
+	}
+	/* Switching back to a standard palette colour must remove the old RGB value. */
+	c->colour_rgb = COMPANY_RGB_DEFAULT;
+	BuildOwnerLegend();
+	MakeRailNormal(tile, c->index, TRACK_BIT_X, RailType(0));
+	CHECK(sample() == Colour(255, 0, 0).data);
 }
 
 TEST_CASE("240 companies - sharing charges revenue and vehicle profit", "[company240][sharing]")

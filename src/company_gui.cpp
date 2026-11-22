@@ -1215,8 +1215,9 @@ void ShowCompanyLiveryWindow(CompanyID company, GroupID group)
  * @param cmf   the company manager's face
  * @param colour the (background) colour of the gradient
  * @param r      position to draw the face
+ * @param company Company supplying the optional RGB background colour.
  */
-void DrawCompanyManagerFace(const CompanyManagerFace &cmf, Colours colour, const Rect &r)
+void DrawCompanyManagerFace(const CompanyManagerFace &cmf, Colours colour, const Rect &r, CompanyID company)
 {
 	/* Determine offset from centre of drawing rect. */
 	Dimension d = GetSpriteSize(SPR_GRADIENT);
@@ -1247,7 +1248,7 @@ void DrawCompanyManagerFace(const CompanyManagerFace &cmf, Colours colour, const
 	}
 
 	/* Draw the gradient (background) */
-	DrawSprite(SPR_GRADIENT, GetColourPalette(colour), x, y);
+	DrawSprite(SPR_GRADIENT, GetCompanyRGBPalette(GetColourPalette(colour), company), x, y);
 
 	/* Thirdly, draw sprites. */
 	for (auto var : SetBitIterator(active_vars)) {
@@ -1425,7 +1426,7 @@ public:
 	{
 		switch (widget) {
 			case WID_SCMF_FACE:
-				DrawCompanyManagerFace(this->face, Company::Get((CompanyID)this->window_number)->colour, r);
+				DrawCompanyManagerFace(this->face, Company::Get((CompanyID)this->window_number)->colour, r, (CompanyID)this->window_number);
 				break;
 
 			case WID_SCMF_STYLE: {
@@ -2362,7 +2363,7 @@ struct CompanyWindow : Window
 		const Company *c = Company::Get((CompanyID)this->window_number);
 		switch (widget) {
 			case WID_C_FACE:
-				DrawCompanyManagerFace(c->face, c->colour, r);
+				DrawCompanyManagerFace(c->face, c->colour, r, c->index);
 				break;
 
 			case WID_C_FACE_TITLE:
@@ -2708,7 +2709,7 @@ struct BuyCompanyWindow : Window {
 		switch (widget) {
 			case WID_BC_FACE: {
 				const Company *c = Company::Get((CompanyID)this->window_number);
-				DrawCompanyManagerFace(c->face, c->colour, r);
+				DrawCompanyManagerFace(c->face, c->colour, r, c->index);
 				break;
 			}
 

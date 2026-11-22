@@ -2,6 +2,12 @@
 
 * * *
 
+### more-companies 1.0.4
+* Fix custom RGB company colours in the main viewport's ownership map mode, including terrain shading, station highlights, and ownership-coloured bridges and tunnels.
+* Fix the background behind the company CEO to use the primary RGB colour in the company window, face editor, takeover dialog, and company error portraits.
+* Preserve face features, standard palette colours, and 8-bit fallback colours. Changing the primary RGB colour refreshes the ownership view and portrait immediately.
+* Add ownership rendering regression coverage and verify live RGB changes in software and OpenGL rendering. See docs/more-companies-1.0.4.md.
+
 ### more-companies 1.0.3
 * Add an optional minimum cargo fare, retaining a speed premium while protecting long-distance deliveries from excessive age decay. The default is zero, preserving standard payment rules.
 * Base feeder credits on the protected minimum when enabled, reserving the speed premium for final delivery and avoiding age-related negative payments on forward-moving routes.

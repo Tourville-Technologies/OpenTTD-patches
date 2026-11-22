@@ -3156,7 +3156,12 @@ inline uint8_t SlopifyColour(TileIndex tile, uint32_t colour)
 
 inline PixelColour SlopifyColour(TileIndex tile, PixelColour colour)
 {
-	return PixelColour{SlopifyColour(tile, colour.p)};
+	PixelColour light{_lighten_colour[colour.p]}, dark{_darken_colour[colour.p]};
+	if (colour.rgb != 0) {
+		light.rgb = AdjustBrightness(Colour(colour.rgb), 160).data;
+		dark.rgb = AdjustBrightness(Colour(colour.rgb), 96).data;
+	}
+	return SlopifyColourGeneric<PixelColour>(tile, colour, light, dark, dark, light);
 }
 
 inline uint8_t GetSlopeIndex(TileIndex tile)
@@ -3172,7 +3177,10 @@ static constexpr inline PixelColour ColourFromIndex(uint32_t values, uint8_t col
 static constexpr inline uint8_t UnwrapPixelColour(PixelColour x) { return x.p; }
 static constexpr inline uint8_t UnwrapPixelColour(uint8_t x) { return x; }
 
-#define COL8TO32(x) _cur_palette.palette[UnwrapPixelColour(x)].data
+static inline uint32_t ViewportMapColour32(uint8_t colour) { return _cur_palette.palette[colour].data; }
+static inline uint32_t ViewportMapColour32(PixelColour colour) { return colour.rgb != 0 ? colour.rgb : ViewportMapColour32(colour.p); }
+
+#define COL8TO32(x) ViewportMapColour32(x)
 #define COLOUR_FROM_INDEX(x) ColourFromIndex(x, colour_index)
 #define IS32(x) (is_32bpp ? COL8TO32(x) : UnwrapPixelColour(x))
 
@@ -3512,14 +3520,14 @@ static inline uint32_t ViewportMapGetColourOwner(const TileIndex tile, TileType 
 
 	/* Train stations are sometimes hard to spot.
 	 * So we give the player a hint by mixing his colour with black. */
-	uint32_t colour = _legend_land_owners[_company_to_list_pos[o]].colour.p;
+	PixelColour colour = _legend_land_owners[_company_to_list_pos[o]].colour;
 	if (t != TileType::Station) {
 		if (show_slope) colour = SlopifyColour(tile, colour);
 	} else {
-		if (GetStationType(tile) == StationType::Rail) colour = colour_index & 1 ? colour : PC_BLACK.p;
+		if (GetStationType(tile) == StationType::Rail) colour = colour_index & 1 ? colour : PC_BLACK;
 	}
 	if (is_32bpp) return COL8TO32(colour);
-	return colour;
+	return colour.p;
 }
 
 template <bool is_32bpp, bool show_slope>
@@ -3731,6 +3739,11 @@ uint32_t ViewportMapGetColour(const Viewport * const vp, int x, int y, const uin
 	}
 }
 
+template uint32_t ViewportMapGetColour<true, true>(const Viewport *, int, int, uint8_t);
+template uint32_t ViewportMapGetColour<true, false>(const Viewport *, int, int, uint8_t);
+template uint32_t ViewportMapGetColour<false, true>(const Viewport *, int, int, uint8_t);
+template uint32_t ViewportMapGetColour<false, false>(const Viewport *, int, int, uint8_t);
+
 /* Taken from http://stereopsis.com/doubleblend.html, PixelBlend() is faster than ComposeColourRGBANoCheck() */
 static inline void PixelBlend(uint32_t * const d, const uint32_t s)
 {
@@ -3871,7 +3884,8 @@ static void ViewportMapDrawBridgeTunnel(Viewport * const vp, const TunnelBridgeT
 	PixelColour colour;
 	if (vp->map_type == VPMT_OWNER && _settings_client.gui.use_owner_colour_for_tunnelbridge && o < MAX_COMPANIES) {
 		colour = _legend_land_owners[_company_to_list_pos[o]].colour;
-		colour = PixelColour{is_tunnel ? _darken_colour[colour.p] : _lighten_colour[colour.p]};
+		colour.p = is_tunnel ? _darken_colour[colour.p] : _lighten_colour[colour.p];
+		if (colour.rgb != 0) colour.rgb = AdjustBrightness(Colour(colour.rgb), is_tunnel ? 96 : 160).data;
 	} else if (vp->map_type == VPMT_ROUTES && IsTileType(tile, TileType::TunnelBridge)) {
 		switch (GetTunnelBridgeTransportType(tile)) {
 			case TransportType::Water:

@@ -187,4 +187,8 @@ bool IsViewportMouseHoverActive();
 
 void UpdateRouteStepSpriteSize();
 
+/** Sample a tile's map-mode pixel, using either RGB or a palette index. */
+template <bool is_32bpp, bool show_slope>
+uint32_t ViewportMapGetColour(const Viewport *vp, int x, int y, uint8_t colour_index);
+
 #endif /* VIEWPORT_FUNC_H */
