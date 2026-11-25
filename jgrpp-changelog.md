@@ -2,6 +2,12 @@
 
 * * *
 
+### more-companies 1.0.6
+* Integrate Discord-controlled resume votes and company profit snapshots on dedicated servers.
+* Forward Discord link messages to the admin port and support clearing company passwords, with membership checked when a client ID is provided.
+* Disconnect idle players and spectators after 15 minutes and pause when the server empties.
+* Keep the More Companies 1.0.5 multiplayer protocol for both clients and servers.
+
 ### more-companies 1.0.5
 * Update to JGRPP 0.73.5 development commit `258290b013410752d6be3a68f99105816577ef44`, which includes OpenTTD 16.0-beta5 changes.
 * Inherit fixes for 24-hour departure schedules, invalid NewGRF airport layouts, and case-insensitive file extension handling.

@@ -1347,6 +1347,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientCommand(Packet &p
 	// Handling of Commands::CompanyAddAllowList would go here
 
 	if (GetCommandFlags(cmd).Test(CommandFlag::ClientID)) SetPreCheckedCommandPayloadClientID(cmd, *cp.command_container.payload, this->client_id);
+	this->last_player_activity = std::chrono::steady_clock::now();
 	cp.client_id = this->client_id;
 
 	this->incoming_queue.push_back(std::move(cp));
@@ -1528,6 +1529,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientAck(Packet &p)
 
 		/* Now it is! Unpause the game */
 		this->status = ClientStatus::Active;
+		this->last_player_activity = std::chrono::steady_clock::now();
 		this->last_token_frame = _frame_counter;
 
 		/* Execute script for, e.g. MOTD */
@@ -1718,6 +1720,11 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientChat(Packet &p)
 		case NetworkAction::ChatBroadcast:
 		case NetworkAction::ChatClient:
 		case NetworkAction::ChatTeam:
+			this->last_player_activity = std::chrono::steady_clock::now();
+			if (_network_dedicated && action == NetworkAction::ChatBroadcast && desttype == NetworkChatDestinationType::Broadcast && msg.starts_with("!discord-link ")) {
+				NetworkAdminChat(action, desttype, this->client_id, msg, data, false);
+				break;
+			}
 			NetworkServerSendChat(action, desttype, dest, msg, this->client_id, data);
 			break;
 		default:
@@ -1838,6 +1845,7 @@ NetworkRecvStatus ServerNetworkGameSocketHandler::ReceiveClientMove(Packet &p)
 	}
 
 	/* if we get here we can move the client */
+	this->last_player_activity = std::chrono::steady_clock::now();
 	NetworkServerDoMove(this->client_id, company_id);
 	return NetworkRecvStatus::Okay;
 }
@@ -2091,6 +2099,17 @@ static void NetworkHandleCommandQueue(NetworkClientSocket *cs)
 {
 	for (auto &cp : cs->outgoing_queue) cs->SendCommand(cp);
 	cs->outgoing_queue.clear();
+}
+
+/** Disconnect idle players and spectators. Network acknowledgements do not count as activity. */
+void NetworkDiscordKickIdleClients()
+{
+	const auto now = std::chrono::steady_clock::now();
+	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
+		if (cs->status != NetworkClientSocket::ClientStatus::Active) continue;
+		if (now - cs->last_player_activity < std::chrono::minutes(15)) continue;
+		cs->SendError(NetworkErrorCode::Kicked, "Inactive for 15 minutes");
+	}
 }
 
 /**

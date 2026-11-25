@@ -552,6 +552,61 @@ static uint NetworkCountActiveClients()
 	return count;
 }
 
+/* The dedicated server stays paused after the first player returns until Discord approves a resume. */
+static bool discord_waiting_for_vote = true;
+static bool discord_had_clients = false;
+static uint64_t discord_pause_generation = 0;
+
+uint NetworkDiscordClientCount()
+{
+	uint count = 0;
+	for (const NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
+		if (cs->status == NetworkClientSocket::ClientStatus::Active) count++;
+	}
+	return count;
+}
+
+uint64_t NetworkDiscordPauseGeneration()
+{
+	return discord_pause_generation;
+}
+
+std::string_view NetworkDiscordPauseState()
+{
+	if (_network_dedicated && discord_waiting_for_vote) return "vote";
+	return _pause_mode.Any() ? "paused" : "running";
+}
+
+std::string_view NetworkDiscordResume(uint64_t generation)
+{
+	if (!_network_dedicated || !discord_waiting_for_vote || generation != discord_pause_generation) return "not_waiting";
+	if (NetworkDiscordClientCount() == 0) return "empty";
+
+	auto other_pauses = _pause_mode;
+	other_pauses.Reset(PauseMode::Normal);
+	other_pauses.Reset(PauseMode::CommandDuringPause);
+	if (other_pauses.Any()) return "blocked";
+
+	discord_waiting_for_vote = false;
+	CheckPauseHelper(false, PauseMode::Normal);
+	return "resumed";
+}
+
+static void NetworkDiscordCheckPause()
+{
+	if (!_network_dedicated) return;
+	NetworkDiscordKickIdleClients();
+	const bool has_clients = NetworkDiscordClientCount() != 0;
+	if (!has_clients) {
+		if (discord_had_clients) discord_pause_generation++;
+		discord_waiting_for_vote = true;
+	}
+	discord_had_clients = has_clients;
+	if (discord_waiting_for_vote && !_pause_mode.Test(PauseMode::Error)) {
+		CheckPauseHelper(true, PauseMode::Normal);
+	}
+}
+
 /**
  * Check if the minimum number of active clients has been reached and pause or unpause the game as appropriate
  */
@@ -1075,6 +1130,9 @@ bool NetworkServerStart()
 	_record_sync_records = false;
 
 	_network_clients_connected = 0;
+	discord_waiting_for_vote = true;
+	discord_had_clients = false;
+	discord_pause_generation++;
 	_network_company_passworded = {};
 
 	NetworkInitGameInfo();
@@ -1457,6 +1515,7 @@ void NetworkGameLoop()
 			 * the frame_freq is more than 1 tick. Same with distributing commands. */
 			CheckPauseOnJoin();
 			CheckMinActiveClients();
+			NetworkDiscordCheckPause();
 			NetworkDistributeCommands();
 		}
 

@@ -54,6 +54,9 @@ std::string_view GetNetworkRevisionString()
 #elif !defined(ENABLE_NETWORK_SYNC_EVERY_FRAME)
 		/* Just a standard build. */
 		network_revision = _openttd_revision;
+		/* 1.0.6 adds server-side Discord integration without changing the game protocol.
+		 * Use the same wire revision on both releases so either client can join either server. */
+		if (_openttd_revision_tagged && network_revision == "more-companies-1.0.6") network_revision = "more-companies-1.0.5";
 #else
 		/* Build for debugging that sends the first part of the seed every frame, practically syncing every frame. */
 		network_revision = fmt::format("dbg_sync-{}", _openttd_revision);

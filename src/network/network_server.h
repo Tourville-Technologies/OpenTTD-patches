@@ -83,6 +83,7 @@ public:
 
 	static const char *GetClientStatusName(ClientStatus status);
 
+	std::chrono::steady_clock::time_point last_player_activity{}; ///< Last gameplay or chat input.
 	uint8_t lag_test = 0;                         ///< Byte used for lag-testing the client
 	uint8_t last_token = 0;                       ///< The last random token we did send to verify the client is listening
 	uint32_t last_token_frame = 0;                ///< The last frame we received the right token
@@ -168,6 +169,7 @@ public:
 };
 
 void NetworkServer_Tick(bool send_frame);
+void NetworkDiscordKickIdleClients();
 void ChangeNetworkRestartTime(bool reset);
 void NetworkServerSetCompanyPassword(CompanyID company_id, std::string_view password, bool already_hashed = true);
 void NetworkServerUpdateCompanyPassworded(CompanyID company_id, bool passworded);

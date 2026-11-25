@@ -929,6 +929,63 @@ static bool ConBanList(std::span<std::string_view> argv)
 	return true;
 }
 
+/** Return the same completed-quarter operating profits as the in-game graph. */
+static bool ConDiscordSnapshot(std::span<std::string_view> argv)
+{
+	if (argv.size() != 2 && (argv.size() != 3 || argv[2] != "state")) return false;
+
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} state {} {} {}", argv[1], NetworkDiscordPauseState(), NetworkDiscordClientCount(), NetworkDiscordPauseGeneration());
+	if (argv.size() == 2) {
+		for (const Company *c : Company::Iterate()) {
+			fmt::memory_buffer profits;
+			for (uint i = 0; i < c->num_valid_stat_ent; i++) {
+				const auto &quarter = c->old_economy[i];
+				fmt::format_to(std::back_inserter(profits), "{}{}", i == 0 ? "" : ",", (int64_t)(quarter.income + quarter.expenses));
+			}
+			IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} company {}|{}|{}", argv[1], c->index + 1,
+				std::string_view(profits.data(), profits.size()), GetString(STR_COMPANY_NAME, c->index));
+		}
+	}
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} end", argv[1]);
+	return true;
+}
+
+static bool ConDiscordResume(std::span<std::string_view> argv)
+{
+	if (argv.size() != 3) return false;
+	const auto generation = ParseInteger<uint64_t>(argv[2]);
+	if (!generation.has_value()) return false;
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} {}", argv[1], NetworkDiscordResume(*generation));
+	return true;
+}
+
+static bool ConDiscordClearPassword(std::span<std::string_view> argv)
+{
+	if (argv.size() != 3 && argv.size() != 4) return false;
+	const auto number = ParseInteger<uint>(argv[2]);
+	const auto company = number.has_value() && *number > 0 && *number <= MAX_COMPANIES ? CompanyID{static_cast<uint8_t>(*number - 1)} : CompanyID::Invalid();
+	if (!Company::IsValidHumanID(company)) {
+		IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} invalid_company", argv[1]);
+		return true;
+	}
+
+	/* When Discord supplies a linked client ID, check its membership at the point of the reset. */
+	if (argv.size() == 4) {
+		const auto client_id = ParseType<ClientID>(argv[3]);
+		const auto *socket = client_id.has_value() ? NetworkClientSocket::GetByClientID(*client_id) : nullptr;
+		const auto *info = socket != nullptr ? socket->GetInfo() : nullptr;
+		if (socket == nullptr || socket->status != NetworkClientSocket::ClientStatus::Active ||
+				info == nullptr || info->client_playas != company) {
+			IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} not_in_company", argv[1]);
+			return true;
+		}
+	}
+
+	NetworkChangeCompanyPassword(company, "*");
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} cleared", argv[1]);
+	return true;
+}
+
 /** Manually pause the game. @copydoc IConsoleCmdProc */
 static bool ConPauseGame(std::span<std::string_view> argv)
 {
@@ -4578,6 +4635,9 @@ void IConsoleStdLibRegister()
 
 	IConsole::CmdRegister("connect",                 ConNetworkConnect,   ConHookClientOnly);
 	IConsole::CmdRegister("clients",                 ConNetworkClients,   ConHookNeedNetwork);
+	IConsole::CmdRegister("discord_snapshot",        ConDiscordSnapshot,   ConHookServerOnly);
+	IConsole::CmdRegister("discord_resume",          ConDiscordResume,     ConHookServerOnly);
+	IConsole::CmdRegister("discord_clear_password",  ConDiscordClearPassword, ConHookServerOnly);
 	IConsole::CmdRegister("status",                  ConStatus,           ConHookServerOnly);
 	IConsole::CmdRegister("server_info",             ConServerInfo,       ConHookServerOnly);
 	IConsole::AliasRegister("info",                  "server_info");
