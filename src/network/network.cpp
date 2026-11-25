@@ -556,12 +556,30 @@ static uint NetworkCountActiveClients()
 static bool discord_waiting_for_vote = true;
 static bool discord_had_clients = false;
 static uint64_t discord_pause_generation = 0;
+static std::chrono::steady_clock::time_point discord_low_population_since{};
+static std::chrono::steady_clock::time_point discord_low_population_warning_at{};
+
+static void NetworkDiscordResetLowPopulationTimer()
+{
+	discord_low_population_since = {};
+	discord_low_population_warning_at = {};
+}
+
+static void NetworkDiscordAnnounceToActiveClients(std::string_view message)
+{
+	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
+		const NetworkClientInfo *info = cs->GetInfo();
+		if (cs->status != NetworkClientSocket::ClientStatus::Active || info == nullptr || !Company::IsValidID(info->client_playas)) continue;
+		cs->SendChat(NetworkAction::ServerMessage, ClientID::Server, false, message, {});
+	}
+}
 
 uint NetworkDiscordClientCount()
 {
 	uint count = 0;
 	for (const NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
-		if (cs->status == NetworkClientSocket::ClientStatus::Active) count++;
+		const NetworkClientInfo *info = cs->GetInfo();
+		if (cs->status == NetworkClientSocket::ClientStatus::Active && info != nullptr && Company::IsValidID(info->client_playas)) count++;
 	}
 	return count;
 }
@@ -585,9 +603,12 @@ std::string_view NetworkDiscordResume(uint64_t generation)
 	auto other_pauses = _pause_mode;
 	other_pauses.Reset(PauseMode::Normal);
 	other_pauses.Reset(PauseMode::CommandDuringPause);
+	/* pause_on_join is temporary. Keep it set, but let an approved vote clear our pause. */
+	other_pauses.Reset(PauseMode::Join);
 	if (other_pauses.Any()) return "blocked";
 
 	discord_waiting_for_vote = false;
+	NetworkDiscordResetLowPopulationTimer();
 	CheckPauseHelper(false, PauseMode::Normal);
 	return "resumed";
 }
@@ -595,11 +616,32 @@ std::string_view NetworkDiscordResume(uint64_t generation)
 static void NetworkDiscordCheckPause()
 {
 	if (!_network_dedicated) return;
-	NetworkDiscordKickIdleClients();
-	const bool has_clients = NetworkDiscordClientCount() != 0;
-	if (!has_clients) {
+	NetworkDiscordMoveIdleClientsToSpectators();
+	const auto now = std::chrono::steady_clock::now();
+	const uint active_clients = NetworkDiscordClientCount();
+	const bool has_clients = active_clients != 0;
+	if (active_clients == 0) {
 		if (discord_had_clients) discord_pause_generation++;
 		discord_waiting_for_vote = true;
+		NetworkDiscordResetLowPopulationTimer();
+	} else if (!discord_waiting_for_vote && active_clients >= 3) {
+		if (discord_low_population_warning_at != std::chrono::steady_clock::time_point{}) {
+			NetworkDiscordAnnounceToActiveClients("Pause countdown cancelled because a third active player connected.");
+		}
+		NetworkDiscordResetLowPopulationTimer();
+	} else if (!discord_waiting_for_vote) {
+		if (discord_low_population_since == std::chrono::steady_clock::time_point{}) discord_low_population_since = now;
+		if (discord_low_population_warning_at == std::chrono::steady_clock::time_point{} &&
+				now - discord_low_population_since >= std::chrono::minutes(15)) {
+			discord_low_population_warning_at = now;
+			NetworkDiscordAnnounceToActiveClients("Fewer than 3 active players are connected. The game will pause in 5 minutes unless another player joins a company.");
+		} else if (discord_low_population_warning_at != std::chrono::steady_clock::time_point{} &&
+				now - discord_low_population_warning_at >= std::chrono::minutes(5)) {
+			discord_pause_generation++;
+			discord_waiting_for_vote = true;
+			NetworkDiscordResetLowPopulationTimer();
+			NetworkDiscordAnnounceToActiveClients("The game is pausing because fewer than 3 active players remained connected. A Discord vote is required to resume.");
+		}
 	}
 	discord_had_clients = has_clients;
 	if (discord_waiting_for_vote && !_pause_mode.Test(PauseMode::Error)) {
@@ -1133,6 +1175,7 @@ bool NetworkServerStart()
 	discord_waiting_for_vote = true;
 	discord_had_clients = false;
 	discord_pause_generation++;
+	NetworkDiscordResetLowPopulationTimer();
 	_network_company_passworded = {};
 
 	NetworkInitGameInfo();

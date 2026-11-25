@@ -2,6 +2,13 @@
 
 * * *
 
+### more-companies 1.0.7
+* Move company players to spectators after 15 minutes without gameplay, chat, or a company move. Spectators stay connected and do not count toward a Discord resume vote.
+* Pause immediately at zero active company players. With one or two, warn after 15 minutes and pause five minutes later if the count stays below three. Reaching three resets the countdown.
+* Honor Discord resume approval while a separate pause-on-join is active.
+* Include economic year, month, and company RGB colours in Discord snapshots.
+* Keep the More Companies 1.0.5 and 1.0.6 multiplayer protocol.
+
 ### more-companies 1.0.6
 * Integrate Discord-controlled resume votes and company profit snapshots on dedicated servers.
 * Forward Discord link messages to the admin port and support clearing company passwords, with membership checked when a client ID is provided.

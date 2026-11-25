@@ -30,6 +30,7 @@
 #include "fontcache.h"
 #include "screenshot.h"
 #include "genworld.h"
+#include "gfx_func.h"
 #include "string_func.h"
 #include "strings_func.h"
 #include "viewport_func.h"
@@ -934,7 +935,8 @@ static bool ConDiscordSnapshot(std::span<std::string_view> argv)
 {
 	if (argv.size() != 2 && (argv.size() != 3 || argv[2] != "state")) return false;
 
-	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} state {} {} {}", argv[1], NetworkDiscordPauseState(), NetworkDiscordClientCount(), NetworkDiscordPauseGeneration());
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} state {} {} {} {} {}", argv[1], NetworkDiscordPauseState(), NetworkDiscordClientCount(),
+		NetworkDiscordPauseGeneration(), EconTime::CurYear().base(), EconTime::CurMonth());
 	if (argv.size() == 2) {
 		for (const Company *c : Company::Iterate()) {
 			fmt::memory_buffer profits;
@@ -942,8 +944,10 @@ static bool ConDiscordSnapshot(std::span<std::string_view> argv)
 				const auto &quarter = c->old_economy[i];
 				fmt::format_to(std::back_inserter(profits), "{}{}", i == 0 ? "" : ",", (int64_t)(quarter.income + quarter.expenses));
 			}
-			IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} company {}|{}|{}", argv[1], c->index + 1,
-				std::string_view(profits.data(), profits.size()), GetString(STR_COMPANY_NAME, c->index));
+			const PixelColour pixel = GetCompanyPixelColour(c->index, Shade::Normal);
+			const Colour colour = pixel.rgb != 0 ? Colour(pixel.rgb) : _cur_palette.palette[pixel.p];
+			IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} company {}|{}|{:02X}{:02X}{:02X}|{}", argv[1], c->index + 1,
+				std::string_view(profits.data(), profits.size()), colour.r, colour.g, colour.b, GetString(STR_COMPANY_NAME, c->index));
 		}
 	}
 	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} end", argv[1]);

@@ -169,7 +169,7 @@ public:
 };
 
 void NetworkServer_Tick(bool send_frame);
-void NetworkDiscordKickIdleClients();
+void NetworkDiscordMoveIdleClientsToSpectators();
 void ChangeNetworkRestartTime(bool reset);
 void NetworkServerSetCompanyPassword(CompanyID company_id, std::string_view password, bool already_hashed = true);
 void NetworkServerUpdateCompanyPassworded(CompanyID company_id, bool passworded);

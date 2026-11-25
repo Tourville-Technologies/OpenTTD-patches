@@ -2101,14 +2101,16 @@ static void NetworkHandleCommandQueue(NetworkClientSocket *cs)
 	cs->outgoing_queue.clear();
 }
 
-/** Disconnect idle players and spectators. Network acknowledgements do not count as activity. */
-void NetworkDiscordKickIdleClients()
+/** Move idle company players to spectators. Network acknowledgements do not count as activity. */
+void NetworkDiscordMoveIdleClientsToSpectators()
 {
 	const auto now = std::chrono::steady_clock::now();
 	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
 		if (cs->status != NetworkClientSocket::ClientStatus::Active) continue;
+		NetworkClientInfo *info = cs->GetInfo();
+		if (info == nullptr || !Company::IsValidID(info->client_playas)) continue;
 		if (now - cs->last_player_activity < std::chrono::minutes(15)) continue;
-		cs->SendError(NetworkErrorCode::Kicked, "Inactive for 15 minutes");
+		NetworkServerDoMove(info->client_id, COMPANY_SPECTATOR);
 	}
 }
 
