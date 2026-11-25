@@ -32,10 +32,11 @@ jobs:
             -DOPTION_USE_NSIS=OFF
           cmake --build build --target openttd openttd_test --parallel 4
           ./build/openttd_test.exe
-          cpack --config build/CPackConfig.cmake -B build/packages -G ZIP
+          cpack --config build/CPackConfig.cmake -G ZIP
+          test -s bundles/openttd-more-companies-1.0.5-windows-win64.zip
       - uses: actions/upload-artifact@v7
         with:
           name: more-companies-1.0.5-windows-win64
-          path: build/packages/*.zip
+          path: bundles/openttd-more-companies-1.0.5-windows-win64.zip
           if-no-files-found: error
           retention-days: 5
