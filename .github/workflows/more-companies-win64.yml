@@ -1,0 +1,41 @@
+name: More Companies 1.0.5 Windows x64
+
+on:
+  push:
+    branches:
+      - build/more-companies-1.0.5-windows
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/more-companies-1.0.5
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: OpenTTD/actions/setup-vcpkg@v7
+        id: vcpkg
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Build and run unit tests
+        shell: bash
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.vcpkg-cmake }}" \
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPTION_USE_NSIS=OFF
+          cmake --build build --target openttd openttd_test --parallel 4
+          ./build/openttd_test.exe
+          cpack --config build/CPackConfig.cmake -B build/packages -G ZIP
+      - uses: actions/upload-artifact@v7
+        with:
+          name: more-companies-1.0.5-windows-win64
+          path: build/packages/*.zip
+          if-no-files-found: error
+          retention-days: 5
