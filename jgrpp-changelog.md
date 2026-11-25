@@ -2,6 +2,11 @@
 
 * * *
 
+### more-companies 1.0.5
+* Update to JGRPP 0.73.5 development commit `258290b013410752d6be3a68f99105816577ef44`, which includes OpenTTD 16.0-beta5 changes.
+* Inherit fixes for 24-hour departure schedules, invalid NewGRF airport layouts, and case-insensitive file extension handling.
+* Integrate upstream blitter and text layout changes with custom RGB company colours.
+
 ### more-companies 1.0.4
 * Fix custom RGB company colours in the main viewport's ownership map mode, including terrain shading, station highlights, and ownership-coloured bridges and tunnels.
 * Fix the background behind the company CEO to use the primary RGB colour in the company window, face editor, takeover dialog, and company error portraits.

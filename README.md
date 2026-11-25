@@ -1,6 +1,6 @@
-## More Companies 1.0.4 - JGR's Patchpack 0.73.5
+## More Companies 1.0.5 - JGR's Patchpack 0.73.5
 
-This fork supports up to 240 companies and custom RGB company colours. Version 1.0.4 fixes RGB colours in the main ownership map view and CEO portrait backgrounds. Download builds from the [More Companies releases](https://github.com/Tourville-Technologies/OpenTTD-patches/releases). See the [1.0.4 notes](docs/more-companies-1.0.4.md) for these fixes and the [1.0.3 notes](docs/more-companies-1.0.3.md) for cargo-aging and transfer settings.
+This fork supports up to 240 companies and custom RGB company colours. Version 1.0.5 updates the fork to the latest JGRPP 0.73.5 development snapshot. Download builds from the [More Companies releases](https://github.com/Tourville-Technologies/OpenTTD-patches/releases). See the [1.0.4 notes](docs/more-companies-1.0.4.md) for the RGB rendering fixes and the [1.0.3 notes](docs/more-companies-1.0.3.md) for cargo-aging and transfer settings.
 
 This is a collection of features and other modifications applied to [OpenTTD](http://www.openttd.org/).  
 It's a separate version of the game which can be installed and played alongside the standard game, not a loadable mod (NewGRF, script, or so on).

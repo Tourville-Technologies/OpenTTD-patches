@@ -174,10 +174,9 @@ void UserErrorI(const std::string &str)
 	 * the stack to be unwound, the code after MainLoop() in
 	 * openttd_main() is never executed. */
 	EM_ASM(if (window["openttd_abort"]) openttd_abort());
-	emscripten_force_exit(1);
-#else
-	_exit(1);
 #endif
+
+	std::_Exit(1);
 }
 
 /**
@@ -439,9 +438,6 @@ static void ShutdownGame()
 	InvalidatePlanCaches();
 	ClearOrderDestinationRefcountMap();
 	TraceRestrictClearRecentSlotsAndCounters();
-
-	/* No NewGRFs were loaded when it was still bootstrapping. */
-	if (_game_mode != GameMode::Bootstrap) ResetNewGRFData();
 
 	FontCache::UninitializeFontCaches();
 
