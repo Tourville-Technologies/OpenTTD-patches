@@ -584,8 +584,8 @@ bool IsValidConsoleColour(ExtendedTextColour c)
 	/* A normal text colour is used. */
 	if (!c.flags.Test(ExtendedTextColourFlag::IsPaletteColour)) return TextColour::Begin <= c.colour && c.colour < TextColour::End;
 
-	/* A text colour from the palette is used; must be the company
-	 * colour gradient, so it must be one of those. */
+	/* Custom RGB text still carries the company gradient as its palette fallback. */
+	c.rgb = 0;
 	for (Colours i : EnumRange(Colours::End)) {
 		if (ExtendedTextColour{GetColourGradient(i, Shade::Normal)} == c) return true;
 	}

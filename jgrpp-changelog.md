@@ -7,6 +7,7 @@
 * Pause immediately at zero active company players. With one or two, warn after 15 minutes and pause five minutes later if the count stays below three. Reaching three resets the countdown.
 * Honor Discord resume approval while a separate pause-on-join is active.
 * Include economic year, month, and company RGB colours in Discord snapshots.
+* Fix a console assertion when a player with a custom RGB company colour sends chat.
 * Keep the More Companies 1.0.5 and 1.0.6 multiplayer protocol.
 
 ### more-companies 1.0.6

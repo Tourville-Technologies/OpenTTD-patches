@@ -21,6 +21,7 @@
 #include "../framerate_type.h"
 #include "../company_base.h"
 #include "../company_colour.h"
+#include "../console_func.h"
 #include "../sprite.h"
 #include "../company_cmd.h"
 #include "../company_gui.h"
@@ -223,6 +224,14 @@ TEST_CASE("240 companies - AI performance tracking", "[company240]")
 		}
 		PerformanceMeasurer::SetInactive(element);
 	}
+}
+
+TEST_CASE("The console accepts custom RGB company chat colours", "[company240][rgb]")
+{
+	PixelColour company_colour = GetColourGradient(Colours::Blue, Shade::Normal);
+	CHECK(IsValidConsoleColour(ExtendedTextColour{company_colour}));
+	company_colour.rgb = Colour(0xFF2567AB).data;
+	CHECK(IsValidConsoleColour(ExtendedTextColour{company_colour}));
 }
 
 TEST_CASE("NewGRF layout palettes do not alias company RGB palettes", "[company240][rgb]")
