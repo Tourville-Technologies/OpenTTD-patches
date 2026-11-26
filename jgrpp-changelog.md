@@ -2,6 +2,11 @@
 
 * * *
 
+### more-companies 1.0.8
+* Write the full road owner ID when building a level crossing or road depot, including town ownership and companies with IDs above 31.
+* Add dedicated-server `discord_force_pause` and `discord_force_resume` commands for the Discord integration.
+* Require More Companies 1.0.8 on both the client and server so they apply the same ownership update during multiplayer construction.
+
 ### more-companies 1.0.7
 * Move company players to spectators after 15 minutes without gameplay, chat, or a company move. Spectators stay connected and do not count toward a Discord resume vote.
 * Pause immediately at zero active company players. With one or two, warn after 15 minutes and pause five minutes later if the count stays below three. Reaching three resets the countdown.

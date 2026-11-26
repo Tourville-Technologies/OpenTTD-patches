@@ -778,9 +778,10 @@ inline void MakeRoadCrossing(TileIndex t, Owner road, Owner tram, Owner rail, Ax
 	_m[t].m4 = INVALID_ROADTYPE;
 	_m[t].m5 = to_underlying(RoadTileType::Crossing) << 6 | to_underlying(roaddir);
 	_me[t].m6 = 0;
-	_me[t].m7 = road.base();
+	_me[t].m7 = 0;
 	_me[t].m8 = INVALID_ROADTYPE << 6 | rat;
 	SetRoadTypes(t, road_rt, tram_rt);
+	SetRoadOwner(t, RoadTramType::Road, road);
 	SetRoadOwner(t, RoadTramType::Tram, tram);
 }
 
@@ -812,9 +813,10 @@ inline void MakeRoadDepot(TileIndex t, Owner owner, DepotID did, DiagDirection d
 	_m[t].m4 = INVALID_ROADTYPE;
 	_m[t].m5 = to_underlying(RoadTileType::Depot) << 6 | to_underlying(dir);
 	_me[t].m6 = 0;
-	_me[t].m7 = owner.base();
+	_me[t].m7 = 0;
 	_me[t].m8 = INVALID_ROADTYPE << 6;
 	SetRoadType(t, GetRoadTramType(rt), rt);
+	SetRoadOwner(t, RoadTramType::Road, owner);
 	SetRoadOwner(t, RoadTramType::Tram, owner);
 }
 

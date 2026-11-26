@@ -613,6 +613,33 @@ std::string_view NetworkDiscordResume(uint64_t generation)
 	return "resumed";
 }
 
+std::string_view NetworkDiscordForcePause()
+{
+	if (!_network_dedicated) return "unavailable";
+	discord_pause_generation++;
+	discord_waiting_for_vote = true;
+	NetworkDiscordResetLowPopulationTimer();
+	CheckPauseHelper(true, PauseMode::Normal);
+	return "paused";
+}
+
+std::string_view NetworkDiscordForceResume()
+{
+	if (!_network_dedicated) return "unavailable";
+	if (NetworkDiscordClientCount() == 0) return "empty";
+
+	auto other_pauses = _pause_mode;
+	other_pauses.Reset(PauseMode::Normal);
+	other_pauses.Reset(PauseMode::CommandDuringPause);
+	other_pauses.Reset(PauseMode::Join);
+	if (other_pauses.Any()) return "blocked";
+
+	discord_waiting_for_vote = false;
+	NetworkDiscordResetLowPopulationTimer();
+	CheckPauseHelper(false, PauseMode::Normal);
+	return "resumed";
+}
+
 static void NetworkDiscordCheckPause()
 {
 	if (!_network_dedicated) return;

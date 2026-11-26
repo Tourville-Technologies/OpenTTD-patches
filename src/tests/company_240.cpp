@@ -9,6 +9,7 @@
 #include "../3rdparty/catch2/catch.hpp"
 #include "../company_type.h"
 #include "../road_map.h"
+#include "../rail_map.h"
 #include "../bridge_map.h"
 #include "../tunnel_map.h"
 #include "../station_map.h"
@@ -132,6 +133,40 @@ TEST_CASE("240 companies - independent tile road and tram owners", "[company240]
 		}
 	}
 	DeallocateMap();
+}
+
+TEST_CASE("Road crossings and depots initialise split owner fields", "[company240]")
+{
+	AllocateMap(64, 64);
+	auto cleanup = scope_guard([] { DeallocateMap(); });
+	ResetRoadTypes();
+	const TileIndex tile{0};
+	const Owner rail_owner{239};
+	const Owner tram_owner{128};
+
+	MakeRailNormal(tile, rail_owner, TRACK_BIT_Y, RailType{0});
+	for (Owner road_owner : {OWNER_TOWN, Owner{2}, Owner{33}, Owner{200}, OWNER_NONE}) {
+		MakeRoadCrossing(tile, road_owner, tram_owner, rail_owner, Axis::X, RailType{0}, ROADTYPE_ROAD, ROADTYPE_TRAM, TownID{7});
+		CHECK(GetTileOwner(tile) == rail_owner);
+		CHECK(GetRoadOwner(tile, RoadTramType::Road) == road_owner);
+		CHECK(GetRoadOwner(tile, RoadTramType::Tram) == tram_owner);
+		CHECK_FALSE(IsOnSnowOrDesert(tile));
+		/* Rail construction can leave the previous road owner's high bits in the tile. */
+		SetRoadOwner(tile, RoadTramType::Road, OWNER_TOWN);
+		MakeRailNormal(tile, rail_owner, TRACK_BIT_Y, RailType{0});
+	}
+
+	MakeRoadCrossing(tile, OWNER_TOWN, tram_owner, rail_owner, Axis::X, RailType{0}, ROADTYPE_ROAD, ROADTYPE_TRAM, TownID{7});
+	for (RoadType type : {ROADTYPE_ROAD, ROADTYPE_TRAM}) {
+		for (Owner owner : {Owner{2}, Owner{33}, Owner{200}}) {
+			SetRoadOwner(tile, RoadTramType::Road, OWNER_TOWN);
+			MakeRoadDepot(tile, owner, DepotID{0}, DiagDirection::NE, type);
+			CHECK(GetTileOwner(tile) == owner);
+			CHECK(GetRoadOwner(tile, RoadTramType::Road) == owner);
+			CHECK(GetRoadOwner(tile, RoadTramType::Tram) == owner);
+			CHECK_FALSE(IsOnSnowOrDesert(tile));
+		}
+	}
 }
 
 TEST_CASE("240 companies - legacy packed owners", "[company240]")

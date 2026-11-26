@@ -963,6 +963,20 @@ static bool ConDiscordResume(std::span<std::string_view> argv)
 	return true;
 }
 
+static bool ConDiscordForcePause(std::span<std::string_view> argv)
+{
+	if (argv.size() != 2) return false;
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} {}", argv[1], NetworkDiscordForcePause());
+	return true;
+}
+
+static bool ConDiscordForceResume(std::span<std::string_view> argv)
+{
+	if (argv.size() != 2) return false;
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} {}", argv[1], NetworkDiscordForceResume());
+	return true;
+}
+
 static bool ConDiscordClearPassword(std::span<std::string_view> argv)
 {
 	if (argv.size() != 3 && argv.size() != 4) return false;
@@ -4641,6 +4655,8 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("clients",                 ConNetworkClients,   ConHookNeedNetwork);
 	IConsole::CmdRegister("discord_snapshot",        ConDiscordSnapshot,   ConHookServerOnly);
 	IConsole::CmdRegister("discord_resume",          ConDiscordResume,     ConHookServerOnly);
+	IConsole::CmdRegister("discord_force_pause",     ConDiscordForcePause, ConHookServerOnly);
+	IConsole::CmdRegister("discord_force_resume",    ConDiscordForceResume, ConHookServerOnly);
 	IConsole::CmdRegister("discord_clear_password",  ConDiscordClearPassword, ConHookServerOnly);
 	IConsole::CmdRegister("status",                  ConStatus,           ConHookServerOnly);
 	IConsole::CmdRegister("server_info",             ConServerInfo,       ConHookServerOnly);
