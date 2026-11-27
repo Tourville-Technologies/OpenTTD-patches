@@ -935,8 +935,15 @@ static bool ConDiscordSnapshot(std::span<std::string_view> argv)
 {
 	if (argv.size() != 2 && (argv.size() != 3 || argv[2] != "state")) return false;
 
-	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} state {} {} {} {} {}", argv[1], NetworkDiscordPauseState(), NetworkDiscordClientCount(),
-		NetworkDiscordPauseGeneration(), EconTime::CurYear().base(), EconTime::CurMonth());
+	EconTime::Year next_quarter_year = EconTime::CurYear();
+	EconTime::Month next_quarter_month = ((EconTime::CurMonth() / 3) + 1) * 3;
+	if (next_quarter_month >= 12) {
+		next_quarter_month = 0;
+		next_quarter_year = EconTime::Year{next_quarter_year.base() + 1};
+	}
+	const int days_to_next_quarter = (EconTime::ConvertYMDToDate(next_quarter_year, next_quarter_month, 1) - EconTime::CurDate()).base();
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} state {} {} {} {} {} {} {}", argv[1], NetworkDiscordPauseState(), NetworkDiscordClientCount(),
+		NetworkDiscordPauseGeneration(), EconTime::CurYear().base(), EconTime::CurMonth(), EconTime::CurDay(), days_to_next_quarter);
 	if (argv.size() == 2) {
 		for (const Company *c : Company::Iterate()) {
 			fmt::memory_buffer profits;
@@ -974,6 +981,20 @@ static bool ConDiscordForceResume(std::span<std::string_view> argv)
 {
 	if (argv.size() != 2) return false;
 	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} {}", argv[1], NetworkDiscordForceResume());
+	return true;
+}
+
+static bool ConDiscordSoftPause(std::span<std::string_view> argv)
+{
+	if (argv.size() != 2) return false;
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} {}", argv[1], NetworkDiscordSoftPause());
+	return true;
+}
+
+static bool ConDiscordPauseStatus(std::span<std::string_view> argv)
+{
+	if (argv.size() != 2) return false;
+	IConsolePrint(CC_DEFAULT, "OTTD_DISCORD {} {}", argv[1], NetworkDiscordPauseStatus());
 	return true;
 }
 
@@ -4657,6 +4678,8 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("discord_resume",          ConDiscordResume,     ConHookServerOnly);
 	IConsole::CmdRegister("discord_force_pause",     ConDiscordForcePause, ConHookServerOnly);
 	IConsole::CmdRegister("discord_force_resume",    ConDiscordForceResume, ConHookServerOnly);
+	IConsole::CmdRegister("discord_soft_pause",      ConDiscordSoftPause, ConHookServerOnly);
+	IConsole::CmdRegister("discord_pause_status",    ConDiscordPauseStatus, ConHookServerOnly);
 	IConsole::CmdRegister("discord_clear_password",  ConDiscordClearPassword, ConHookServerOnly);
 	IConsole::CmdRegister("status",                  ConStatus,           ConHookServerOnly);
 	IConsole::CmdRegister("server_info",             ConServerInfo,       ConHookServerOnly);

@@ -52,6 +52,8 @@ std::string_view NetworkDiscordPauseState();
 std::string_view NetworkDiscordResume(uint64_t generation);
 std::string_view NetworkDiscordForcePause();
 std::string_view NetworkDiscordForceResume();
+std::string_view NetworkDiscordSoftPause();
+std::string NetworkDiscordPauseStatus();
 std::string NetworkChangeCompanyPassword(CompanyID company_id, std::string password);
 void NetworkReboot();
 void NetworkDisconnect(bool close_admins = true);

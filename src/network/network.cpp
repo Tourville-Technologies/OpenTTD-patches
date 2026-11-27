@@ -555,6 +555,7 @@ static uint NetworkCountActiveClients()
 /* The dedicated server stays paused after the first player returns until Discord approves a resume. */
 static bool discord_waiting_for_vote = true;
 static bool discord_had_clients = false;
+static bool discord_admin_prevents_pause = false;
 static uint64_t discord_pause_generation = 0;
 static std::chrono::steady_clock::time_point discord_low_population_since{};
 static std::chrono::steady_clock::time_point discord_low_population_warning_at{};
@@ -608,6 +609,7 @@ std::string_view NetworkDiscordResume(uint64_t generation)
 	if (other_pauses.Any()) return "blocked";
 
 	discord_waiting_for_vote = false;
+	discord_admin_prevents_pause = false;
 	NetworkDiscordResetLowPopulationTimer();
 	CheckPauseHelper(false, PauseMode::Normal);
 	return "resumed";
@@ -618,6 +620,7 @@ std::string_view NetworkDiscordForcePause()
 	if (!_network_dedicated) return "unavailable";
 	discord_pause_generation++;
 	discord_waiting_for_vote = true;
+	discord_admin_prevents_pause = false;
 	NetworkDiscordResetLowPopulationTimer();
 	CheckPauseHelper(true, PauseMode::Normal);
 	return "paused";
@@ -635,9 +638,61 @@ std::string_view NetworkDiscordForceResume()
 	if (other_pauses.Any()) return "blocked";
 
 	discord_waiting_for_vote = false;
+	discord_admin_prevents_pause = true;
 	NetworkDiscordResetLowPopulationTimer();
 	CheckPauseHelper(false, PauseMode::Normal);
 	return "resumed";
+}
+
+std::string_view NetworkDiscordSoftPause()
+{
+	if (!_network_dedicated) return "unavailable";
+	discord_admin_prevents_pause = false;
+	NetworkDiscordResetLowPopulationTimer();
+	return "normal";
+}
+
+std::string NetworkDiscordPauseStatus()
+{
+	const auto now = std::chrono::steady_clock::now();
+	const uint active_clients = NetworkDiscordClientCount();
+	std::string low_population;
+	if (discord_waiting_for_vote) {
+		low_population = "locked pending a Discord vote";
+	} else if (discord_admin_prevents_pause) {
+		low_population = "suppressed by administrative unpause";
+	} else if (active_clients >= 3) {
+		low_population = "inactive (3+ active players)";
+	} else if (discord_low_population_warning_at != std::chrono::steady_clock::time_point{}) {
+		int64_t remaining = std::chrono::duration_cast<std::chrono::seconds>(discord_low_population_warning_at + std::chrono::minutes(5) - now).count();
+		if (remaining < 0) remaining = 0;
+		low_population = fmt::format("warning issued ({} seconds until pause)", remaining);
+	} else if (discord_low_population_since != std::chrono::steady_clock::time_point{}) {
+		int64_t remaining = std::chrono::duration_cast<std::chrono::seconds>(discord_low_population_since + std::chrono::minutes(15) - now).count();
+		if (remaining < 0) remaining = 0;
+		low_population = fmt::format("timer running ({} seconds until warning)", remaining);
+	} else {
+		low_population = "starting";
+	}
+
+	std::string locks;
+	auto add_lock = [&locks](std::string_view name) {
+		if (!locks.empty()) locks += ", ";
+		locks.append(name);
+	};
+	if (_pause_mode.Test(PauseMode::Normal)) add_lock("normal/Discord");
+	if (_pause_mode.Test(PauseMode::SaveLoad)) add_lock("save/load");
+	if (_pause_mode.Test(PauseMode::Join)) add_lock("joining clients");
+	if (_pause_mode.Test(PauseMode::Error)) add_lock("critical error");
+	if (_pause_mode.Test(PauseMode::ActiveClients)) add_lock("minimum active clients");
+	if (_pause_mode.Test(PauseMode::GameScript)) add_lock("game script");
+	if (_pause_mode.Test(PauseMode::LinkGraph)) add_lock("link graph");
+	if (_pause_mode.Test(PauseMode::CommandDuringPause)) add_lock("command during pause");
+	if (locks.empty()) locks = "none";
+
+	return fmt::format("State: {}|Active company players: {}|Pause generation: {}|Vote lock: {}|Administrative unpause override: {}|Low-population control: {}|OpenTTD pause locks: {}",
+		NetworkDiscordPauseState(), active_clients, discord_pause_generation, discord_waiting_for_vote ? "on" : "off",
+		discord_admin_prevents_pause ? "on" : "off", low_population, locks);
 }
 
 static void NetworkDiscordCheckPause()
@@ -650,6 +705,9 @@ static void NetworkDiscordCheckPause()
 	if (active_clients == 0) {
 		if (discord_had_clients) discord_pause_generation++;
 		discord_waiting_for_vote = true;
+		discord_admin_prevents_pause = false;
+		NetworkDiscordResetLowPopulationTimer();
+	} else if (discord_admin_prevents_pause) {
 		NetworkDiscordResetLowPopulationTimer();
 	} else if (!discord_waiting_for_vote && active_clients >= 3) {
 		if (discord_low_population_warning_at != std::chrono::steady_clock::time_point{}) {
@@ -1201,6 +1259,7 @@ bool NetworkServerStart()
 	_network_clients_connected = 0;
 	discord_waiting_for_vote = true;
 	discord_had_clients = false;
+	discord_admin_prevents_pause = false;
 	discord_pause_generation++;
 	NetworkDiscordResetLowPopulationTimer();
 	_network_company_passworded = {};

@@ -1,6 +1,6 @@
-## More Companies 1.0.8 - JGR's Patchpack 0.73.5
+## More Companies 1.0.9 - JGR's Patchpack 0.73.5
 
-This fork supports up to 240 companies and custom RGB company colours. Version 1.0.8 fixes road ownership when building level crossings and depots, and adds dedicated-server pause and resume controls for the [OpenTTD Discord integration](https://github.com/Tourville-Technologies/OpenttdDiscord). Download builds from the [More Companies releases](https://github.com/Tourville-Technologies/OpenTTD-patches/releases). See the [1.0.4 notes](docs/more-companies-1.0.4.md) for the RGB rendering fixes and the [1.0.3 notes](docs/more-companies-1.0.3.md) for cargo-aging and transfer settings.
+This fork supports up to 240 companies and custom RGB company colours. Version 1.0.9 extends the [OpenTTD Discord integration](https://github.com/Tourville-Technologies/OpenttdDiscord) with administrative pause controls, pause status, and the date of the next economic quarter. Download builds from the [More Companies releases](https://github.com/Tourville-Technologies/OpenTTD-patches/releases). See the [1.0.4 notes](docs/more-companies-1.0.4.md) for the RGB rendering fixes and the [1.0.3 notes](docs/more-companies-1.0.3.md) for cargo-aging and transfer settings.
 
 This is a collection of features and other modifications applied to [OpenTTD](http://www.openttd.org/).  
 It's a separate version of the game which can be installed and played alongside the standard game, not a loadable mod (NewGRF, script, or so on).

@@ -2,6 +2,12 @@
 
 * * *
 
+### more-companies 1.0.9
+* Suppress the low-population countdown after an administrative unpause while at least one company player remains active. Restore automatic pausing with `discord_soft_pause`.
+* Report the vote lock, automatic countdown, override, and game pause locks through `discord_pause_status`.
+* Include the current economic day and days until the next quarter in Discord snapshots.
+* Keep multiplayer compatibility with More Companies 1.0.8.
+
 ### more-companies 1.0.8
 * Write the full road owner ID when building a level crossing or road depot, including town ownership and companies with IDs above 31.
 * Add dedicated-server `discord_force_pause` and `discord_force_resume` commands for the Discord integration.

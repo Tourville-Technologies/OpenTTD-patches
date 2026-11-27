@@ -59,6 +59,10 @@ std::string_view GetNetworkRevisionString()
 		if (_openttd_revision_tagged && (network_revision == "more-companies-1.0.6" || network_revision == "more-companies-1.0.7")) {
 			network_revision = "more-companies-1.0.5";
 		}
+		/* The 1.0.9 Discord admin controls use the 1.0.8 game protocol. */
+		if (_openttd_revision_tagged && network_revision == "more-companies-1.0.9") {
+			network_revision = "more-companies-1.0.8";
+		}
 #else
 		/* Build for debugging that sends the first part of the seed every frame, practically syncing every frame. */
 		network_revision = fmt::format("dbg_sync-{}", _openttd_revision);
